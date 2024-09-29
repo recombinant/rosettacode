@@ -63,6 +63,8 @@ fn part2v1() !void {
     defer prime_.deinit();
     var total_ = try Int.initSet(allocator, 1);
     defer total_.deinit();
+    // Use a temporary and swap() before or after multiplication
+    // as bare multiplication with aliasing will be slower.
     var tmp_ = try Int.init(allocator);
     defer tmp_.deinit();
 
