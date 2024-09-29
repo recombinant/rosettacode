@@ -1,0 +1,55 @@
+L(7) = 4, count of minimum chain: 5
+e.g.: { 1, 2, 4, 6, 7 }
+
+L(14) = 5, count of minimum chain: 14
+e.g.: { 1, 2, 4, 8, 12, 14 }
+
+L(21) = 6, count of minimum chain: 26
+e.g.: { 1, 2, 4, 8, 16, 20, 21 }
+
+L(29) = 7, count of minimum chain: 114
+e.g.: { 1, 2, 4, 8, 16, 24, 28, 29 }
+
+L(32) = 5, count of minimum chain: 1
+e.g.: { 1, 2, 4, 8, 16, 32 }
+
+L(42) = 7, count of minimum chain: 78
+e.g.: { 1, 2, 4, 8, 16, 32, 40, 42 }
+
+L(64) = 6, count of minimum chain: 1
+e.g.: { 1, 2, 4, 8, 16, 32, 64 }
+
+L(47) = 8, count of minimum chain: 183
+e.g.: { 1, 2, 4, 8, 12, 13, 26, 39, 47 }
+
+L(79) = 9, count of minimum chain: 492
+e.g.: { 1, 2, 4, 8, 16, 24, 26, 52, 78, 79 }
+
+L(191) = 11, count of minimum chain: 7172
+e.g.: { 1, 2, 4, 8, 16, 32, 48, 52, 53, 106, 159, 191 }
+
+L(382) = 11, count of minimum chain: 4
+e.g.: { 1, 2, 4, 8, 16, 17, 33, 50, 83, 166, 332, 382 }
+
+L(379) = 12, count of minimum chain: 6583
+e.g.: { 1, 2, 4, 8, 16, 32, 64, 96, 104, 105, 210, 315, 379 }
+
+=============================================================
+
+L(47) = 8, count of minimum chain: 183
+e.g.: { 1, 2, 4, 8, 12, 13, 26, 39, 47 }
+
+L(79) = 9, count of minimum chain: 492
+e.g.: { 1, 2, 4, 8, 16, 24, 26, 52, 78, 79 }
+
+L(191) = 11, count of minimum chain: 7172
+e.g.: { 1, 2, 4, 8, 16, 32, 48, 52, 53, 106, 159, 191 }
+
+L(382) = 11, count of minimum chain: 4
+e.g.: { 1, 2, 4, 8, 16, 17, 33, 50, 83, 166, 332, 382 }
+
+L(379) = 12, count of minimum chain: 6583
+e.g.: { 1, 2, 4, 8, 16, 32, 64, 96, 104, 105, 210, 315, 379 }
+
+L(12509) = 18, count of minimum chain: 147464
+e.g.: { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 4160, 4168, 8336, 12504, 12508, 12509 }    
