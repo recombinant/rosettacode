@@ -1,5 +1,10 @@
 // https://rosettacode.org/wiki/Cyclops_numbers
 // Translation of C++
+
+// Using a prime sieve generator is slower than than using the
+// slightly optimised CyclopsIterator. Improvements to the latter
+// would be good for better speed.
+
 const std = @import("std");
 const fmt = std.fmt;
 const math = std.math;
