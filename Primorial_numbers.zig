@@ -176,12 +176,18 @@ fn part3() !void {
     for (primes_array) |*p|
         p.* = try Int.initSet(allocator, (try primes.next()).?);
 
+    // // Use a temporary and swap() before or after multiplication
+    // // as bare multiplication with aliasing will be slower.
+    var tmp = try Int.init(allocator);
+    defer tmp.deinit();
+
     // Use the vecprod from the Go example.
     var s = primes_array;
     var le = primes_array.len;
     while (le > 1) {
         for (0..le / 2) |i| {
-            try s[i].mul(&s[i], &s[le - i - 1]);
+            try tmp.mul(&s[i], &s[le - i - 1]);
+            s[i].swap(&tmp);
             s[le - i - 1].deinit();
         }
         var c = le / 2;
