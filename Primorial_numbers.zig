@@ -9,6 +9,7 @@ const time = std.time;
 
 const Int = std.math.big.int.Managed;
 
+// https://rosettacode.org/wiki/Extensible_prime_generator
 const AutoSieveType = @import("sieve.zig").AutoSieveType;
 const PrimeGen = @import("sieve.zig").PrimeGen;
 
