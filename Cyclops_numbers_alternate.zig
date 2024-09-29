@@ -7,7 +7,6 @@
 
 const std = @import("std");
 const fmt = std.fmt;
-const math = std.math;
 const time = std.time;
 const print = std.debug.print;
 
@@ -80,9 +79,21 @@ const CyclopsIterator = struct {
 
         while (!isCyclopsNumber(candidate)) {
             const n_digits: u64 = @intFromFloat(@floor(@log10(@as(f64, @floatFromInt(candidate))) + 1));
-            if (n_digits % 2 == 0)
-                candidate = math.pow(u64, 10, n_digits);
-            candidate += 1;
+            if (n_digits % 2 == 0) {
+                // candidate to the next odd number of digits cyclops.
+                candidate = 0;
+                const centre = n_digits / 2 ;
+                var one: u64 = 1;
+                // odd number of digits
+                // zero center and ones either side
+                for (0..n_digits + 1) |i| {
+                    if (i != centre)
+                        candidate += one;
+                    one *= 10;
+                }
+            } else {
+                candidate += 1;
+            }
         }
         self.next_candidate = candidate + 1;
         self.count += 1;
