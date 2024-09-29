@@ -9,7 +9,6 @@ const std = @import("std");
 const fmt = std.fmt;
 const math = std.math;
 const time = std.time;
-const testing = std.testing;
 const print = std.debug.print;
 
 pub fn main() !void {
@@ -226,6 +225,8 @@ fn blindCyclops(n_: u64) u64 {
     }
     return n;
 }
+
+const testing = std.testing;
 
 test blindCyclops {
     try testing.expectEqual(11, blindCyclops(101));
