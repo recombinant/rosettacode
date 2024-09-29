@@ -162,6 +162,7 @@ fn part2v2() !void {
 
 /// Show the length of the one millionth primorial number
 fn part3() !void {
+    // print("calculating...", .{});
     var gpa = heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
@@ -195,9 +196,9 @@ fn part3() !void {
             c += 1;
         s = s[0..c];
         le = c;
-        print("{} ", .{le});
+        // print("{} ", .{le});
     }
-    print("\nfinished\n", .{});
+    // print(" finished\n", .{});
     defer s[0].deinit();
     // TODO: use this string length code rather than the quick fix approximation
     // Zig 0.14dev toString() is extraordinarily slow compared to GNU GMP
