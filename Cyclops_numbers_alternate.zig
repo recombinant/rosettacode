@@ -2,6 +2,7 @@
 // Translation of C++
 const std = @import("std");
 const fmt = std.fmt;
+const math = std.math;
 const time = std.time;
 const testing = std.testing;
 const print = std.debug.print;
@@ -73,9 +74,12 @@ const CyclopsIterator = struct {
     fn next(self: *CyclopsIterator) struct { u64, usize } {
         var candidate = self.next_candidate;
 
-        while (!isCyclopsNumber(candidate))
+        while (!isCyclopsNumber(candidate)) {
+            const n_digits: u64 = @intFromFloat(@floor(@log10(@as(f64, @floatFromInt(candidate))) + 1));
+            if (n_digits % 2 == 0)
+                candidate = math.pow(u64, 10, n_digits);
             candidate += 1;
-
+        }
         self.next_candidate = candidate + 1;
         self.count += 1;
         return .{ candidate, self.count };
@@ -151,6 +155,10 @@ const PalindromicPrimeCyclopsIterator = struct {
 fn isCyclopsNumber(n_: u64) bool {
     if (n_ == 0)
         return true;
+
+    const n_digits: u64 = @intFromFloat(@floor(@log10(@as(f64, @floatFromInt(n_))) + 1));
+    if (n_digits % 2 == 0)
+        return false;
 
     var n = n_;
     var m = n % 10;
