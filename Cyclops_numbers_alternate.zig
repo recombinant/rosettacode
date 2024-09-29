@@ -1,10 +1,14 @@
 // https://rosettacode.org/wiki/Cyclops_numbers
 // Translation of C++
 const std = @import("std");
+const fmt = std.fmt;
+const time = std.time;
 const testing = std.testing;
 const print = std.debug.print;
 
-pub fn main() void {
+pub fn main() !void {
+    var t0 = try time.Timer.start();
+    // --------------
     const limit = 50;
     const limit_stretch = 10_000_000;
     // --------------
@@ -44,6 +48,7 @@ pub fn main() void {
     cyclops_number = 0;
     while (cyclops_number < limit_stretch) cyclops_number, cyclops_count = it3.next();
     print("First palindromic prime cyclops after {} is {} at 1 based index {}\n\n", .{ limit_stretch, cyclops_number, cyclops_count });
+    print("Processed in {}\n", .{fmt.fmtDuration(t0.read())});
 }
 
 fn printCyclops(count: usize, limit: usize, n: u64) void {
