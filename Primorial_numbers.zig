@@ -4,6 +4,7 @@ const fmt = std.fmt;
 const heap = std.heap;
 const io = std.io;
 const math = std.math;
+const mem = std.mem;
 const time = std.time;
 
 const Int = std.math.big.int.Managed;
@@ -140,7 +141,7 @@ fn part2v2() !void {
             10_000,
             100_000,
             => {
-                const total_: Int = if (index == 0) one else try vecProd(&primes_array);
+                const total_: Int = if (index == 0) one else try vecProd(allocator, &primes_array);
                 assert(primes_array.items.len == 1 or index == 0);
 
                 const total: []const u8 = try total_.toString(allocator, 10, .lower);
@@ -218,12 +219,18 @@ fn part3() !void {
 /// the result as the single remaining Int in `primes_array`
 /// All other Int values in `primes_array` will be deinit()
 /// and `primes_array` shrunk to a list of 1 item.
-fn vecProd(primes_array: *std.ArrayList(Int)) !Int {
+fn vecProd(allocator: mem.Allocator, primes_array: *std.ArrayList(Int)) !Int {
+    // Use a temporary and swap() after multiplication
+    // as bare multiplication with aliasing will be slower.
+    var tmp = try Int.init(allocator);
+    defer tmp.deinit();
+
     var s = primes_array.items;
     var le = s.len;
     while (le > 1) {
         for (0..le / 2) |i| {
-            try s[i].mul(&s[i], &s[le - i - 1]);
+            try tmp.mul(&s[i], &s[le - i - 1]);
+            s[i].swap(&tmp);
             s[le - i - 1].deinit();
         }
         var c = le / 2;
