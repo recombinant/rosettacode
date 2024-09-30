@@ -3,10 +3,11 @@
 
 // Using a prime sieve generator is slower than than using the
 // slightly optimised CyclopsIterator. Improvements to the latter
-// would be good for better speed.
+// would improve speed.
 
 const std = @import("std");
 const fmt = std.fmt;
+const math = std.math;
 const time = std.time;
 const print = std.debug.print;
 
@@ -78,11 +79,11 @@ const CyclopsIterator = struct {
         var candidate = self.next_candidate;
 
         while (!isCyclopsNumber(candidate)) {
-            const n_digits: u64 = @intFromFloat(@floor(@log10(@as(f64, @floatFromInt(candidate))) + 1));
+            const n_digits: u64 = math.log10_int(candidate) + 1;
             if (n_digits % 2 == 0) {
                 // candidate to the next odd number of digits cyclops.
                 candidate = 0;
-                const centre = n_digits / 2 ;
+                const centre = n_digits / 2;
                 var one: u64 = 1;
                 // odd number of digits
                 // zero center and ones either side
@@ -171,7 +172,7 @@ fn isCyclopsNumber(n_: u64) bool {
     if (n_ == 0)
         return true;
 
-    const n_digits: u64 = @intFromFloat(@floor(@log10(@as(f64, @floatFromInt(n_))) + 1));
+    const n_digits: u64 = math.log10_int(n_) + 1;
     if (n_digits % 2 == 0)
         return false;
 
