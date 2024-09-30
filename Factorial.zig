@@ -1,5 +1,4 @@
 // https://rosettacode.org/wiki/Factorial
-// 2023 08 31
 const std = @import("std");
 const math = std.math;
 const mem = std.mem;
@@ -55,26 +54,26 @@ const Factorial = struct {
         return self._recursive(&n);
     }
 
-    fn _recursive(self: *const Factorial, n: *const Int) !Int {
-        if (n.eqlZero()) {
-            return self.one.clone();
-        } else {
-            // n - 1
-            var n1 = try Int.init(self.allocator);
-            try n1.sub(n, &self.one);
-            // recursive(n - 1)
-            var recurse = try self._recursive(&n1);
+    fn _recursive(self: *const Factorial, n_: *const Int) !Int {
+        if (n_.eqlZero())
+            return self.one.clone()
+        else {
+            // n_ - 1
+            var n = try Int.init(self.allocator);
+            try n.sub(n_, &self.one);
+            // recursive(n_ - 1)
+            var recurse = try self._recursive(&n);
             defer recurse.deinit();
             // overwrites result
-            // n * recursive(n - 1)
-            try n1.mul(&recurse, n); // reuse n1
+            // n_ * recursive(n_ - 1)
+            try n.mul(&recurse, n_); // reuse n
             //
-            return n1;
+            return n;
         }
     }
 
-    fn iterative(self: *const Factorial, _n: usize) !Int {
-        var n = try Int.initSet(self.allocator, _n);
+    fn iterative(self: *const Factorial, n_: usize) !Int {
+        var n = try Int.initSet(self.allocator, n_);
         var i = try Int.initSet(self.allocator, 2);
         var result = try self.one.clone();
         defer n.deinit();
