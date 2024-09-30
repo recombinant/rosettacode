@@ -1,7 +1,7 @@
 // https://rosettacode.org/wiki/Jaro_similarity
 // Translation of C (keeping comments)
 const std = @import("std");
-const Allocator = std.mem.Allocator;
+const mem = std.mem;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -15,7 +15,7 @@ pub fn main() !void {
     try stdout.print("{d:.6}\n", .{try jaro(allocator, "JELLYFISH", "SMELLYFISH")});
 }
 
-fn jaro(allocator: Allocator, str1: []const u8, str2: []const u8) !f64 {
+fn jaro(allocator: mem.Allocator, str1: []const u8, str2: []const u8) !f64 {
     // if both strings are empty return 1
     // if only one of the strings is empty return 0
     if (str1.len == 0 and str2.len == 0) return 1;

@@ -80,7 +80,7 @@ const Factorial = struct {
         defer n.deinit();
         defer i.deinit();
         // n < 2
-        if (n.order(i) == std.math.Order.lt)
+        if (n.order(i) == math.Order.lt)
             return result;
 
         var tmp = try Int.init(self.allocator); // used to avoid aliasing
