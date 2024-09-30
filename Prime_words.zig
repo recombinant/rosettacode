@@ -103,11 +103,7 @@ test "test isPrime" {
 /// Return at least n prime numbers.
 fn sieve(allocator: mem.Allocator, n: usize) ![]u32 {
     const float_n: f32 = @floatFromInt(n);
-    const limit: usize = @intFromFloat(math.log(
-        f32,
-        math.e,
-        float_n,
-    ) * float_n * 1.2); // should be enough
+    const limit: usize = @intFromFloat(@log(float_n) * float_n * 1.2); // should be enough
 
     var sieved = try allocator.alloc(bool, limit);
     defer allocator.free(sieved); // redundant if ArenaAllocator used
