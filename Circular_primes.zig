@@ -5,6 +5,8 @@ const math = std.math;
 const heap = std.heap;
 const sort = std.sort;
 
+// TODO: second task
+
 pub fn main() !void {
     var arena = heap.ArenaAllocator.init(heap.page_allocator);
     defer arena.deinit();
