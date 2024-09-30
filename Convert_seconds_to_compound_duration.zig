@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Convert_seconds_to_compound_duration
-// Translated from C
+// Translation of C
 const std = @import("std");
 const mem = std.mem;
 

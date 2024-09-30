@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Determine_if_two_triangles_overlap
-// Translated from C
+// Translation of C
 const std = @import("std");
 const math = std.math;
 const mem = std.mem;

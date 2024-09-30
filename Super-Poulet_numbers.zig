@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Super-Poulet_numbers
-// Translated from C++
+// Translation of C++
 const std = @import("std");
 const heap = std.heap;
 const mem = std.mem;

@@ -1,5 +1,5 @@
 // https://www.rosettacode.org/wiki/Largest_int_from_concatenated_ints
-// Translated from C
+// Translation of C
 const std = @import("std");
 const io = std.io;
 const math = std.math;

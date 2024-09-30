@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Upside-down_numbers
-// Translated from Wren
+// Translation of Wren
 const std = @import("std");
 const math = std.math;
 const mem = std.mem;

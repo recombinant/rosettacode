@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Numbers_with_equal_rises_and_falls
-// Translated from C
+// Translation of C
 // https://oeis.org/A296712
 // Pipe through fmt for columnar output.
 

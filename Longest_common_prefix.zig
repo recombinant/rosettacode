@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Longest_common_prefix
-// Translated from Wren (alternative version)
+// Translation of Wren (alternative version)
 const std = @import("std");
 const math = std.math;
 const mem = std.mem;

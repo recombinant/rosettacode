@@ -1,5 +1,5 @@
 // https://www.rosettacode.org/wiki/Magic_squares_of_odd_order
-// Translated from C
+// Translation of C
 // Usage : executable <integer specifying rows in magic square>
 const std = @import("std");
 

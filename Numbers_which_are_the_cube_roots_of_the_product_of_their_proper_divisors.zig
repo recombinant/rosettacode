@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Numbers_which_are_the_cube_roots_of_the_product_of_their_proper_divisors
-// Translated from Wren (alternative version)
+// Translation of Wren (alternative version)
 const std = @import("std");
 const testing = std.testing;
 const print = std.debug.print;

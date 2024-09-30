@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Count_in_factors
-// Translated from C
+// Translation of C
 const std = @import("std");
 const math = std.math;
 const mem = std.mem;

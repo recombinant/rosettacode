@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Recaman%27s_sequence
-// Translated from C
+// Translation of C
 const std = @import("std");
 
 pub fn main() !void {

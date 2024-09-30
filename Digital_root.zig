@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Digital_root
-// Translated from C
+// Translation of C
 const std = @import("std");
 const print = std.debug.print;
 

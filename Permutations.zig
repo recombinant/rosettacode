@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Permutations
-// Translated from Nim
+// Translation of Nim
 const std = @import("std");
 const mem = std.mem;
 

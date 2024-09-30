@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Klarner-Rado_sequence
-// Translated from C
+// Translation of C
 const std = @import("std");
 const fmt = std.fmt;
 const io = std.io;

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Ramsey%27s_theorem
-// Translated from C
+// Translation of C
 const std = @import("std");
 
 const Kind = enum(u8) {

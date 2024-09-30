@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Sum_and_product_puzzle
-// Translated from C
+// Translation of C
 const std = @import("std");
 const heap = std.heap;
 const mem = std.mem;

@@ -1,5 +1,5 @@
 // https://www.rosettacode.org/wiki/Magic_squares_of_doubly_even_order
-// Translated from Java/Kotlin
+// Translation of Java/Kotlin
 const std = @import("std");
 const math = std.math;
 const mem = std.mem;

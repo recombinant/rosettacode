@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Esthetic_numbers
-// Translated from Go
+// Translation of Go
 // https://oeis.org/A033075
 const std = @import("std");
 const fmt = std.fmt;

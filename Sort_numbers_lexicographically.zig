@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Sort_numbers_lexicographically
-// Translated from C
+// Translation of C
 const std = @import("std");
 const mem = std.mem;
 const assert = std.debug.assert;

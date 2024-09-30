@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Gradient_descent
-// Translated from Go
+// Translation of Go
 const std = @import("std");
 const math = std.math;
 const mem = std.mem;

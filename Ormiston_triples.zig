@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Ormiston_triples
-// Translated from C++
+// Translation of C++
 const std = @import("std");
 const fmt = std.fmt;
 const heap = std.heap;

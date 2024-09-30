@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Zebra_puzzle
-// Translated from Go
+// Translation of Go
 // This Zig version assumes Ascii text to reduce code clutter.
 const std = @import("std");
 const fmt = std.fmt;

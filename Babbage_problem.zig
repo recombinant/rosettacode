@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Babbage_problem
-// Translated from D
+// Translation of D
 const std = @import("std");
 const math = std.math;
 const print = std.debug.print;

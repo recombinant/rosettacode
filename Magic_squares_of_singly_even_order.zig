@@ -1,5 +1,5 @@
 // https://www.rosettacode.org/wiki/Magic_squares_of_singly_even_order
-// Translated from C
+// Translation of C
 // Usage : executable <integer specifying rows in magic square>
 const std = @import("std");
 const mem = std.mem;

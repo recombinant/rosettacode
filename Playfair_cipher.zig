@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Playfair_cipher
-// Translated from Nim
+// Translation of Nim
 const std = @import("std");
 const ascii = std.ascii;
 const heap = std.heap;

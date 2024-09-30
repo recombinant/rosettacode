@@ -209,7 +209,7 @@ fn IndividualsResults(T: type) type {
     };
 }
 
-// Translated from https://rosettacode.org/wiki/Category_talk:Wren-seq
+// Translation of https://rosettacode.org/wiki/Category_talk:Wren-seq
     // Groups each individual element of a list by count and indices, preserving order.
     // Returns a list of three element lists, one for each individual element.
     // The content of each three element list is as follows:

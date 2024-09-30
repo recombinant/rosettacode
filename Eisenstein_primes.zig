@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Eisenstein_primes
-// Translated from Nim
+// Translation of Nim
 // TODO: requires a plot - maybe popen gnuplot
 const std = @import("std");
 const math = std.math;

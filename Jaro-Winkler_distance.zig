@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Jaro-Winkler_distance
-// Translated from C++
+// Translation of C++
 const std = @import("std");
 const heap = std.heap;
 const math = std.math;

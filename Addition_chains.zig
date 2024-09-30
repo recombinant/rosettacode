@@ -58,7 +58,7 @@ fn Brauer(comptime n: u64) type {
             // if x<<(best_len - pos) < n:
             //    return
             {
-                // This is a translation of the above two lines of Python code.
+                // This is a Translation of the above two lines of Python code.
 
                 const diff = self.best_len - pos;
                 // Avoid shifting a u64 more than 63 bits left.

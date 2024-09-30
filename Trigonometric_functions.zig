@@ -1,5 +1,5 @@
 // https://www.rosettacode.org/wiki/Trigonometric_functions
-// Translated from C
+// Translation of C
 const std = @import("std");
 const math = std.math;
 

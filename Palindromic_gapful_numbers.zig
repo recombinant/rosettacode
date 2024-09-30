@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Palindromic_gapful_numbers
-// Translated from C++
+// Translation of C++
 const std = @import("std");
 const print = std.debug.print;
 

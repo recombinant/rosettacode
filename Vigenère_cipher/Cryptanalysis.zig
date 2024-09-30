@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Vigen%C3%A8re_cipher/Cryptanalysis
-// Translated from C++
+// Translation of C++
 const std = @import("std");
 const ascii = std.ascii;
 const mem = std.mem;

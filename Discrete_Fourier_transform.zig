@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Discrete_Fourier_transform
-// Translated from Wren
+// Translation of Wren
 const std = @import("std");
 const fmt = std.fmt;
 const mem = std.mem;

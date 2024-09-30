@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Lah_numbers
-// Translated from C
+// Translation of C
 const std = @import("std");
 const testing = std.testing;
 

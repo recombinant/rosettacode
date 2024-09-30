@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Smallest_enclosing_circle_problem
-// Translated from Wren following the same C++ code:
+// Translation of Wren following the same C++ code:
 // https://www.geeksforgeeks.org/minimum-enclosing-circle-set-2-welzls-algorithm/?ref=rp
 const std = @import("std");
 const math = std.math;

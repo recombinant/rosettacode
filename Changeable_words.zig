@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Changeable_words
-// Translated from Wren
+// Translation of Wren
 const std = @import("std");
 const mem = std.mem;
 const print = std.debug.print;

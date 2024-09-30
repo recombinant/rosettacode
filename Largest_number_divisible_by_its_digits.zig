@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Largest_number_divisible_by_its_digits
-// Translation of: Kotlin
+// Translation of Kotlin
 const std = @import("std");
 const fmt = std.fmt;
 const math = std.math;

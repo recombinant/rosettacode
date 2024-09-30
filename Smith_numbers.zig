@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Smith_numbers
-// Translated from C
+// Translation of C
 const std = @import("std");
 const mem = std.mem;
 

@@ -9,7 +9,7 @@ pub fn main() void {
     const l3dp = findLargest3DigitProduct();
     print("The largest palindromic product of 3-digit numbers is {d} ({d} * {d})\n\n", .{ l3dp[0], l3dp[1], l3dp[2] });
 
-    // More optimized (Translated from Wren)
+    // More optimized (Translation of Wren)
     // Slows down noticeably for 'n'' larger than 7.
     for (2..8) |n| {
         const ldp = findLargestPrimeProduct(n);
@@ -56,7 +56,7 @@ test isPalindrome {
     try testing.expect(!isPalindrome(22033));
 }
 
-// Translated from Wren
+// Translation of Wren
 fn findLargestPrimeProduct(n: u64) struct { u64, u64, u64 } {
     var pow: u64 = math.pow(u64, 10, n);
     const low: u64 = pow * 9;

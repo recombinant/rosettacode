@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Sailors,_coconuts_and_a_monkey_problem
-// Translated from Kotlin
+// Translation of Kotlin
 const std = @import("std");
 const print = std.debug.print;
 

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Jaro_similarity
-// Translated from C (keeping comments)
+// Translation of C (keeping comments)
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 
