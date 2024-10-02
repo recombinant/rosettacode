@@ -121,14 +121,14 @@ fn commatize(buffer: []u8, n: u64) ![]const u8 {
 
 fn maxDecimalCommatized() usize {
     const T = u64; // @TypeOf(n) in commatize() above
-    if (@typeInfo(T) != .int and @typeInfo(T).int.bits != .unsigned)
+    if (@typeInfo(T) != .int or @typeInfo(T).int.signedness != .unsigned)
         @compileError("type must be an unsigned integer.");
     return maxDecimalChars(T) + maxDecimalCommas(T);
 }
 
 /// Return the maximum number of characters in a string representing a decimal of type T.
 fn maxDecimalChars(comptime T: type) usize {
-    if (@typeInfo(T) != .int and @typeInfo(T).int.bits != .unsigned)
+    if (@typeInfo(T) != .int or @typeInfo(T).int.signedness != .unsigned)
         @compileError("type must be an unsigned integer.");
     const max_int: comptime_float = @floatFromInt(math.maxInt(T));
     return @intFromFloat(@log10(max_int) + 1);
@@ -136,7 +136,7 @@ fn maxDecimalChars(comptime T: type) usize {
 
 /// Return the maximum number of commas in a 'commatized' string representing a decimal of type T.
 fn maxDecimalCommas(comptime T: type) usize {
-    if (@typeInfo(T) != .int and @typeInfo(T).int.bits != .unsigned)
+    if (@typeInfo(T) != .int or @typeInfo(T).int.signedness != .unsigned)
         @compileError("type must be an unsigned integer.");
     return (maxDecimalChars(T) - 1) / 3;
 }
