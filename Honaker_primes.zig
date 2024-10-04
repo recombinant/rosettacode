@@ -2,6 +2,7 @@
 const std = @import("std");
 const fmt = std.fmt;
 const heap = std.heap;
+const mem = std.mem;
 const time = std.time;
 
 const print = std.debug.print;
@@ -16,29 +17,30 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var primegen = PrimeGen(u64).init(allocator);
-    defer primegen.deinit();
+    var it = HonakerPrimeIterator.init(allocator);
+    defer it.deinit();
 
     const task1 = 50;
     const task2 = 10_000;
-
     var count: usize = 0;
-    var idx: u64 = 1;
-    while (try primegen.next()) |p| : (idx += 1) {
-        if (sumDigits(p) == sumDigits(idx)) {
-            count += 1;
-            if (count == 1)
-                print("The first {} Honaker primes:\n", .{task1});
-            if (count <= task1) {
-                const sep: u8 = if (count % 5 == 0) '\n' else ' ';
-                print("({d:3}, {d:4}){c}", .{ idx, p, sep });
-            } else if (count == task2) {
-                print("\n\nThe {d}th Honaker prime: ({}, {})\n", .{ task2, idx, p });
-                break;
-            }
+
+    while (true) {
+        const hp = try it.next(); // Honaker prime
+        count += 1;
+
+        if (count == 1)
+            print("The first {} Honaker primes:\n", .{task1});
+        if (count <= task1) {
+            const sep: u8 = if (count % 5 == 0) '\n' else ' ';
+            print("({d:3}, {d:4}){c}", .{ hp.index, hp.prime, sep });
+        } else if (count == task2) {
+            print(
+                "\n\nThe {d}th Honaker prime: ({}, {})\n",
+                .{ task2, hp.index, hp.prime },
+            );
+            break;
         }
     }
-
     print("\nprocessed in {}\n", .{fmt.fmtDuration(t0.read())});
 }
 
@@ -51,3 +53,30 @@ fn sumDigits(n_: u64) u64 {
     }
     return sum;
 }
+
+/// Honaker prime iterator
+const HonakerPrimeIterator = struct {
+    primegen: PrimeGen(u64),
+    index: u64 = 1,
+
+    fn init(allocator: mem.Allocator) HonakerPrimeIterator {
+        return HonakerPrimeIterator{
+            .primegen = PrimeGen(u64).init(allocator),
+        };
+    }
+    fn deinit(self: *HonakerPrimeIterator) void {
+        self.primegen.deinit();
+    }
+
+    fn next(self: *HonakerPrimeIterator) !struct { index: u64, prime: u64 } {
+        while (try self.primegen.next()) |p| : (self.index += 1) {
+            if (sumDigits(p) == sumDigits(self.index)) {
+                return .{
+                    .index = self.index,
+                    .prime = p,
+                };
+            }
+        }
+        unreachable;
+    }
+};
