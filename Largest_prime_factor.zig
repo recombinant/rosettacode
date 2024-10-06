@@ -4,18 +4,18 @@ const std = @import("std");
 pub fn main() !void {
     var t0 = try std.time.Timer.start();
 
-    const n = comptime std.math.pow(u128, 2, 64) - 59;
+    // const n = comptime std.math.pow(u128, 2, 64) - 59;
     // const n = comptime std.math.pow(u64, 2, 32) - 5;
     // const n = comptime std.math.pow(u128, 2, 31) - 1;
-    // const n = 600_851_475_143;
+    const n = 600_851_475_143;
     const T = AutoNumberType(n);
 
-    const factor = largestPrimeFactor(T, @intCast(n));
+    const factor = findLargestPrimeFactor(T, @intCast(n));
     try std.io.getStdOut().writer().print("Largest prime factor of {d} is {d}\n", .{ n, factor });
     try std.io.getStdErr().writer().print("\nprocessed in {}\n", .{std.fmt.fmtDuration(t0.read())});
 }
 
-fn largestPrimeFactor(T: type, n_: T) T {
+pub fn findLargestPrimeFactor(T: type, n_: T) T {
     if (n_ < 2)
         return 1;
 
