@@ -139,5 +139,34 @@ fn findPrimeFactors(allocator: mem.Allocator, n_: u32) ![]u32 {
     if (n > 1)
         try factors.append(n);
 
-    return try factors.toOwnedSlice();
+    return factors.toOwnedSlice();
+}
+
+const testing = std.testing;
+
+test findPrimeFactors {
+    const factors1 = try findPrimeFactors(testing.allocator, 1);
+    defer testing.allocator.free(factors1);
+    const expected1 = &[_]u32{};
+    try testing.expectEqualSlices(u32, expected1, factors1);
+
+    const factors2 = try findPrimeFactors(testing.allocator, 2);
+    defer testing.allocator.free(factors2);
+    const expected2 = &[_]u32{2};
+    try testing.expectEqualSlices(u32, expected2, factors2);
+
+    const factors30 = try findPrimeFactors(testing.allocator, 30);
+    defer testing.allocator.free(factors30);
+    const expected30 = &[_]u32{ 2, 3, 5 };
+    try testing.expectEqualSlices(u32, expected30, factors30);
+
+    const factors54 = try findPrimeFactors(testing.allocator, 54);
+    defer testing.allocator.free(factors54);
+    const expected54 = &[_]u32{ 2, 3 };
+    try testing.expectEqualSlices(u32, expected54, factors54);
+
+    const factorsN = try findPrimeFactors(testing.allocator, 2 * 2 * 3 * 5 * 5 * 7 * 11 * 13 * 17 * 29);
+    defer testing.allocator.free(factorsN);
+    const expectedN = &[_]u32{ 2, 3, 5, 7, 11, 13, 17, 29 };
+    try testing.expectEqualSlices(u32, expectedN, factorsN);
 }
