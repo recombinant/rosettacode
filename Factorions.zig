@@ -22,13 +22,13 @@ pub fn main() void {
             sum += factorial[n];
 
             if (sum == i)
-                printNumber(i, @intCast(base));
+                printFactorion(i, @intCast(base));
         }
         print("\n", .{});
     }
 }
 
-fn printNumber(n: usize, base: u8) void {
+fn printFactorion(n: usize, base: u8) void {
     if (base != 10) {
         var buffer: [10]u8 = undefined;
         const converted = std.fmt.bufPrintIntToSlice(&buffer, n, base, .lower, .{});
