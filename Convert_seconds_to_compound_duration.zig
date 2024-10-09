@@ -42,7 +42,7 @@ fn duration(allocator: mem.Allocator, seconds: u32) ![]const u8 {
     const writer = result.writer();
 
     var sep: []const u8 = "";
-    for (&remainders, units) |n, unit| {
+    for (remainders, units) |n, unit| {
         if (n != 0) {
             try writer.print("{s}{d} {s}", .{ sep, n, unit });
             sep = ", ";
