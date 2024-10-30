@@ -51,6 +51,9 @@ fn hamming(allocator: mem.Allocator, limit: usize) !Int {
     defer x3.deinit();
     defer x5.deinit();
 
+    var rma = try Int.init(allocator);
+    defer rma.deinit();
+
     var i: usize = 0;
     var j: usize = 0;
     var k: usize = 0;
@@ -59,24 +62,18 @@ fn hamming(allocator: mem.Allocator, limit: usize) !Int {
         h[n] = try min3(x2, x3, x5);
         if (x2.eql(h[n])) {
             i += 1;
-            var rma = try Int.init(allocator);
             try rma.mul(&_2, &h[i]);
             rma.swap(&x2);
-            rma.deinit();
         }
         if (x3.eql(h[n])) {
             j += 1;
-            var rma = try Int.init(allocator);
             try rma.mul(&_3, &h[j]);
             rma.swap(&x3);
-            rma.deinit();
         }
         if (x5.eql(h[n])) {
             k += 1;
-            var rma = try Int.init(allocator);
             try rma.mul(&_5, &h[k]);
             rma.swap(&x5);
-            rma.deinit();
         }
     }
 
