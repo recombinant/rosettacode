@@ -13,13 +13,13 @@ pub fn main() void {
     // 3. first string ends with the second string
     print("{}\n", .{mem.endsWith(u8, "abcd", "zn")});
     print("\n", .{});
-
-    // 2.1 location of the match for part 2
+    //
+    // Optional 1. location of the match for part 2
     print("{?}\n", .{mem.indexOf(u8, "abab", "bb")}); // null, not found
     print("{?}\n", .{mem.indexOf(u8, "abcd", "bc")});
     print("\n", .{});
-
-    // 2.2 multiple occurrences of a string for part 2
+    //
+    // Optional 2. multiple occurrences of a string for part 2
     const haystack = "a skunk sat on a stump and thunk the stump stunk, but the stump thunk the skunk stunk";
     const needle = "unk";
     print("{}:", .{mem.count(u8, haystack, needle)});
