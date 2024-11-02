@@ -79,7 +79,7 @@ const FibWord = struct {
                 @memcpy(new[0..self.b.len], self.b);
                 @memcpy(new[self.b.len..], self.a);
                 self.allocator.free(old);
-                self.a = new;
+                self.a = new; // a = b ++ a
                 mem.swap([]const u8, &self.a, &self.b);
                 return self.b;
             },
