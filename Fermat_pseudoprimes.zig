@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Fermat_pseudoprimes
+// Translation of C++
 const std = @import("std");
 
 pub fn main() !void {
