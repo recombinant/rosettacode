@@ -5,11 +5,7 @@ const testing = std.testing;
 const print = std.debug.print;
 
 pub fn main() !void {
-    var buffer: [50 * @sizeOf(u64)]u8 = undefined;
-    var fba = std.heap.FixedBufferAllocator.init(&buffer);
-    const allocator = fba.allocator();
-
-    var numbers50 = try std.ArrayList(u64).initCapacity(allocator, 50);
+    var numbers50 = try std.BoundedArray(u64, 50).init(0);
 
     var count: usize = 0;
     var n: u64 = 1;
@@ -22,7 +18,7 @@ pub fn main() !void {
                 try numbers50.append(n);
                 if (count == 50) {
                     print("First 50 numbers which are the cube roots of the products of their proper divisors:\n", .{});
-                    for (numbers50.items, 1..) |number, i| {
+                    for (numbers50.constSlice(), 1..) |number, i| {
                         print("{d:3} ", .{number});
                         if (i % 10 == 0)
                             print("\n", .{});
@@ -30,9 +26,9 @@ pub fn main() !void {
                 }
             } else if (count == 500)
                 print("\n500th   : {}\n", .{n})
-            else if (count == 5000)
+            else if (count == 5_000)
                 print("5,000th : {}\n", .{n})
-            else if (count == 50000) {
+            else if (count == 50_000) {
                 print("50,000th: {}\n", .{n});
                 break;
             }
