@@ -56,23 +56,19 @@ fn validateISIN(s: []const u8) ValidationError!void {
     if (!std.ascii.isDigit(s[11]))
         return ValidationError.InvalidChecksumCharacter;
 
-    // buffer with enough space to hold two characters per `s` character
-    var buffer: [12 * 2]u8 = undefined;
-    var fba = std.heap.FixedBufferAllocator.init(&buffer);
-    const allocator = fba.allocator();
-    var array_list = std.ArrayList(u8).initCapacity(allocator, buffer.len) catch unreachable;
-    // defer array_list.deinit(); // not required - buffer is on stack
-    var writer = array_list.writer();
+    // enough space to hold two characters per `s` character
+    var array = std.BoundedArray(u8, 12 * 2).init(0) catch unreachable;
+    var writer = array.writer();
 
     for (s) |ch| {
         switch (ch) {
-            '0'...'9' => array_list.append(ch) catch unreachable,
+            '0'...'9' => array.append(ch) catch unreachable,
             'A'...'Z' => writer.print("{d}", .{ch - 'A' + 10}) catch unreachable,
             else => return ValidationError.InvalidCodeCharacter,
         }
     }
 
-    if (!luhn(array_list.items))
+    if (!luhn(array.constSlice()))
         return ValidationError.ChecksumError;
 }
 
