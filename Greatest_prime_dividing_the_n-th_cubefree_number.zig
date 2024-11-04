@@ -31,8 +31,8 @@ pub fn main() !void {
     const cube_free = try getSieve3(allocator, task_stretch_limit);
     defer allocator.free(cube_free);
 
-    var first_hundred = try std.BoundedArray(u32, task1_limit).init(0);
-    try first_hundred.append(1);
+    var first_hundred = try std.BoundedArray(u32, task1_limit).init(1);
+    first_hundred.set(0, 1);
 
     var count: u32 = 1;
     var n: u32 = 2;
