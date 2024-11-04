@@ -223,6 +223,7 @@ fn part3() !void {
 /// the result as the single remaining Int in `primes_array`
 /// All other Int values in `primes_array` will be deinit()
 /// and `primes_array` shrunk to a list of 1 item.
+/// T is a std.BoundArray type.
 fn vecProd(allocator: mem.Allocator, T: type, primes_array: *T) !Int {
     // Use a temporary and swap() after multiplication
     // as bare multiplication with aliasing will be slower.
