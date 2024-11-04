@@ -18,34 +18,28 @@ pub fn main() !void {
         try stdout.writeByte('\n');
     }
     {
-        var buffer: [2 * limit * @sizeOf(u16)]u8 = undefined;
-        var fba = std.heap.FixedBufferAllocator.init(&buffer);
-        const allocator = fba.allocator();
-
-        var od = try std.ArrayList(u16).initCapacity(allocator, limit);
-        // defer od.deinit(); // not necessary with stack based allocation
-        var ev = try std.ArrayList(u16).initCapacity(allocator, limit);
-        // defer ev.deinit(); // not necessary with stack based allocation
+        var od = try std.BoundedArray(u16, limit).init(0);
+        var ev = try std.BoundedArray(u16, limit).init(0);
 
         {
             var n: u16 = 0;
-            while (ev.items.len < limit or od.items.len < limit) : (n += 1) {
+            while (ev.len < limit or od.len < limit) : (n += 1) {
                 if (@popCount(n) & 1 == 0) {
-                    if (ev.items.len < limit)
+                    if (ev.len < limit)
                         try ev.append(n);
                 } else {
-                    if (od.items.len < limit)
+                    if (od.len < limit)
                         try od.append(n);
                 }
             }
         }
 
         try stdout.writeAll("evil   :");
-        for (ev.items) |n| try stdout.print(" {d:2}", .{n});
+        for (ev.constSlice()) |n| try stdout.print(" {d:2}", .{n});
         try stdout.writeByte('\n');
 
         try stdout.writeAll("odious :");
-        for (od.items) |n| try stdout.print(" {d:2}", .{n});
+        for (od.constSlice()) |n| try stdout.print(" {d:2}", .{n});
         try stdout.writeByte('\n');
     }
 
