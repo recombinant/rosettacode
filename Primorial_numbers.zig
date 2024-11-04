@@ -117,13 +117,9 @@ fn part2v2() !void {
     var primes = PrimeGen(T).init(allocator);
     defer primes.deinit();
 
-    const max_size: usize = comptime 100_000 - 10_000 + 1;
-    var primes_array_buffer: [max_size * @sizeOf(Int)]u8 = undefined;
-    var fba = heap.FixedBufferAllocator.init(&primes_array_buffer);
-    const allocator2 = fba.allocator();
-
-    var primes_array = try std.ArrayList(Int).initCapacity(allocator2, max_size);
-    defer for (primes_array.items) |*item| item.deinit(); // should only be one Int remaining
+    const PrimesArray = std.BoundedArray(Int, 100_000 - 10_000 + 1);
+    var primes_array = try PrimesArray.init(0);
+    defer for (primes_array.slice()) |*item| item.deinit(); // should only be one Int remaining
 
     var one = try Int.initSet(allocator, 1);
     defer one.deinit();
@@ -142,8 +138,8 @@ fn part2v2() !void {
             10_000,
             100_000,
             => {
-                const total_: Int = if (index == 0) one else try vecProd(allocator, &primes_array);
-                assert(primes_array.items.len == 1 or index == 0);
+                const total_: Int = if (index == 0) one else try vecProd(allocator, PrimesArray, &primes_array);
+                assert(primes_array.len == 1 or index == 0);
 
                 const total: []const u8 = try total_.toString(allocator, 10, .lower);
                 print(
@@ -219,7 +215,7 @@ fn part3() !void {
     var buffer1: [maxDecimalCommatized()]u8 = undefined;
     var buffer2: [maxDecimalCommatized()]u8 = undefined;
 
-    print("Primorial({s}) = has {s} digits (aproximately)\n", .{ try commatize(&buffer1, primes_array.len), try commatize(&buffer2, approx_length) });
+    print("Primorial({s}) = has {s} digits (approximately)\n", .{ try commatize(&buffer1, primes_array.len), try commatize(&buffer2, approx_length) });
 }
 
 /// Translation of the vecprod from the Go example.
@@ -227,13 +223,13 @@ fn part3() !void {
 /// the result as the single remaining Int in `primes_array`
 /// All other Int values in `primes_array` will be deinit()
 /// and `primes_array` shrunk to a list of 1 item.
-fn vecProd(allocator: mem.Allocator, primes_array: *std.ArrayList(Int)) !Int {
+fn vecProd(allocator: mem.Allocator, T: type, primes_array: *T) !Int {
     // Use a temporary and swap() after multiplication
     // as bare multiplication with aliasing will be slower.
     var tmp = try Int.init(allocator);
     defer tmp.deinit();
 
-    var s = primes_array.items;
+    var s = primes_array.slice();
     var le = s.len;
     while (le > 1) {
         for (0..le / 2) |i| {
@@ -247,8 +243,8 @@ fn vecProd(allocator: mem.Allocator, primes_array: *std.ArrayList(Int)) !Int {
         s = s[0..c];
         le = c;
     }
-    primes_array.shrinkRetainingCapacity(1);
-    return primes_array.items[0];
+    try primes_array.resize(1);
+    return primes_array.get(0);
 }
 
 fn commatize(buffer: []u8, n: u64) ![]const u8 {
