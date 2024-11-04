@@ -31,9 +31,7 @@ pub fn main() !void {
     const cube_free = try getSieve3(allocator, task_stretch_limit);
     defer allocator.free(cube_free);
 
-    var buffer: [task1_limit * @sizeOf(u32)]u8 = undefined;
-    var fba = heap.FixedBufferAllocator.init(&buffer);
-    var first_hundred = try std.ArrayList(u32).initCapacity(fba.allocator(), task1_limit);
+    var first_hundred = try std.BoundedArray(u32, task1_limit).init(0);
     try first_hundred.append(1);
 
     var count: u32 = 1;
@@ -47,7 +45,7 @@ pub fn main() !void {
             count += 1;
             if (count == task1_limit) {
                 print("The first {} terms of a370833 are:\n", .{task1_limit});
-                for (first_hundred.items, 1..) |num, i| {
+                for (first_hundred.slice(), 1..) |num, i| {
                     const sep: u8 = if (i % 10 == 0) '\n' else ' ';
                     print("{d:3}{c}", .{ num, sep });
                 }
