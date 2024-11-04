@@ -128,9 +128,7 @@ fn part2v2() !void {
     var buf1: [maxDecimalCommatized()]u8 = undefined;
     var buf2: [maxDecimalCommatized()]u8 = undefined;
 
-    while (try primes.next()) |prime| : ({
-        index += 1;
-    }) {
+    while (try primes.next()) |prime| : (index += 1) {
         switch (index) {
             10,
             100,
