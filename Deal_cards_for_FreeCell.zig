@@ -32,7 +32,9 @@ fn printFreeCell( // TODO: allocator: mem.Allocator,
         "6", "7", "8", "9", "10",
         "J", "Q", "K",
     };
+    const pack_len = suits.len * ranks.len;
 
+    // Bytes of unicode.
     const suits_len: usize = comptime blk: {
         var len: usize = 0;
         for (suits) |suit| len += suit.len;
@@ -44,27 +46,23 @@ fn printFreeCell( // TODO: allocator: mem.Allocator,
         break :blk len;
     };
 
-    // suit, rank and slices + 4 bytes missed
-    var buffer: [(suits_len * 13) + (ranks_len * 4) + @sizeOf([]u8) * 52 + 4]u8 = undefined;
-    var fbs = heap.FixedBufferAllocator.init(&buffer);
-    const allocator = fbs.allocator();
+    var buffer: [suits_len * 13 + ranks_len * 4]u8 = undefined;
+    var fba = heap.FixedBufferAllocator.init(&buffer);
+    const allocator = fba.allocator();
 
-    // var la = heap.LoggingAllocator(.debug, .debug).init(fbs.allocator());
-    // const allocator = la.allocator();
-
-    var deck = try std.ArrayList([]u8).initCapacity(allocator, 52);
+    var deck = try std.BoundedArray([]const u8, pack_len).init(0);
     for (ranks) |rank|
         for (suits) |suit| {
             const buf = try fmt.allocPrint(allocator, "{s}{s}", .{ rank, suit });
             try deck.append(buf);
         };
 
-    while (deck.items.len != 0) {
+    while (deck.len != 0) {
         for (0..8) |_| {
-            if (deck.items.len == 0)
+            if (deck.len == 0)
                 break; // linefeed
 
-            const n = rnd.random().int(u16) % deck.items.len;
+            const n = rnd.random().int(u16) % deck.len;
             const card = deck.swapRemove(n);
             try out.print("{s} ", .{card});
         }
