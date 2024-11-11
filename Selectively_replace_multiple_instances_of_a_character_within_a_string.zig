@@ -18,13 +18,13 @@ pub fn main() !void {
     var r_rep: [*c]const u8 = "rF";
 
     for (replaced) |*ch| {
+        // Use C-style pointer arithmetic
         const ptr: *[*c]const u8 = switch (ch.*) {
             'a' => &a_rep,
             'b' => &b_rep,
             'r' => &r_rep,
             else => continue,
         };
-        // Use C-style pointer arithmetic
         if (ptr.*.* != 0) {
             ch.* = ptr.*.*;
             ptr.* += 1;
