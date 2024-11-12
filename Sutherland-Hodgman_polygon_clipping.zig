@@ -46,8 +46,9 @@ pub fn main() !void {
     for (clipped) |point|
         try writer.print("{d} {d} ", .{ point.x, point.y });
     try writer.print("{d} {d}\n", .{ clipped[0].x, clipped[0].y });
+    try writer.writeAll("'/>\n");
 
-    try writer.writeAll("'/>\n</svg>\n");
+    try writer.writeAll("</svg>\n");
 }
 
 const Point = struct {
