@@ -18,10 +18,9 @@ pub fn main() !void {
         var buf: [3]u8 = undefined;
         const s = try std.fmt.bufPrint(&buf, "{d}", .{i});
         const palindromes: [][]const u8 = try allPalindromes(allocator, s);
-        std.mem.sort([]const u8, palindromes, {}, lessThan);
         defer _ = arena.reset(.retain_capacity);
         try writer.print("{}  ", .{i});
-        // Unsorted palindrome values
+        std.mem.sort([]const u8, palindromes, {}, lessThan);
         for (palindromes) |palindrome|
             try writer.print("{s:5}", .{palindrome});
         try writer.writeByte('\n');
