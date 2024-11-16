@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Hofstadter_Figure-Figure_sequences
+// Translation of Go
 const std = @import("std");
 const mem = std.mem;
 
@@ -56,8 +57,8 @@ fn FigureSequence(T: type) type {
                 try self.r.append(next_nrk); // extend sequence r by one element
                 var sn = self.r.items[nrk] + 2;
                 while (sn < next_nrk) : (sn += 1)
-                    try self.s.append(sn); // extend sequence s up to rNext
-                try self.s.append(next_nrk + 1); // extend sequence s one past rNext
+                    try self.s.append(sn); // extend sequence s up to next_nrk
+                try self.s.append(next_nrk + 1); // extend sequence s one past next_nrk
             }
             return self.r.items[n];
         }
