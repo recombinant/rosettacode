@@ -10,6 +10,8 @@ pub fn main() !void {
     try main2();
 }
 
+// --------------------------------------------------------------
+
 pub fn main1() !void {
     const stdout = std.io.getStdOut().writer();
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -18,12 +20,14 @@ pub fn main1() !void {
 
     const x: []const f64 = &[_]f64{ 90, 47, 58, 29, 22, 32, 55, 5, 55, 73 };
 
-    const y = try fwdDiff(allocator, x, 4);
-    defer allocator.free(y);
+    for (0..x.len) |p| {
+        const y = try fwdDiff(allocator, x, p);
+        defer allocator.free(y);
+        for (y) |n|
+            try stdout.print("{d:5} ", .{n});
+        try stdout.writeByte('\n');
+    }
 
-    for (y) |n|
-        try stdout.print("{d} ", .{n});
-    try stdout.writeByte('\n');
     try stdout.writeByte('\n');
 }
 
@@ -63,30 +67,36 @@ fn binomCoeff(allocator: mem.Allocator, n: i32) ![]i32 {
     return b;
 }
 
+// --------------------------------------------------------------
+/// Use method with Pascal triangle, binomial coefficients are pre-computed
 pub fn main2() !void {
     const stdout = std.io.getStdOut().writer();
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var array = [_]f64{ 90, 47, 58, 29, 22, 32, 55, 5, 55, 73 };
+    const original = [_]f64{ 90, 47, 58, 29, 22, 32, 55, 5, 55, 73 };
+    var array: [original.len]f64 = undefined;
 
-    const p = 4; // order
-    const b = try binomCoeff(allocator, p); // pre-compute binomial coefficients for order p
-    defer allocator.free(b);
+    for (0..array.len) |p| {
+        @memcpy(&array, &original);
+        // pre-compute binomial coefficients for order p
+        const b = try binomCoeff(allocator, @intCast(p));
+        defer allocator.free(b);
 
-    // compute p-th difference
-    for (0..array.len) |k| {
-        array[k] *= @as(f64, @floatFromInt(b[0]));
-        var j: usize = 1;
-        while (j <= p) : (j += 1) {
-            if (k + j < array.len)
-                array[k] += @as(f64, @floatFromInt(b[j])) * array[k + j];
+        // compute p-th difference
+        for (0..array.len) |k| {
+            array[k] *= @as(f64, @floatFromInt(b[0]));
+            var j: usize = 1;
+            while (j <= p) : (j += 1) {
+                if (k + j < array.len)
+                    array[k] += @as(f64, @floatFromInt(b[j])) * array[k + j];
+            }
         }
-    }
 
-    // resulting series is shorter by p elements
-    for (array[0 .. array.len - p]) |n|
-        try stdout.print("{d} ", .{n});
-    try stdout.writeByte('\n');
+        // resulting series is shorter by p elements
+        for (array[0 .. array.len - p]) |n|
+            try stdout.print("{d:5} ", .{n});
+        try stdout.writeByte('\n');
+    }
 }
