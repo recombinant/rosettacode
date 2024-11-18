@@ -1,6 +1,7 @@
 // https://rosettacode.org/wiki/McNaughton-Yamada-Thompson_algorithm
 // Translation of C++
-// This is a nearly verbatim translation of the C++ solution.
+// This is a nearly verbatim translation of the C++ solution
+// with the use of a memory pool for State creation.
 const std = @import("std");
 const mem = std.mem;
 
@@ -10,6 +11,8 @@ pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
+    var state_pool = StatePool.init(std.heap.page_allocator);
+    defer state_pool.deinit();
     // ----------------------------------------------------------
     const stdout = std.io.getStdOut();
     const writer = stdout.writer();
@@ -19,8 +22,9 @@ pub fn main() !void {
 
     for (infixes) |infix| {
         for (strings) |str| {
-            const result = try matchRegex(allocator, infix, str);
+            const result = try matchRegex(allocator, &state_pool, infix, str);
             _ = arena.reset(.retain_capacity); // reset allocated memory
+            _ = state_pool.reset(.retain_capacity);
             try writer.print("{} {s} {s}\n", .{ result, infix, str });
         }
         try writer.writeByte('\n');
@@ -28,12 +32,12 @@ pub fn main() !void {
 }
 
 // Function to match a string against the regex
-fn matchRegex(allocator: mem.Allocator, infix: []const u8, str: []const u8) !bool {
+fn matchRegex(allocator: mem.Allocator, state_pool: *StatePool, infix: []const u8, str: []const u8) !bool {
     const postfix = try shunt(allocator, infix);
     // Uncomment the next line to see the postfix expression
     // std.debug.print("Postfix: {s}\n", .{postfix});
 
-    const nfa = try compileRegex(allocator, postfix);
+    const nfa = try compileRegex(allocator, state_pool, postfix);
 
     var current: StateSet = try followes(allocator, nfa.initial.?);
     var nextStates = StateSet.init(allocator);
@@ -86,6 +90,7 @@ fn shunt(allocator: mem.Allocator, infix: []const u8) ![]const u8 {
     return postfix.toOwnedSlice();
 }
 
+const StatePool = std.heap.MemoryPoolExtra(State, .{});
 const StateSet = std.AutoArrayHashMap(*State, void);
 
 const State = struct {
@@ -126,15 +131,15 @@ fn followes(allocator: mem.Allocator, state: *State) !StateSet {
 }
 
 // Function to compile postfix regex into an NFA
-fn compileRegex(allocator: mem.Allocator, postfix: []const u8) !NFA {
+fn compileRegex(allocator: mem.Allocator, state_pool: *StatePool, postfix: []const u8) !NFA {
     var nfa_stack = Stack(NFA).init(allocator);
 
     for (postfix) |c| {
         switch (c) {
             '*' => {
                 var nfa1 = nfa_stack.pop();
-                var initial = try allocator.create(State);
-                const accept = try allocator.create(State);
+                var initial = try state_pool.create();
+                const accept = try state_pool.create();
                 initial.* = State{};
                 accept.* = State{};
                 initial.edge1 = nfa1.initial;
@@ -152,8 +157,8 @@ fn compileRegex(allocator: mem.Allocator, postfix: []const u8) !NFA {
             '|' => {
                 const nfa2 = nfa_stack.pop();
                 const nfa1 = nfa_stack.pop();
-                var initial = try allocator.create(State);
-                const accept = try allocator.create(State);
+                var initial = try state_pool.create();
+                const accept = try state_pool.create();
                 initial.* = State{};
                 accept.* = State{};
                 initial.edge1 = nfa1.initial;
@@ -164,8 +169,8 @@ fn compileRegex(allocator: mem.Allocator, postfix: []const u8) !NFA {
             },
             '+' => {
                 const nfa1 = nfa_stack.pop();
-                var initial = try allocator.create(State);
-                const accept = try allocator.create(State);
+                var initial = try state_pool.create();
+                const accept = try state_pool.create();
                 initial.* = State{};
                 accept.* = State{};
                 initial.edge1 = nfa1.initial;
@@ -175,8 +180,8 @@ fn compileRegex(allocator: mem.Allocator, postfix: []const u8) !NFA {
             },
             '?' => {
                 const nfa1 = nfa_stack.pop();
-                var initial = try allocator.create(State);
-                const accept = try allocator.create(State);
+                var initial = try state_pool.create();
+                const accept = try state_pool.create();
                 initial.* = State{};
                 accept.* = State{};
                 initial.edge1 = nfa1.initial;
@@ -186,8 +191,8 @@ fn compileRegex(allocator: mem.Allocator, postfix: []const u8) !NFA {
             },
             else => {
                 // Literal character
-                var initial = try allocator.create(State);
-                const accept = try allocator.create(State);
+                var initial = try state_pool.create();
+                const accept = try state_pool.create();
                 initial.* = State.init(c);
                 accept.* = State{};
                 initial.edge1 = accept;
