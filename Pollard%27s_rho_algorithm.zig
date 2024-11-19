@@ -43,7 +43,7 @@ fn runPollardsRho(T: type, random: std.Random, number: T) T {
 
     // Zig implementation of C++ do..while() loop
     var do = true;
-    while (divisor == 1 or do == true) {
+    while (divisor == 1 or do) {
         do = false;
         // Use wraparound semantics, ie. *% and -%
         x = (x *% x + constant) % number;
