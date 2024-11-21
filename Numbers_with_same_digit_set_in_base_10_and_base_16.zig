@@ -4,7 +4,7 @@ const print = std.debug.print;
 
 const LIMIT = 100_000;
 
-pub fn main() !void {
+pub fn main() void {
     var count: usize = 0;
     var i: u64 = 0;
     while (i < LIMIT) : (i += 1)
