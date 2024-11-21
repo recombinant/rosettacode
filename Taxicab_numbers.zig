@@ -22,7 +22,7 @@ pub fn main() !void {
     try main2();
 }
 
-/// Easier to read and maintain but requires intermediate storage
+/// Easy to read and maintain but requires intermediate storage
 /// for taxicab numbers.
 pub fn main1() !void {
     const cubes: [magic_number]u32 = blk: {
