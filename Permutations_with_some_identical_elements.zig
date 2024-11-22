@@ -54,21 +54,11 @@ fn findPermutations(str: []u8, index: usize, n: usize, writer: anytype) !void {
         // Proceed further for str[i] only if it
         // doesn't match with any of the characters
         // after str[index]
-        const check = shouldSwap(str, index, i);
+        const check = mem.indexOfScalar(u8, str[index..i], str[i]) == null;
         if (check) {
             mem.swap(u8, &str[index], &str[i]);
             try findPermutations(str, index + 1, n, writer);
             mem.swap(u8, &str[index], &str[i]);
         }
     }
-}
-
-// Returns true if str[curr] does not matches with any of the
-// characters after str[start]
-fn shouldSwap(str: []const u8, start: usize, curr: usize) bool {
-    const c2 = str[curr];
-    for (str[start..curr]) |c1|
-        if (c1 == c2)
-            return false;
-    return true;
 }
