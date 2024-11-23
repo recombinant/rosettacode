@@ -9,11 +9,6 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     //
-    // for short lived allocations
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const ephemeral_allocator = arena.allocator();
-    //
     const polygon1 = try Polygon.init(allocator, &[_]Point{
         Point.init(0.0, 0.0), Point.init(0.0, 2.0), Point.init(1.0, 4.0),
         Point.init(2.0, 2.0), Point.init(2.0, 0.0),
@@ -34,9 +29,9 @@ pub fn main() !void {
     print("polygon2 = {any}\n", .{polygon2});
     print("polygon3 = {any}\n", .{polygon3});
     print("\n", .{});
-    print("polygon1 and polygon2 overlap? {}\n", .{try polygon1.overlaps(ephemeral_allocator, polygon2)});
-    print("polygon1 and polygon3 overlap? {}\n", .{try polygon1.overlaps(ephemeral_allocator, polygon3)});
-    print("polygon2 and polygon3 overlap? {}\n", .{try polygon2.overlaps(ephemeral_allocator, polygon3)});
+    print("polygon1 and polygon2 overlap? {}\n", .{polygon1.overlaps(polygon2)});
+    print("polygon1 and polygon3 overlap? {}\n", .{polygon1.overlaps(polygon3)});
+    print("polygon2 and polygon3 overlap? {}\n", .{polygon2.overlaps(polygon3)});
 }
 
 const Polygon = struct {
@@ -55,16 +50,14 @@ const Polygon = struct {
         allocator.free(self.vertices);
         allocator.free(self.axes);
     }
-    fn overlaps(self: Polygon, allocator: std.mem.Allocator, other: Polygon) !bool {
-        const allAxes = try std.mem.concat(allocator, Vector, &[2][]const Vector{ self.axes, other.axes });
-        defer allocator.free(allAxes);
-
-        for (allAxes) |axis| {
-            const projection1 = self.projectionOnAxis(axis);
-            const projection2 = other.projectionOnAxis(axis);
-            if (!projection1.overlaps(projection2))
-                return false;
-        }
+    fn overlaps(self: Polygon, other: Polygon) bool {
+        for ([_][]Vector{ self.axes, other.axes }) |axes|
+            for (axes) |axis| {
+                const projection1 = self.projectionOnAxis(axis);
+                const projection2 = other.projectionOnAxis(axis);
+                if (!projection1.overlaps(projection2))
+                    return false;
+            };
         return true;
     }
     fn projectionOnAxis(self: Polygon, axis: Vector) Projection {
