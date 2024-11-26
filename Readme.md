@@ -10,3 +10,5 @@ Any questions ask on one of the Zig forums:
 - somewhere on Discord
 
 [zig.news](https://zig.news/) lists some info as well as interesting happenings in the global Zig community.
+
+![Analytics](github.com/recombinant/rosettacode)
