@@ -26,14 +26,13 @@ fn factors(allocator: mem.Allocator, number: u64) ![]u64 {
     var number_list = std.ArrayList(u64).init(allocator);
 
     var n: u64 = 1;
-    while (n < math.sqrt(number) + 1) : (n += 1) {
+    while (n <= math.sqrt(number)) : (n += 1)
         if (number % n == 0) {
             try number_list.append(n);
             const n2 = number / n;
             if (n2 != n)
                 try number_list.append(n2);
-        }
-    }
+        };
     const result = try number_list.toOwnedSlice();
     mem.sort(u64, result, {}, sort.asc(u64));
     return result;
