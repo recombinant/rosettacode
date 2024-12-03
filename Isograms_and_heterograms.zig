@@ -71,9 +71,8 @@ pub fn main() !void {
 /// characters are alphabetic.
 fn lowerString(output: []u8, ascii_string: []const u8) []u8 {
     std.debug.assert(output.len >= ascii_string.len);
-    for (ascii_string, 0..) |c, i| {
+    for (ascii_string, 0..) |c, i|
         output[i] = c | 0x20;
-    }
     return output[0..ascii_string.len];
 }
 
@@ -87,14 +86,13 @@ const IsogramPair = struct {
         for (word) |c|
             letters[(c | 0x20) - 'a'] += 1;
         var max_n: u5 = 0;
-        for (letters) |n| {
+        for (letters) |n|
             if (n != 0) {
                 if (max_n == 0)
                     max_n = n
                 else if (max_n != n)
                     return null;
-            }
-        }
+            };
         // Stores mixed case eliminating an extra alloc/free.
         // Can be converted to lowercase for print.
         return IsogramPair{ .n = max_n, .word = word };
@@ -119,8 +117,9 @@ const testing = std.testing;
 test "ascii case conversion" {
     try testing.expectEqual('A' | 0x20, 'a');
     try testing.expectEqual('a' | 0x20, 'a');
+    try testing.expectEqual('Z' | 0x20, 'z');
+    try testing.expectEqual('z' | 0x20, 'z');
 }
-
 test lowerString {
     var buffer: [16]u8 = undefined;
     const string = "HelloWorld";
