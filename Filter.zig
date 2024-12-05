@@ -22,13 +22,13 @@ fn allocFilter(comptime T: type, allocator: std.mem.Allocator, context: anytype,
 }
 
 pub fn main() !void {
-    const input = [_]u16{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+    var input = [_]u16{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
     var output: [input.len]u16 = undefined;
 
     const result_even = filter(u16, true, &output, &input, isOddOrEven);
     std.debug.print("Even numbers: {any}\n", .{result_even});
-
-    const result_odd = filter(u16, false, &output, &input, isOddOrEven);
+    // destructive, modify original Array
+    const result_odd = filter(u16, false, &input, &input, isOddOrEven);
     std.debug.print("Odd numbers:  {any}\n", .{result_odd});
 
     // ---------------------------------------------------- allocator
