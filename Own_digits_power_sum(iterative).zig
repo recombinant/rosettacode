@@ -24,35 +24,35 @@ pub fn main() !void {
         for (powers[2..], 2..) |*p, d| p.* *= d;
         var i = try std.math.powi(u64, 10, n - 1);
         const max = i * 10;
-        var lastDigit: u4 = 0;
+        var last_digit: u4 = 0;
         var sum: u64 = undefined;
         while (i < max) {
-            if (lastDigit == 0) {
+            if (last_digit == 0) {
                 getDigits(i);
                 sum = 0;
                 for (0..n) |d| {
                     const dp = digits[d];
                     sum += powers[dp];
                 }
-            } else if (lastDigit == 1)
+            } else if (last_digit == 1)
                 sum += 1
             else
-                sum += powers[lastDigit] - powers[lastDigit - 1];
+                sum += powers[last_digit] - powers[last_digit - 1];
 
             if (sum == i) {
                 print("{d}\n", .{i});
-                if (lastDigit == 0) print("{d}\n", .{i + 1});
-                i += 10 - lastDigit;
-                lastDigit = 0;
+                if (last_digit == 0) print("{d}\n", .{i + 1});
+                i += 10 - last_digit;
+                last_digit = 0;
             } else if (sum > i) {
-                i += 10 - lastDigit;
-                lastDigit = 0;
-            } else if (lastDigit < 9) {
+                i += 10 - last_digit;
+                last_digit = 0;
+            } else if (last_digit < 9) {
                 i += 1;
-                lastDigit += 1;
+                last_digit += 1;
             } else {
                 i += 1;
-                lastDigit = 0;
+                last_digit = 0;
             }
         }
     }
