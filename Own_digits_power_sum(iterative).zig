@@ -5,15 +5,14 @@ const print = std.debug.print;
 
 const MAX_DIGITS = 9;
 
-var digits: [MAX_DIGITS]u4 = undefined;
-
-fn getDigits(i_: u64) void {
-    var i = i_;
-    var ix: u64 = 0;
-    while (i > 0) : (ix += 1) {
-        digits[ix] = @intCast(i % 10);
-        i /= 10;
+fn digitsFromNumber(output: []u4, n_: u64) []const u4 {
+    var n = n_;
+    var idx: u64 = 0;
+    while (n != 0) : (idx += 1) {
+        output[idx] = @intCast(n % 10);
+        n /= 10;
     }
+    return output[0..idx];
 }
 
 pub fn main() !void {
@@ -28,12 +27,11 @@ pub fn main() !void {
         var sum: u64 = undefined;
         while (i < max) {
             if (last_digit == 0) {
-                getDigits(i);
+                var digit_buffer: [MAX_DIGITS]u4 = undefined;
                 sum = 0;
-                for (0..n) |d| {
-                    const dp = digits[d];
-                    sum += powers[dp];
-                }
+                const digits = digitsFromNumber(&digit_buffer, i);
+                for (digits) |digit|
+                    sum += powers[digit];
             } else if (last_digit == 1)
                 sum += 1
             else
