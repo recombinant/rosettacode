@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Additive_primes
-// Translated from C
+// Translation of C
 const std = @import("std");
 
 pub fn main() !void {
