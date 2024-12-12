@@ -1,28 +1,23 @@
 // https://rosettacode.org/wiki/Find_minimum_number_of_coins_that_make_a_given_value
 const std = @import("std");
-const sort = std.sort;
 
 pub fn main() !void {
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    const writer = std.io.getStdOut().writer();
 
-    try makeChange(988, stdout);
-
-    try bw.flush();
+    try makeChange(988, writer);
 }
 
 fn makeChange(total: u32, writer: anytype) !void {
     var coins = [_]u32{ 1, 2, 5, 10, 20, 50, 100, 200 };
-    sort.heap(u32, &coins, {}, comptime sort.desc(u32));
+    std.mem.sort(u32, &coins, {}, std.sort.desc(u32));
 
     try writer.print("Available denominations: {any}. Total is to be: {d}.\n", .{ coins, total });
 
     var count: u32 = 0;
     var remaining = total;
     for (coins) |coin| {
-        const coins_used = @divTrunc(remaining, coin);
-        remaining = @mod(remaining, coin);
+        const coins_used = remaining / coin;
+        remaining %= coin;
         if (coins_used > 0)
             try writer.print(" {s:>5} coin{s} of {d:>3}\n", .{ asText(coins_used), plural(coins_used), coin });
         count += coins_used;
