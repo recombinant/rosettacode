@@ -10,8 +10,8 @@ pub fn main() !void {
 
     var values = try std.BoundedArray([]const u8, 2).init(0);
     var it = std.mem.tokenizeScalar(u8, text, ' ');
-    while (it.next()) |number|
-        try values.append(number);
+    while (it.next()) |value|
+        try values.append(value);
 
     const a = try std.fmt.parseInt(u64, values.get(0), 10);
     const b = try std.fmt.parseInt(u64, values.get(1), 10);
