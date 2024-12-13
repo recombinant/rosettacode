@@ -1,12 +1,26 @@
 // https://rosettacode.org/wiki/Trabb_Pardo%E2%80%93Knuth_algorithm
 const std = @import("std");
 
-// 10 -1 1 2 3 4 4.3 4.305 4.303 4.302 4.301
+// Please enter 11 numbers : 10 -1 1 2 3 4 4.3 4.305 4.303 4.302 4.301
+// f( 4.3010) = 399.8863
+// f( 4.3020) = Overflow!
+// f( 4.3030) = Overflow!
+// f( 4.3050) = Overflow!
+// f( 4.3000) = 399.6086
+// f( 4.0000) = 322.0000
+// f( 3.0000) = 136.7321
+// f( 2.0000) =  41.4142
+// f( 1.0000) =   6.0000
+// f(-1.0000) =  -4.0000
+// f(10.0000) = Overflow!
+
 pub fn main() !void {
     const check = 400;
 
     const writer = std.io.getStdOut().writer();
     const reader = std.io.getStdIn().reader();
+
+    try writer.writeAll("Please enter 11 numbers : ");
 
     var buffer: [1024]u8 = undefined;
     const line = try reader.readUntilDelimiter(&buffer, '\n');
