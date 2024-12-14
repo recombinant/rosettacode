@@ -53,7 +53,7 @@ const Collapser = struct {
         var list = try self.createListFromText(text);
         std.debug.assert(text.len == list.len());
 
-        // collapse
+        // collapse while copying to ArrayList
         var result = std.ArrayList(u8).init(allocator);
         var node = list.first.?;
         var c1 = node.data;
@@ -73,7 +73,6 @@ const Collapser = struct {
     }
     fn createListFromText(self: *Collapser, text: []const u8) !List {
         var list = List{};
-        // convert text to singly linked list
         var node: *Node = undefined;
         for (text) |c| {
             const new_node = try self.node_pool.create();
