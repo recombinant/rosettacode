@@ -1,4 +1,4 @@
-// https://rosettacode.org/wiki/Find_words_which_contains_all_the_vowels
+// https://rosettacode.org/wiki/Find_words_which_contain_all_the_vowels
 const std = @import("std");
 const mem = std.mem;
 const meta = std.meta;
