@@ -14,12 +14,12 @@ pub fn main() !void {
     try tree.print(writer);
 
     try writer.writeAll("\nTree after applying a function to each node:\n");
-    tree.map(MulAdd{ 2, 7 }, mulAdd);
+    tree.map(MulAddContext{ 2, 7 }, mulAdd);
     try tree.print(writer);
 }
 
-const MulAdd = struct { u16, u16 };
-fn mulAdd(muladd: MulAdd, node: *Container) void {
+const MulAddContext = struct { u16, u16 };
+fn mulAdd(muladd: MulAddContext, node: *Container) void {
     const multiplier, const addend = muladd;
     node.value *= multiplier;
     node.value += addend;
