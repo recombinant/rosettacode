@@ -9,23 +9,20 @@ You may use this code in any way you wish, and it is free.  No warrantee.
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
-#ifdef _MSC_VER
-  typedef unsigned __int32 uint32_t;
-#else
-  #include <stdint.h>
-#endif
+#include <stdint.h>
+#include "The_ISAAC_cipher.h"
 
 /* a ub4 is an unsigned 4-byte quantity */
 typedef  uint32_t  ub4;
 
 /* external results */
-ub4 randrsl[256], randcnt;
+static ub4 randrsl[256], randcnt;
 
 /* internal state */
 static    ub4 mm[256];
 static    ub4 aa=0, bb=0, cc=0;
 
-void isaac()
+static void isaac()
 {
    register ub4 i,x,y;
 
@@ -63,7 +60,7 @@ void isaac()
    h^=a>>9;  c+=h; a+=b; \
 }
 
-void randinit(int flag)
+static void randinit(int flag)
 {
    register int i;
    ub4 a,b,c,d,e,f,g,h;
@@ -105,7 +102,7 @@ void randinit(int flag)
 
 
 // Get a random 32-bit value 0..MAXINT
-ub4 iRandom()
+static ub4 iRandom()
 {
 	ub4 r = randrsl[randcnt];
 	++randcnt;
@@ -118,14 +115,14 @@ ub4 iRandom()
 
 
 // Get a random character in printable ASCII range
-char iRandA()
+static char iRandA()
 {	
 	return iRandom() % 95 + 32;
 }
 
 
 // Seed ISAAC with a string
-void iSeed(char *seed, int flag)
+void iSeed(const char *seed, int flag)
 {
 	register ub4 i,m;
 	for (i=0; i<256; i++) mm[i]=0;
@@ -140,19 +137,9 @@ void iSeed(char *seed, int flag)
 }
 
 
-// maximum length of message
-#define MAXMSG 4096
-#define MOD 95
-#define START 32
-// cipher modes for Caesar
-enum ciphermode {
-	mEncipher, mDecipher, mNone 
-};
-
-
 // XOR cipher on random stream. Output: ASCII string
 char v[MAXMSG];
-char* Vernam(char *msg)
+const char* Vernam(const char *msg)
 	{
 		register ub4 i,l;
 		l = strlen(msg);
@@ -177,8 +164,8 @@ char Caesar(enum ciphermode m, char ch, char shift, char modulo, char start)
 	}
 	
 // Caesar-shift a string on a pseudo-random stream
-char c[MAXMSG];
-char* CaesarStr(enum ciphermode m, char *msg, char modulo, char start)
+static char c[MAXMSG];
+const char* CaesarStr(enum ciphermode m, const char *msg, char modulo, char start)
 	{
 		register ub4 i,l;
 		l = strlen(msg);
@@ -189,44 +176,3 @@ char* CaesarStr(enum ciphermode m, char *msg, char modulo, char start)
 			c[i] = Caesar(m, msg[i], iRandA(), modulo, start);
 		return c;
 	}
-
-	
-int main()
-{
-	register ub4 n,l;
-	// input: message and key
-	char *msg = "a Top Secret secret";
-	char *key = "this is my secret key";
-	// Vernam ciphertext & plaintext
-	char vctx[MAXMSG], vptx[MAXMSG];
-	// Caesar ciphertext & plaintext
-	char cctx[MAXMSG], cptx[MAXMSG];
-	l = strlen(msg);
-	// Encrypt: Vernam XOR
-	iSeed(key,1);
-	strcpy(vctx, Vernam(msg));
-	// Encrypt: Caesar
-	strcpy(cctx, CaesarStr(mEncipher, msg, MOD, START));
-	// Decrypt: Vernam XOR
-	iSeed(key,1);
-	strcpy(vptx, Vernam(vctx));
-	// Decrypt: Caesar
-	strcpy(cptx, CaesarStr(mDecipher,cctx, MOD, START));
-	// Program output
-	printf("Message: %s\n",msg);
-	printf("Key    : %s\n",key);
-	printf("XOR    : ");
-	// Output Vernam ciphertext as a string of hex digits
-	for (n=0; n<l; n++) printf("%02X",vctx[n]);
-	printf("\n");
-	// Output Vernam decrypted plaintext
-	printf("XOR dcr: %s\n",vptx);
-	// Caesar
-	printf("MOD    : ");
-	// Output Caesar ciphertext as a string of hex digits
-	for (n=0; n<l; n++) printf("%02X",cctx[n]);
-	printf("\n");
-	// Output Caesar decrypted plaintext
-	printf("MOD dcr: %s\n",cptx);
-	return 0;
-}
