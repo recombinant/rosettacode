@@ -17,13 +17,13 @@ pub fn main() !void {
     // tangent
     try stdout.print("{d} {d}\n", .{ @tan(radians), @tan(math.degreesToRadians(degrees)) });
     // arcsine
-    var temp: f64 = math.asin(@as(f64, @sin(radians)));
+    var temp = math.asin(@sin(radians));
     try stdout.print("{d} {d}\n", .{ temp, math.radiansToDegrees(temp) });
     // arccosine
-    temp = math.acos(@as(f64, @cos(radians)));
+    temp = math.acos(@cos(radians));
     try stdout.print("{d} {d}\n", .{ temp, math.radiansToDegrees(temp) });
     // arctangent
-    temp = math.atan(@as(f64, @tan(radians)));
+    temp = math.atan(@tan(radians));
     try stdout.print("{d} {d}\n", .{ temp, math.radiansToDegrees(temp) });
 }
 
