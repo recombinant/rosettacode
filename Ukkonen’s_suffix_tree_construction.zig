@@ -67,21 +67,20 @@ const Ukkonen = struct {
 
     fn newNode(self: *Ukkonen, start: usize, end: *usize) *Node {
         const node: *Node = self.allocator.create(Node) catch unreachable;
-        node.* = undefined;
-        @memset(&node.children, null);
+        node.* = Node{
+            // For root node, suffix_link will be set to null
+            // For internal nodes, suffix_link will be set to root
+            // by default in current extension and may change in
+            // next extension
+            .suffix_link = self.root,
+            .start = start,
+            .end = end,
 
-        // For root node, suffix_link will be set to null
-        // For internal nodes, suffix_link will be set to root
-        // by default in current extension and may change in
-        // next extension
-        node.suffix_link = self.root;
-        node.start = start;
-        node.end = end;
-
-        // suffix_index will be set to null by default and
-        // actual suffix index will be set later for leaves
-        // at the end of all phases
-        node.suffix_index = null;
+            // suffix_index will be set to null by default and
+            // actual suffix index will be set later for leaves
+            // at the end of all phases
+            .suffix_index = null,
+        };
         return node;
     }
     fn edgeLength(self: *const Ukkonen, n: *Node) usize {
@@ -270,7 +269,9 @@ const Ukkonen = struct {
 
         // root is a special node with start and end indices undefined,
         // as it has no parent from where an edge comes to root
+        std.debug.assert(self.root == null);
         self.root = self.newNode(undefined, self.root_end);
+
         self.active_node = self.root.?; // first active_node will be root
         for (0..self.text.len) |i|
             self.extendSuffixTree(i);
