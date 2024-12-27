@@ -9,7 +9,6 @@
 // only namespaced functions that can be called with dot syntax.
 
 const std = @import("std");
-const math = std.math; // Save some typing, reduce clutter. Otherwise math.sin() would be std.math.sin() etc.
 
 pub fn main() !void {
     // Coordinates are found here:
@@ -28,7 +27,7 @@ pub fn main() !void {
 
     const distance = calcGreatCircleDistance(bna, lax);
 
-    std.debug.print("Output: {d:.6} km\n", .{distance});
+    std.debug.print("Output: {d:.3} km\n", .{distance});
 
     // Output: 2886.326609 km
 }
@@ -42,7 +41,7 @@ const DMS = struct {
     s: f64,
 
     fn toRadians(self: DMS) f64 {
-        return (self.d + self.m / 60 + self.s / 3600) * math.pi / 180;
+        return (self.d + self.m / 60 + self.s / 3600) * std.math.pi / 180;
     }
 };
 
@@ -54,8 +53,8 @@ fn calcGreatCircleDistance(lat_long1: LatLong, lat_long2: LatLong) f64 {
     const long1 = lat_long1.long.toRadians();
     const long2 = lat_long2.long.toRadians();
 
-    const a = math.sin(0.5 * (lat2 - lat1));
-    const b = math.sin(0.5 * (long2 - long1));
+    const a = @sin(0.5 * (lat2 - lat1));
+    const b = @sin(0.5 * (long2 - long1));
 
-    return 12742 * math.asin(math.sqrt(a * a + math.cos(lat1) * math.cos(lat2) * b * b));
+    return 12742 * std.math.asin(@sqrt(a * a + @cos(lat1) * @cos(lat2) * b * b));
 }
