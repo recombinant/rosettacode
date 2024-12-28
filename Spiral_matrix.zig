@@ -2,7 +2,7 @@
 // Translation of Python
 const std = @import("std");
 
-pub fn main() !void {
+pub fn main() void {
     for (spiral_matrix(5)) |i|
         std.debug.print("{any:2}\n", .{i});
 }

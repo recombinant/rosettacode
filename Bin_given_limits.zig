@@ -2,7 +2,7 @@
 const std = @import("std");
 const print = std.debug.print;
 
-pub fn main() !void {
+pub fn main() void {
     print("Example 1:\n", .{});
     const limits1 = [_]u8{ 23, 37, 43, 53, 67, 83 };
     const data1 = [_]u8{

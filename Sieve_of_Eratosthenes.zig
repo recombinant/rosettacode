@@ -36,7 +36,7 @@ fn Sieve(comptime max: usize) type {
     };
 }
 
-pub fn main() !void {
+pub fn main() void {
     const max_prime = 1000;
     var eratosthenes = Sieve(max_prime).init();
 

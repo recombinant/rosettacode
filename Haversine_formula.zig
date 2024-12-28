@@ -10,7 +10,7 @@
 
 const std = @import("std");
 
-pub fn main() !void {
+pub fn main() void {
     // Coordinates are found here:
     //     http://www.airport-data.com/airport/BNA/
     //     http://www.airport-data.com/airport/LAX/

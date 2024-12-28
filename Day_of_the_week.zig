@@ -11,7 +11,7 @@ fn wday(year: u16, month: u4, day: u6) u3 {
         yy + yy / 4 - yy / 100 + yy / 400) % 7);
 }
 
-pub fn main() !void {
+pub fn main() void {
     var y: u16 = 2008;
     while (y <= 2121) : (y += 1)
         if (wday(y, 12, 25) == 0)

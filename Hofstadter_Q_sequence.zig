@@ -3,7 +3,7 @@
 const std = @import("std");
 const print = std.debug.print;
 
-pub fn main() !void {
+pub fn main() void {
     var Q: [100_000]u32 = undefined;
     Q[0] = 1;
     Q[1] = 1;

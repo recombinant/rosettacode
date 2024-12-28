@@ -2,7 +2,7 @@
 const std = @import("std");
 const print = std.debug.print;
 
-pub fn main() !void {
+pub fn main() void {
     move(4, 1, 2, 3);
 }
 

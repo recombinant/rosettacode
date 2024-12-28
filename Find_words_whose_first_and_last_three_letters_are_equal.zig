@@ -3,7 +3,7 @@ const std = @import("std");
 const mem = std.mem;
 const print = std.debug.print;
 
-pub fn main() !void {
+pub fn main() void {
     const text = @embedFile("data/unixdict.txt");
 
     var it = mem.splitScalar(u8, text, '\n');

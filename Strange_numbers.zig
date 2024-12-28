@@ -39,7 +39,7 @@ fn gen(p: []u8, i: usize, c: u8) void {
     }
 }
 
-pub fn main() !void {
+pub fn main() void {
     // ----------------------------------------------- task
     {
         var buf: [3]u8 = undefined;

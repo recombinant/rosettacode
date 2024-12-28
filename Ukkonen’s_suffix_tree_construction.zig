@@ -306,7 +306,7 @@ const Ukkonen = struct {
     }
 };
 
-pub fn main() !void {
+pub fn main() void {
     // ---------------------------------------------------- allocator
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();

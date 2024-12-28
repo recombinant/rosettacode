@@ -36,7 +36,7 @@ fn Sieve(comptime max: usize) type {
     };
 }
 
-pub fn main() !void {
+pub fn main() void {
     const limit = 1000;
     var eratosthenes = Sieve(limit).init();
 

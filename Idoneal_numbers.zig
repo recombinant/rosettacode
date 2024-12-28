@@ -6,7 +6,7 @@ const std = @import("std");
 const assert = std.debug.assert;
 const print = std.debug.print;
 
-pub fn main() !void {
+pub fn main() void {
     const newline_count = 10;
     var count: usize = 0;
     var n: u16 = 1;

@@ -2,7 +2,7 @@
 const std = @import("std");
 const print = std.debug.print;
 
-pub fn main() !void {
+pub fn main() void {
     const T = u2056;
     const upb: T = std.math.log2(std.math.maxInt(T)) / 2;
 

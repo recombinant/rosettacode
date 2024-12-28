@@ -4,7 +4,7 @@ const math = std.math;
 
 const print = std.debug.print;
 
-pub fn main() !void {
+pub fn main() void {
     {
         const RndGen = Microsoft;
 

@@ -2,7 +2,7 @@
 const std = @import("std");
 const print = std.debug.print;
 
-pub fn main() !void {
+pub fn main() void {
     const inf: f64 = std.math.floatMax(f64) / std.math.floatMin(f64);
     const minus_inf: f64 = -std.math.floatMax(f64) / std.math.floatMin(f64);
     const zero: f64 = 0.0;

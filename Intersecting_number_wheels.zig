@@ -22,7 +22,7 @@ const Wheel = struct {
     }
 };
 
-pub fn main() !void {
+pub fn main() void {
     var wheel1 = [_]Wheel{
         Wheel.init('A', &[_]u8{ 1, 2, 3 }),
     };
