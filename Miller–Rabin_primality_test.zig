@@ -85,7 +85,7 @@ fn primeTest(n: u64, random: std.Random, options: PrimeTestOptions) bool {
 
 const testing = std.testing;
 test "primeTest primes" {
-    var prng = std.Random.DefaultPrng.init(0);
+    var prng = std.Random.DefaultPrng.init(testing.random_seed);
     const random = prng.random();
 
     const primes = [_]u64{ 2, 3, 5, 7, 11, 13, 17, 19, 23, 29 };
@@ -94,7 +94,7 @@ test "primeTest primes" {
 }
 
 test "primeTest composites" {
-    var prng = std.Random.DefaultPrng.init(0);
+    var prng = std.Random.DefaultPrng.init(testing.random_seed);
     const random = prng.random();
 
     const primes = [_]u64{ 2, 3, 5, 7, 11, 13, 17, 19, 23, 29 };
@@ -105,7 +105,7 @@ test "primeTest composites" {
 }
 
 test "primeTest large primes" {
-    var prng = std.Random.DefaultPrng.init(0);
+    var prng = std.Random.DefaultPrng.init(testing.random_seed);
     const random = prng.random();
 
     const n = std.math.pow(u64, 2, 62);
@@ -118,7 +118,7 @@ test "primeTest large primes" {
 }
 
 test "primeTest large composites" {
-    var prng = std.Random.DefaultPrng.init(0);
+    var prng = std.Random.DefaultPrng.init(testing.random_seed);
     const random = prng.random();
 
     const n = std.math.pow(u64, 2, 62);
