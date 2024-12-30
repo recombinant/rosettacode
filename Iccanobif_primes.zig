@@ -6,11 +6,11 @@ pub fn main() !void {
     const stdout = std.io.getStdOut().writer();
     try stdout.writeAll("The first 10 Iccanobif primes are:\n");
 
-    var fibonnaci = Fibonnaci{};
+    var fibonacci = Fibonacci{};
     var count: u8 = 0;
     var looped = true;
     while (count != 10) {
-        const n = reverse(fibonnaci.next());
+        const n = reverse(fibonacci.next());
         if (isPrime(n)) {
             if (looped) try stdout.writeByte(' ') else looped = false;
             try stdout.print("{d}", .{n});
@@ -31,11 +31,11 @@ fn reverse(n_: u64) u64 {
     return result;
 }
 
-const Fibonnaci = struct {
+const Fibonacci = struct {
     fib1: u64 = 0,
     fib2: u64 = 1,
 
-    fn next(self: *Fibonnaci) u64 {
+    fn next(self: *Fibonacci) u64 {
         const fib = self.fib1;
         self.fib1 = self.fib2;
         self.fib2 += fib;
@@ -64,8 +64,8 @@ test reverse {
     try testing.expectEqual(@as(u64, 0), reverse(0));
 }
 
-test Fibonnaci {
-    var f = Fibonnaci{};
+test Fibonacci {
+    var f = Fibonacci{};
 
     var sequence = [_]u64{
         0,      1,      1,      2,     3,     5,     8,     13,    21,
