@@ -64,7 +64,7 @@ test reverse {
     try testing.expectEqual(@as(u64, 0), reverse(0));
 }
 
-test "Fibonnaci" {
+test Fibonnaci {
     var f = Fibonnaci{};
 
     var sequence = [_]u64{
@@ -78,7 +78,7 @@ test "Fibonnaci" {
     }
 }
 
-test "isPrime" {
+test isPrime {
     const primes = [_]u64{ 2, 3, 5, 7, 11, 13, 17, 19, 23, 29 };
     const non_primes = [_]u64{ 0, 1, 4, 6, 8, 9, 10, 12, 14, 15, 16, 18 };
 
