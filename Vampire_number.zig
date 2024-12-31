@@ -1,3 +1,4 @@
+// https://rosettacode.org/wiki/Vampire_number
 const std = @import("std");
 
 pub fn main() !void {

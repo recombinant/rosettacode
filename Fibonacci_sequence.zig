@@ -1,3 +1,4 @@
+// https://rosettacode.org/wiki/Fibonacci_sequence
 const std = @import("std");
 
 pub fn main() !void {

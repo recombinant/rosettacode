@@ -1,4 +1,4 @@
-// https://en.wikipedia.org/wiki/Welch%27s_t-test
+// https://rosettacode.org/wiki/Welch%27s_t-test
 // Translation of C refer to C code for comments and license
 const std = @import("std");
 
