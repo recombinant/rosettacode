@@ -76,7 +76,7 @@ const Point = struct {
     x: f64,
     y: f64,
 
-    // refer to std.format.format documentation
+    // refer to std.fmt.format documentation
     /// When a point is written, do it in the form "x,y " to three decimal places
     pub fn format(self: *const Point, comptime _: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
         try writer.print("{d:.3},{d:.3} ", .{ self.x, self.y });

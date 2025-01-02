@@ -119,7 +119,7 @@ const RegularExpression = union(RegularExpressionType) {
             inline else => |*re| return re.simplify(pool),
         }
     }
-    // refer to std.format.format documentation
+    // refer to std.fmt.format documentation
     pub fn format(self: *const Self, comptime _: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
         switch (self.*) {
             inline else => |re| try re.write(writer),
