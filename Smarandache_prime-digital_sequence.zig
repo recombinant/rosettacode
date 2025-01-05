@@ -34,7 +34,7 @@ pub fn main() void {
 fn nextPrimeDigitNumber(n: anytype) @TypeOf(n) {
     const T = @TypeOf(n);
     if (@typeInfo(T) != .int or @typeInfo(T).int.signedness != .unsigned)
-        @compileError("isPrime() expected unsigned integer argument, found " ++ @typeName(T));
+        @compileError("nextPrimeDigitNumber() expected unsigned integer argument, found " ++ @typeName(T));
 
     if (n == 0)
         return 2;
