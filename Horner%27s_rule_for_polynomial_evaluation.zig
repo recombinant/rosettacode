@@ -17,7 +17,7 @@ fn horner(coefficients: []const f64, x: f64) f64 {
     var i = coefficients.len;
     while (i != 0) {
         i -= 1;
-        accumulator = accumulator * x + coefficients[i];
+        accumulator = @mulAdd(f64, accumulator, x, coefficients[i]);
     }
     return accumulator;
 }
