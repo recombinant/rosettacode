@@ -23,8 +23,8 @@ pub fn main() !void {
 
 /// Pritchard's sieve of primes up to limit with a StaticBitSet.
 pub fn pritchard(allocator: mem.Allocator, T: type, comptime limit: usize) ![]T {
-    var members = bit_set.ArrayBitSet(usize, limit).initEmpty();
-    var mcopy = bit_set.ArrayBitSet(usize, limit).initEmpty();
+    var members: bit_set.ArrayBitSet(usize, limit) = .initEmpty();
+    var mcopy: bit_set.ArrayBitSet(usize, limit) = .initEmpty();
     members.set(1);
 
     var steplength: usize = 1;
@@ -32,7 +32,7 @@ pub fn pritchard(allocator: mem.Allocator, T: type, comptime limit: usize) ![]T 
     const rtlim: usize = math.sqrt(limit);
     var nlimit: usize = 2;
 
-    var primes = std.ArrayList(T).init(allocator);
+    var primes: std.ArrayList(T) = .init(allocator);
     while (prime < rtlim) {
         if (steplength < limit) {
             for (1..steplength) |w|
