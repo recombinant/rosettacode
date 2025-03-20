@@ -1,19 +1,15 @@
 // https://rosettacode.org/wiki/Abelian_sandpile_model
-const std = @import("std");
-const math = std.math;
-const mem = std.mem;
-
 pub fn main() !void {
     const stdout = std.io.getStdOut().writer();
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     // Initialize the sand pile.
     const init_val = try askInitVal();
 
-    var sand_pile = try SandPile.init(allocator, init_val);
+    var sand_pile: SandPile = try .init(allocator, init_val);
     defer sand_pile.deinit();
 
     // Run the simulation.
@@ -187,3 +183,7 @@ fn askInitVal() !u32 {
         // await further input
     }
 }
+
+const std = @import("std");
+const math = std.math;
+const mem = std.mem;

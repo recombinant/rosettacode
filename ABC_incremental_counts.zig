@@ -1,12 +1,6 @@
 // https://rosettacode.org/wiki/ABC_incremental_counts
-const std = @import("std");
-const ascii = std.ascii;
-const mem = std.mem;
-const sort = std.sort;
-const print = std.debug.print;
-
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -45,9 +39,9 @@ pub fn main() !void {
 
 fn abcIncrementalCounts(allocator: mem.Allocator, text: []const u8, letters: []const u8, min_count: usize) ![][]const u8 {
     if (text.len == 0 or letters.len == 0)
-        return allocator.alloc([]u8, 0);
+        return allocator.alloc([]const u8, 0);
 
-    var result = std.ArrayList([]const u8).init(allocator);
+    var result: std.ArrayList([]const u8) = .init(allocator);
 
     const counts = try allocator.alloc(usize, letters.len);
     defer allocator.free(counts);
@@ -80,3 +74,9 @@ fn abcIncrementalCounts(allocator: mem.Allocator, text: []const u8, letters: []c
     }
     return try result.toOwnedSlice();
 }
+
+const std = @import("std");
+const ascii = std.ascii;
+const mem = std.mem;
+const sort = std.sort;
+const print = std.debug.print;

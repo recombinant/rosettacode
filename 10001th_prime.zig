@@ -1,18 +1,11 @@
 // https://rosettacode.org/wiki/10001th_prime
-const std = @import("std");
-const bit_set = std.bit_set;
-const math = std.math;
-const mem = std.mem;
-const testing = std.testing;
-const print = std.debug.print;
-
 pub fn main() !void {
     const n = 10001;
     const f: f32 = @floatFromInt(n);
     // ----------------------------- estimate maximum prime plus some
     const limit: usize = @intFromFloat(@floor(@log(f) * f * 1.2));
     // ---------------------------------------------------- allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // --------------------------------------------------------------
@@ -89,3 +82,10 @@ test pritchard {
     try testing.expectEqual(541, primes[99]);
     try testing.expectEqual(999983, primes[primes.len - 1]);
 }
+
+const std = @import("std");
+const bit_set = std.bit_set;
+const math = std.math;
+const mem = std.mem;
+const testing = std.testing;
+const print = std.debug.print;
