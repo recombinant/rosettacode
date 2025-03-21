@@ -1,24 +1,16 @@
 // https://rosettacode.org/wiki/ADFGVX_cipher
 // Translation of C++
 // Note: The C++ is/was missing the columnar transposition
-const std = @import("std");
-const ascii = std.ascii;
-const mem = std.mem;
-const sort = std.sort;
-
-const assert = std.debug.assert;
-const print = std.debug.print;
-
 pub fn main() !void {
     // -------------------------------------------- random number
-    var prng = std.Random.DefaultPrng.init(blk: {
+    var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
         std.posix.getrandom(mem.asBytes(&seed)) catch unreachable;
         break :blk seed;
     });
     const random = prng.random();
     // ------------------------------------------------ allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // ----------------------------------------------------------
@@ -84,7 +76,7 @@ fn createKey(allocator: mem.Allocator, random: std.Random, size: usize) ![]const
 
     const data = @embedFile("data/unixdict.txt");
 
-    var candidates = std.ArrayList([]const u8).init(allocator);
+    var candidates: std.ArrayList([]const u8) = .init(allocator);
     defer {
         for (candidates.items) |word|
             allocator.free(word);
@@ -114,7 +106,7 @@ fn createKey(allocator: mem.Allocator, random: std.Random, size: usize) ![]const
 
 fn encrypt(allocator: mem.Allocator, plain_text: []const u8, polybius: PolybiusSquare, key: []const u8) ![]const u8 {
     // Create the fractionated text.
-    var code_array = std.ArrayList(u8).init(allocator);
+    var code_array: std.ArrayList(u8) = .init(allocator);
     for (plain_text) |letter|
         for (polybius, 0..) |row, i|
             for (row, 0..) |ch, j|
@@ -136,7 +128,7 @@ fn encrypt(allocator: mem.Allocator, plain_text: []const u8, polybius: PolybiusS
     };
     defer allocator.free(order);
     // This effectively transposes and concatenates columns to create the encrypted text.
-    var encrypted = std.ArrayList(u8).init(allocator);
+    var encrypted: std.ArrayList(u8) = .init(allocator);
     for (order) |i_| {
         if (encrypted.items.len != 0)
             try encrypted.append(' ');
@@ -156,7 +148,7 @@ fn decrypt(
     // Retrieve the transposed columns from the encryped text.
     const transposed_columns = blk: {
         var it = mem.tokenizeScalar(u8, encrypted_text, ' ');
-        var columns_array = std.ArrayList([]const u8).init(allocator);
+        var columns_array: std.ArrayList([]const u8) = .init(allocator);
         while (it.next()) |word|
             try columns_array.append(word);
         break :blk try columns_array.toOwnedSlice();
@@ -202,3 +194,11 @@ fn decrypt(
     }
     return plain_text.toOwnedSlice();
 }
+
+const std = @import("std");
+const ascii = std.ascii;
+const mem = std.mem;
+const sort = std.sort;
+
+const assert = std.debug.assert;
+const print = std.debug.print;

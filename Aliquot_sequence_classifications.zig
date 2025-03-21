@@ -1,18 +1,14 @@
 // https://rosettacode.org/wiki/Aliquot_sequence_classifications
-const std = @import("std");
-const math = std.math;
-const mem = std.mem;
-
 pub fn main() !void {
     const stdout_file = std.io.getStdOut().writer();
     var bw = std.io.bufferedWriter(stdout_file);
     const stdout = bw.writer();
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var t0 = try std.time.Timer.start();
+    var t0: std.time.Timer = try .start();
 
     for (1..11) |n| {
         const result = try classification(allocator, n);
@@ -104,7 +100,7 @@ fn classification(allocator: mem.Allocator, n: u64) !struct { category: Category
     var count: usize = 0;
     var previous = n;
     var category = Category.unknown;
-    var sequence = std.ArrayList(u64).init(allocator);
+    var sequence: std.ArrayList(u64) = .init(allocator);
 
     var it = iterateAliquotSequence(n);
     while (it.next()) |k| {
@@ -131,3 +127,7 @@ fn classification(allocator: mem.Allocator, n: u64) !struct { category: Category
     // Caller owns and should free memory slice .sequence.
     return .{ .category = category, .sequence = try sequence.toOwnedSlice() };
 }
+
+const std = @import("std");
+const math = std.math;
+const mem = std.mem;

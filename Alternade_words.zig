@@ -1,18 +1,14 @@
 // https://rosettacode.org/wiki/Alternade_words
-const std = @import("std");
-const mem = std.mem;
-const print = std.debug.print;
-
 pub fn main() !void {
     const filename = "data/unixdict.txt";
     const text = @embedFile(filename);
 
     // ------------------------------------------ allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // --------------------------------------- set of words
-    var words = std.StringArrayHashMap(void).init(allocator);
+    var words: std.StringArrayHashMap(void) = .init(allocator);
     defer words.deinit();
     {
         try words.ensureTotalCapacity(mem.count(u8, text, "\n") + 1);
@@ -24,8 +20,8 @@ pub fn main() !void {
     // ----------------------------------------------------
     var count: u32 = 0;
 
-    var w1 = std.ArrayList(u8).init(allocator);
-    var w2 = std.ArrayList(u8).init(allocator);
+    var w1: std.ArrayList(u8) = .init(allocator);
+    var w2: std.ArrayList(u8) = .init(allocator);
     defer w1.deinit();
     defer w2.deinit();
 
@@ -48,3 +44,7 @@ pub fn main() !void {
         }
     }
 }
+
+const std = @import("std");
+const mem = std.mem;
+const print = std.debug.print;
