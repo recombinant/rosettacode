@@ -1,9 +1,5 @@
 // https://www.rosettacode.org/wiki/Abundant_odd_numbers
 // based on C
-const std = @import("std");
-const math = std.math;
-const assert = std.debug.assert;
-
 pub fn main() !void {
     const stdout = std.io.getStdOut().writer();
 
@@ -42,3 +38,7 @@ fn sumProperDivisors(n: u64) u64 {
     }
     return sum;
 }
+
+const std = @import("std");
+const math = std.math;
+const assert = std.debug.assert;

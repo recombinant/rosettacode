@@ -1,13 +1,6 @@
 // https://rosettacode.org/wiki/Addition_chains
 // Translation of Go
 // The slower version.
-const std = @import("std");
-const fmt = std.fmt;
-const heap = std.heap;
-const mem = std.mem;
-const time = std.time;
-const print = std.debug.print;
-
 const max_len = 13;
 const max_non_brauer = 382;
 
@@ -17,14 +10,14 @@ var brauer_example: []const u64 = undefined;
 var non_brauer_example: []const u64 = undefined;
 
 pub fn main() !void {
-    var arena = heap.ArenaAllocator.init(heap.page_allocator);
+    var arena: heap.ArenaAllocator = .init(heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
-    // var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    // var gpa: std.heap.DebugAllocator(.{}) = .init;
     // defer _ = gpa.deinit();
     // const allocator = gpa.allocator();
 
-    var t0 = try time.Timer.start();
+    var t0: time.Timer = try .start();
 
     const nums = [_]u64{ 7, 14, 21, 29, 32, 42, 64, 47, 79, 191, 382, 379 };
     // const nums = [_]u64{ 47, 79, 191, 382, 379, 12509 };
@@ -33,7 +26,7 @@ pub fn main() !void {
     for (nums) |num| {
         _ = arena.reset(.retain_capacity);
 
-        var t1 = try time.Timer.start();
+        var t1: time.Timer = try .start();
 
         brauer_count = 0;
         non_brauer_count = 0;
@@ -111,7 +104,7 @@ fn additionChains(allocator: mem.Allocator, target: u64, length_: usize, chosen_
             }
         }
     } else {
-        var ndone = std.ArrayList(u64).init(allocator);
+        var ndone: std.ArrayList(u64) = .init(allocator);
         defer ndone.deinit();
         while (true) {
             var i = le;
@@ -139,3 +132,10 @@ fn additionChains(allocator: mem.Allocator, target: u64, length_: usize, chosen_
     }
     return length;
 }
+
+const std = @import("std");
+const fmt = std.fmt;
+const heap = std.heap;
+const mem = std.mem;
+const time = std.time;
+const print = std.debug.print;

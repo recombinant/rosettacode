@@ -1,8 +1,4 @@
 // https://rosettacode.org/wiki/ABC_words
-const std = @import("std");
-const mem = std.mem;
-const print = std.debug.print;
-
 pub fn main() void {
     const text = @embedFile("data/unixdict.txt"); // no uppercase
 
@@ -24,3 +20,7 @@ pub fn main() void {
         print("{d:3} {s:<14}{c}", .{ count, word, sep });
     }
 }
+
+const std = @import("std");
+const mem = std.mem;
+const print = std.debug.print;

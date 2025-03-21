@@ -1,7 +1,4 @@
 // https://rosettacode.org/wiki/Abundant,_deficient_and_perfect_number_classifications
-const std = @import("std");
-const assert = std.debug.assert;
-
 pub fn main() !void {
     const stdout_file = std.io.getStdOut().writer();
     var bw = std.io.bufferedWriter(stdout_file);
@@ -45,3 +42,6 @@ fn sumProperDivisors(number: u64) u64 {
     }
     return sum;
 }
+
+const std = @import("std");
+const assert = std.debug.assert;

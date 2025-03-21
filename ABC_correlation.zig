@@ -1,5 +1,4 @@
 // https://rosettacode.org/wiki/ABC_correlation
-const std = @import("std");
 
 // Assuming only lower case ASCII letters ('a' to 'z' inclusive)
 // other ASCII characters encountered will be ignored.
@@ -37,7 +36,6 @@ pub fn main() !void {
     try writer.print("\nThere are {} abc words in unixdict.txt\n", .{count});
 }
 
-const testing = std.testing;
 test isAbcWord {
     try testing.expect(!isAbcWord("")); // no 'a', 'b' or 'c'
     try testing.expect(!isAbcWord("a")); // no 'b' or 'c'
@@ -49,3 +47,6 @@ test isAbcWord {
     try testing.expect(isAbcWord("DaEbFcGcHbIaJ"));
     try testing.expect(isAbcWord("AbacC"));
 }
+
+const std = @import("std");
+const testing = std.testing;

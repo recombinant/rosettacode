@@ -1,12 +1,10 @@
 // https://rosettacode.org/wiki/Achilles_numbers
 // Translation of C++
-const std = @import("std");
-
 pub fn main() !void {
     const writer = std.io.getStdOut().writer();
 
     // ---------------------------------------------------- allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // --------------------------------------------------------------
@@ -77,7 +75,7 @@ fn perfectPowers(allocator: std.mem.Allocator, n: anytype) ![]@TypeOf(n) {
     // to prevent variable p overflow
     const P = std.meta.Int(.unsigned, @typeInfo(T).int.bits * 2); // u128 in long-hand
 
-    var result = std.ArrayList(T).init(allocator);
+    var result: std.ArrayList(T) = .init(allocator);
     const s = std.math.sqrt(n);
     var i: T = 2;
     while (i <= s) : (i += 1) {
@@ -96,7 +94,7 @@ fn orderU64(context: u64, item: u64) std.math.Order {
 fn achilles(allocator: std.mem.Allocator, T: type, from: T, to: T, pps: []T) ![]T {
     if (@typeInfo(T) != .int or @typeInfo(T).int.signedness != .unsigned)
         @compileError("achilles() expected unsigned integer type argument, found " ++ @typeName(T));
-    var result = std.ArrayList(T).init(allocator);
+    var result: std.ArrayList(T) = .init(allocator);
     const c: T = @intFromFloat(std.math.cbrt(@as(f64, @floatFromInt(to / 4))));
     const s = std.math.sqrt(to / 8);
     var b: T = 2;
@@ -181,3 +179,5 @@ fn phi(n: anytype) @TypeOf(n) {
     return result;
 }
 // ==============================================================
+
+const std = @import("std");

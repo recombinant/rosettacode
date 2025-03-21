@@ -1,14 +1,7 @@
 // https://rosettacode.org/wiki/Addition_chains
 // Only handles Brauer addition chains.
-const std = @import("std");
-const fmt = std.fmt;
-const heap = std.heap;
-const math = std.math;
-const mem = std.mem;
-const time = std.time;
-
 pub fn main() !void {
-    var arena = heap.ArenaAllocator.init(heap.page_allocator);
+    var arena: heap.ArenaAllocator = .init(heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
 
@@ -39,7 +32,7 @@ fn Brauer(comptime n: u64) type {
         fn init(allocator: mem.Allocator) Self {
             var b = Self{
                 .allocator = allocator,
-                .best = std.ArrayList(u64).init(allocator),
+                .best = .init(allocator),
             };
             @memset(&b.chain, 0);
             @memset(&b.in_chain, false);
@@ -154,8 +147,6 @@ fn brauer(allocator: mem.Allocator, comptime n: usize) !void {
     );
 }
 
-const testing = std.testing;
-
 test "isBrauer" {
     try testing.expect(isBrauer(&[_]u64{ 1, 2, 3, 5, 8, 13 }));
     try testing.expect(isBrauer(&[_]u64{ 1, 2, 3, 5, 10, 13 }));
@@ -171,3 +162,11 @@ test "isBrauer" {
     try testing.expect(isAdditionChain(&[_]u64{ 1, 2, 4, 5, 8, 13 }));
     try testing.expect(!isAdditionChain(&[_]u64{ 1, 2, 4, 5, 7, 13 }));
 }
+
+const std = @import("std");
+const fmt = std.fmt;
+const heap = std.heap;
+const math = std.math;
+const mem = std.mem;
+const time = std.time;
+const testing = std.testing;

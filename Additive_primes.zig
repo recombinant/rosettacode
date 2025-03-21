@@ -13,7 +13,7 @@ pub fn main() !void {
     const is_prime: std.StaticBitSet(N) = comptime blk: {
         @setEvalBranchQuota(4000);
         // An array of bool would have been simpler.
-        var bitset = std.StaticBitSet(N).initEmpty();
+        var bitset: std.StaticBitSet(N) = .initEmpty();
         var it = bitset.iterator(.{ .kind = .unset });
         while (it.next()) |n|
             if (isPrime(n))
