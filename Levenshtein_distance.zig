@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Levenshtein_distance
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 /// Recursive method without memoization.

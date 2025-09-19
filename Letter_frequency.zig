@@ -1,7 +1,6 @@
 // https://rosettacode.org/wiki/Letter_frequency
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const ascii = std.ascii;
-const mem = std.mem;
 const print = std.debug.print;
 
 pub fn main() void {
@@ -14,7 +13,7 @@ pub fn main() void {
 }
 
 fn frequency(text: []const u8) [26]usize {
-    var result = mem.zeroes([26]usize);
+    var result = std.mem.zeroes([26]usize);
     for (text) |c| {
         switch (c) {
             'a'...'z' => result[c - 'a'] += 1,
