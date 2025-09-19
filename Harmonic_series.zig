@@ -1,26 +1,24 @@
 // https://www.rosettacode.org/wiki/Harmonic_series
+// {{works with|Zig|0.14.1}}
 const std = @import("std");
-const math = std.math;
-const mem = std.mem;
-const Rational = math.big.Rational;
-const Int = math.big.Managed;
+const Rational = std.math.big.Rational;
 
 pub fn main() !void {
     // ------------------------------------------------------- stdout
     const stdout = std.io.getStdOut().writer();
     // ---------------------------------------------------- allocator
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
     // ---------------------------------------- alternative allocator
-    //   var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    //   var gpa: std.heap.DebugAllocator(.{}) = .init;
     //   defer _ = gpa.deinit();
     //
     //   const allocator = gpa.allocator();
     // --------------------------------------------------------------
-    var t0 = try std.time.Timer.start();
+    var t0: std.time.Timer = try .start();
     // --------------------------------------------------------------
-    var hgen = try HarmonicGenerator.init(allocator);
+    var hgen: HarmonicGenerator = try .init(allocator);
     defer hgen.deinit();
 
     try stdout.writeAll("First 20 harmonic numbers:\n");
@@ -73,14 +71,14 @@ const HarmonicGenerator = struct {
     n: usize,
     term: Rational,
     reciprocal: Rational,
-    allocator: mem.Allocator,
+    allocator: std.mem.Allocator,
 
-    fn init(allocator: mem.Allocator) !HarmonicGenerator {
+    fn init(allocator: std.mem.Allocator) !HarmonicGenerator {
         return .{
             .n = 0,
-            .term = try Rational.init(allocator), // {.p=0,.q=1}
+            .term = try .init(allocator), // {.p=0,.q=1}
             .allocator = allocator,
-            .reciprocal = try Rational.init(allocator),
+            .reciprocal = try .init(allocator),
         };
     }
 
@@ -98,7 +96,7 @@ const HarmonicGenerator = struct {
         self.n += 1;
         try self.reciprocal.setRatio(1, self.n);
 
-        var rma = try Rational.init(self.allocator);
+        var rma: Rational = try .init(self.allocator);
         try rma.add(self.term, self.reciprocal);
 
         try self.term.copyRatio(rma.p, rma.q);

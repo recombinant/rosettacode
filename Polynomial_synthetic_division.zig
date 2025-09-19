@@ -1,14 +1,11 @@
 // https://rosettacode.org/wiki/Polynomial_synthetic_division
-// Translation of: Go
+// {{works with|Zig|0.14.1}}
+// {{trans|Go}}
 const std = @import("std");
-const fmt = std.fmt;
-const heap = std.heap;
-const io = std.io;
-const mem = std.mem;
 const Rational = std.math.big.Rational;
 
 pub fn main() !void {
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -25,7 +22,7 @@ pub fn main() !void {
         destroyPolynomial(allocator, R);
     }
 
-    const stdout = io.getStdOut().writer();
+    const stdout = std.io.getStdOut().writer();
 
     try printPolynomial(stdout, N);
     try stdout.writeAll(" div ");
@@ -42,7 +39,7 @@ fn printPolynomial(writer: anytype, rationals: []Rational) !void {
     try writer.writeAll("[");
 
     var buffer: [256]u8 = undefined;
-    var fba = heap.FixedBufferAllocator.init(&buffer);
+    var fba: std.heap.FixedBufferAllocator = .init(&buffer);
     const allocator = fba.allocator();
 
     var started = false;
@@ -64,7 +61,7 @@ fn printPolynomial(writer: anytype, rationals: []Rational) !void {
 /// e.g.: x**2 + 3*x + 5 will be represented as [1, 3, 5]
 ///
 /// Returns {quotient, remainder}. Caller owns returned slices' memory.
-fn extendedSyntheticDivision(allocator: mem.Allocator, dividend: []const Rational, divisor: []const Rational) !struct { []Rational, []Rational } {
+fn extendedSyntheticDivision(allocator: std.mem.Allocator, dividend: []const Rational, divisor: []const Rational) !struct { []Rational, []Rational } {
     const out = try dupePolynomial(allocator, dividend);
     defer allocator.free(out); // Rational contents are moved for return
 
@@ -78,7 +75,7 @@ fn extendedSyntheticDivision(allocator: mem.Allocator, dividend: []const Rationa
 
         const coef = out[i];
         if (!coef.p.eqlZero()) { // Useless to multiply if coef is 0
-            var tmp = try Rational.init(allocator);
+            var tmp: Rational = try .init(allocator);
             defer tmp.deinit();
             // In synthetic division, we always skip the first coefficient of the divisor,
             // because it is only used to normalize the dividend coefficients
@@ -103,28 +100,28 @@ fn extendedSyntheticDivision(allocator: mem.Allocator, dividend: []const Rationa
 }
 
 /// Caller owns returned slice memory.
-fn createPolynomial(allocator: mem.Allocator, T: type, array: []const T) ![]Rational {
+fn createPolynomial(allocator: std.mem.Allocator, T: type, array: []const T) ![]Rational {
     if (@typeInfo(T) != .int)
         @compileError("createPolynomial requires an integer, found " ++ @typeName(T));
 
     const result = try allocator.alloc(Rational, array.len);
     for (result, array) |*rat, n| {
-        rat.* = try Rational.init(allocator);
+        rat.* = try .init(allocator);
         try rat.setInt(n);
     }
     return result;
 }
 
-fn dupePolynomial(allocator: mem.Allocator, rationals: []const Rational) ![]Rational {
+fn dupePolynomial(allocator: std.mem.Allocator, rationals: []const Rational) ![]Rational {
     const result = try allocator.alloc(Rational, rationals.len);
     for (result, rationals) |*dest, source| {
-        dest.* = try Rational.init(allocator);
+        dest.* = try .init(allocator);
         try dest.copyRatio(source.p, source.q);
     }
     return result;
 }
 
-fn destroyPolynomial(allocator: mem.Allocator, rationals: []Rational) void {
+fn destroyPolynomial(allocator: std.mem.Allocator, rationals: []Rational) void {
     for (rationals) |*r|
         r.deinit();
 

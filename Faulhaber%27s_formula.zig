@@ -1,5 +1,7 @@
 // https://rosettacode.org/wiki/Faulhaber%27s_formula
-// Translation of Python
+// {{works with|Zig|0.14.1}}
+// {{trans|Python}}
+
 // Over four times the size of the Python implementation
 // (bloated primarily by allocation, rational arithmetic
 // and pretty printing code)
@@ -15,7 +17,6 @@
 // measureably faster program than using a single general
 // purpose allocator.
 const std = @import("std");
-const mem = std.mem;
 const Int = std.math.big.int.Managed;
 const Rational = std.math.big.Rational;
 
@@ -24,16 +25,16 @@ const use_ephemeral_allocator = true; // true uses (faster) ArenaAllocator
 const use_pretty_print = true; // false uses ASCII
 
 pub fn main() !void {
-    var t0 = try std.time.Timer.start();
+    var t0: std.time.Timer = try .start();
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     var arena: std.heap.ArenaAllocator = undefined;
-    var ephemeral_allocator: mem.Allocator = undefined;
+    var ephemeral_allocator: std.mem.Allocator = undefined;
     if (use_ephemeral_allocator) {
-        arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+        arena = .init(std.heap.page_allocator);
         ephemeral_allocator = arena.allocator();
     } else {
         ephemeral_allocator = allocator;
@@ -44,7 +45,7 @@ pub fn main() !void {
     const writer = bw.writer();
 
     // 64 bit numbers can generate the first 20 expressions before failure caused by integer overflow.
-    var it = SumPolynomialIterator(10).init(allocator);
+    var it: SumPolynomialIterator(10) = .init(allocator);
     defer it.deinit();
 
     var i: usize = 0;
@@ -64,17 +65,17 @@ pub fn main() !void {
 fn SumPolynomialIterator(comptime n: usize) type {
     return struct {
         const Self = @This();
-        allocator: mem.Allocator,
+        allocator: std.mem.Allocator,
         count: usize,
         u: std.ArrayList(u64),
         v: std.ArrayList([]const i64),
 
-        fn init(allocator: mem.Allocator) Self {
+        fn init(allocator: std.mem.Allocator) Self {
             return Self{
                 .allocator = allocator,
                 .count = 0,
-                .u = std.ArrayList(u64).init(allocator),
-                .v = std.ArrayList([]const i64).init(allocator),
+                .u = .init(allocator),
+                .v = .init(allocator),
             };
         }
         fn deinit(self: *Self) void {
@@ -83,7 +84,7 @@ fn SumPolynomialIterator(comptime n: usize) type {
                 self.allocator.free(a);
             self.v.deinit();
         }
-        fn next(self: *Self, ephemeral_allocator: mem.Allocator) !?SumPolynomialResult {
+        fn next(self: *Self, ephemeral_allocator: std.mem.Allocator) !?SumPolynomialResult {
             const allocator = ephemeral_allocator;
             switch (self.count) {
                 0 => {
@@ -95,8 +96,8 @@ fn SumPolynomialIterator(comptime n: usize) type {
                     @memcpy(v1, &[2]i64{ 1, 1 });
                     try self.v.appendSlice(&[2][]const i64{ v0, v1 });
                     //
-                    var zero = try Rational.init(ephemeral_allocator);
-                    var one = try Rational.init(ephemeral_allocator);
+                    var zero: Rational = try .init(ephemeral_allocator);
+                    var one: Rational = try .init(ephemeral_allocator);
                     try zero.setInt(0);
                     try one.setInt(1);
                     var t = try allocator.alloc(Rational, 2);
@@ -111,21 +112,21 @@ fn SumPolynomialIterator(comptime n: usize) type {
                     self.count += 1;
                     try self.v.append(try self.nextv());
                     // t = [0] * (i + 2)
-                    var zero = try Int.initSet(allocator, 0);
+                    var zero: Int = try .initSet(allocator, 0);
                     defer if (!use_ephemeral_allocator) zero.deinit();
                     const t = try allocator.alloc(Rational, self.count + 2);
                     for (t) |*value| {
-                        value.* = try Rational.init(allocator);
+                        value.* = try .init(allocator);
                         try value.copyInt(zero);
                     }
                     // initialize here for repeated reuse in for() loop
-                    var r = try Rational.init(allocator);
+                    var r: Rational = try .init(allocator);
                     defer if (!use_ephemeral_allocator) r.deinit();
-                    var s = try Rational.init(allocator);
+                    var s: Rational = try .init(allocator);
                     defer if (!use_ephemeral_allocator) s.deinit();
-                    var rma1 = try Rational.init(allocator);
+                    var rma1: Rational = try .init(allocator);
                     defer if (!use_ephemeral_allocator) rma1.deinit();
-                    var rma2 = try Rational.init(allocator);
+                    var rma2: Rational = try .init(allocator);
                     defer if (!use_ephemeral_allocator) rma2.deinit();
 
                     const u: []const u64 = self.u.items;
@@ -168,14 +169,14 @@ fn SumPolynomialIterator(comptime n: usize) type {
 }
 
 const SumPolynomialResult = struct {
-    allocator: mem.Allocator,
+    allocator: std.mem.Allocator,
     t: []Rational,
     one: Int,
-    fn init(allocator: mem.Allocator, t: []Rational) !SumPolynomialResult {
+    fn init(allocator: std.mem.Allocator, t: []Rational) !SumPolynomialResult {
         return SumPolynomialResult{
             .allocator = allocator,
             .t = t,
-            .one = try Int.initSet(allocator, 1),
+            .one = try .initSet(allocator, 1),
         };
     }
     fn deinit(self: *SumPolynomialResult) void {
@@ -187,16 +188,14 @@ const SumPolynomialResult = struct {
             self.one.deinit();
         }
     }
-    pub fn format(self: *const SumPolynomialResult, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
-        _ = fmt;
-        _ = options;
+    pub fn format(self: *const SumPolynomialResult, comptime _: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
         const allocator = self.allocator;
-        var tmp = try Int.init(allocator);
+        var tmp: Int = try .init(allocator);
         defer if (!use_ephemeral_allocator) tmp.deinit();
         var first = true;
         const t = try allocator.dupe(Rational, self.t);
         defer if (!use_ephemeral_allocator) allocator.free(t);
-        mem.reverse(Rational, t);
+        std.mem.reverse(Rational, t);
         for (t, 1..) |value, i| {
             const power = self.t.len - i;
             if (value.p.eqlZero())

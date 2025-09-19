@@ -1,14 +1,8 @@
 // https://rosettacode.org/wiki/Evaluate_binomial_coefficients
+// {{works with|Zig|0.14.1}}
 const std = @import("std");
-const heap = std.heap;
-const io = std.io;
-const math = std.math;
-const mem = std.mem;
-
-const Rational = math.big.Rational;
-const Int = math.big.int.Managed;
-
-const assert = std.debug.assert;
+const Rational = std.math.big.Rational;
+const Int = std.math.big.int.Managed;
 
 pub fn main() !void {
     try example1();
@@ -19,7 +13,7 @@ pub fn main() !void {
 // --------------------------------------------------------------
 
 pub fn example1() !void {
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -30,7 +24,7 @@ pub fn example1() !void {
     defer b2.deinit();
     defer b3.deinit();
 
-    const stdout = io.getStdOut().writer();
+    const stdout = std.io.getStdOut().writer();
     try stdout.print("Example 1 (rational numbers)\n", .{});
     try stdout.print("{d}\n", .{b1});
     try stdout.print("{d}\n", .{b2});
@@ -38,10 +32,10 @@ pub fn example1() !void {
 }
 
 /// Using rational numbers.
-fn binomialCoeff1(allocator: mem.Allocator, n: usize, k: usize) !Int {
-    var result = try Rational.init(allocator);
-    var factor = try Rational.init(allocator);
-    var temp = try Rational.init(allocator);
+fn binomialCoeff1(allocator: std.mem.Allocator, n: usize, k: usize) !Int {
+    var result: Rational = try .init(allocator);
+    var factor: Rational = try .init(allocator);
+    var temp: Rational = try .init(allocator);
     defer result.deinit();
     defer factor.deinit();
     defer temp.deinit();
@@ -53,7 +47,7 @@ fn binomialCoeff1(allocator: mem.Allocator, n: usize, k: usize) !Int {
         // avoid alias inefficiency when multiplying
         try temp.copyRatio(result.p, result.q);
         try result.mul(temp, factor);
-        assert(try result.q.to(usize) == 1);
+        std.debug.assert(try result.q.to(usize) == 1);
     }
     return result.p.clone();
 }
@@ -61,7 +55,7 @@ fn binomialCoeff1(allocator: mem.Allocator, n: usize, k: usize) !Int {
 // --------------------------------------------------------------
 
 pub fn example2() !void {
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -72,7 +66,7 @@ pub fn example2() !void {
     defer r2.deinit();
     defer r3.deinit();
 
-    const stdout = io.getStdOut().writer();
+    const stdout = std.io.getStdOut().writer();
     try stdout.print("Example 2 (big integers)\n", .{});
     try stdout.print("{d}\n", .{r1});
     try stdout.print("{d}\n", .{r2});
@@ -80,12 +74,12 @@ pub fn example2() !void {
 }
 
 /// Using big integers.
-fn binomialCoeff2(allocator: mem.Allocator, n: usize, k: usize) !Int {
-    var result = try Int.initSet(allocator, 1);
-    var temp = try Int.init(allocator);
-    var numerator = try Int.init(allocator);
-    var denominator = try Int.init(allocator);
-    var rem = try Int.init(allocator);
+fn binomialCoeff2(allocator: std.mem.Allocator, n: usize, k: usize) !Int {
+    var result: Int = try .initSet(allocator, 1);
+    var temp: Int = try .init(allocator);
+    var numerator: Int = try .init(allocator);
+    var denominator: Int = try .init(allocator);
+    var rem: Int = try .init(allocator);
     defer temp.deinit();
     defer numerator.deinit();
     defer denominator.deinit();
@@ -96,7 +90,7 @@ fn binomialCoeff2(allocator: mem.Allocator, n: usize, k: usize) !Int {
         try denominator.set(i);
         try temp.mul(&result, &numerator);
         try result.divTrunc(&rem, &temp, &denominator);
-        assert(rem.eqlZero());
+        std.debug.assert(rem.eqlZero());
     }
     return result;
 }
@@ -104,7 +98,7 @@ fn binomialCoeff2(allocator: mem.Allocator, n: usize, k: usize) !Int {
 // --------------------------------------------------------------
 
 fn example3() !void {
-    const stdout = io.getStdOut().writer();
+    const stdout = std.io.getStdOut().writer();
     try stdout.print("Example 3 (translation of C)\n", .{});
     try stdout.print("{d}\n", .{try binomialCoeff(u16, 5, 3)});
     try stdout.print("{d}\n", .{try binomialCoeff(u64, 40, 19)});
@@ -128,14 +122,14 @@ fn binomialCoeff(comptime T: type, n_: T, k_: T) BinomialCoeffError!T {
     var r: T = 1;
     var d: T = 1;
     while (d <= k) : (d += 1) {
-        if (r >= math.maxInt(T) / n) { // Possible overflow?
-            var g = math.gcd(n, d);
+        if (r >= std.math.maxInt(T) / n) { // Possible overflow?
+            var g = std.math.gcd(n, d);
             const nr = n / g;
             var dr = d / g; // reduced numerator / denominator
-            g = math.gcd(r, dr);
+            g = std.math.gcd(r, dr);
             r /= g;
             dr /= g;
-            if (r >= math.maxInt(T) / nr)
+            if (r >= std.math.maxInt(T) / nr)
                 return BinomialCoeffError.Overflow; // Unavoidable overflow
             r *= nr;
             r /= dr;
