@@ -1,15 +1,19 @@
 // https://rosettacode.org/wiki/Achilles_numbers
-// Translation of C++
-pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
+const std = @import("std");
 
+pub fn main() !void {
+    var t0: std.time.Timer = try .start();
+    // ------------------------------------------------------- stdout
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // ---------------------------------------------------- allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
+    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // --------------------------------------------------------------
-
-    var t0 = try std.time.Timer.start();
 
     const limit: u64 = 1_000_000_000_000_000;
 
@@ -18,21 +22,23 @@ pub fn main() !void {
     const ach = try achilles(allocator, u64, 1, 1_000_000, pps);
     defer allocator.free(ach);
 
-    try writer.writeAll("First 50 Achilles numbers:\n");
+    try stdout.writeAll("First 50 Achilles numbers:\n");
     for (ach[0..@min(50, ach.len)], 1..) |a, i|
-        try writer.print("{d:7}{c}", .{ a, @as(u8, if (i % 10 == 0) '\n' else ' ') });
+        try stdout.print("{d:7}{c}", .{ a, @as(u8, if (i % 10 == 0) '\n' else ' ') });
+    try stdout.flush();
 
-    try writer.writeAll("\nFirst 50 strong Achilles numbers:\n");
+    try stdout.writeAll("\nFirst 50 strong Achilles numbers:\n");
     var i: usize = 0;
     var count: usize = 0;
     while (count < 50 and i < ach.len) : (i += 1)
         if (std.sort.binarySearch(u64, ach, totient(ach[i]), orderU64) != null) {
             count += 1;
-            try writer.print("{d:7}{c}", .{ ach[i], @as(u8, if (count % 10 == 0) '\n' else ' ') });
+            try stdout.print("{d:7}{c}", .{ ach[i], @as(u8, if (count % 10 == 0) '\n' else ' ') });
         };
+    try stdout.flush();
 
     var digits: usize = 2;
-    try writer.writeAll("\nNumber of Achilles numbers with:\n");
+    try stdout.writeAll("\nNumber of Achilles numbers with:\n");
     var from: u64 = 1;
     var to: u64 = 100;
     while (to <= limit) : ({
@@ -40,12 +46,15 @@ pub fn main() !void {
         digits += 1;
     }) {
         const ach2 = try achilles(allocator, u64, from, to, pps);
-        try writer.print("{d:2} digits: {d}\n", .{ digits, ach2.len });
+        try stdout.print("{d:2} digits: {d}\n", .{ digits, ach2.len });
+        try stdout.flush();
         allocator.free(ach2);
         from = to;
     }
+    try stdout.writeByte('\n');
+    try stdout.flush();
 
-    std.log.info("processed in {}\n", .{std.fmt.fmtDuration(t0.read())});
+    std.log.info("processed in {D}", .{t0.read()});
 }
 
 /// The original C++ implementation removed duplicates.
@@ -64,7 +73,7 @@ fn uniqueSort(T: type, vector: *std.ArrayList(T)) void {
     // std.mem.sort(T, vector.items, {}, std.sort.asc(T));
 
     // Plan B - sort
-    std.mem.sort(T, vector.items, {}, std.sort.asc(T));
+    std.mem.sortUnstable(T, vector.items, {}, std.sort.asc(T));
 }
 
 fn perfectPowers(allocator: std.mem.Allocator, n: anytype) ![]@TypeOf(n) {
@@ -75,16 +84,16 @@ fn perfectPowers(allocator: std.mem.Allocator, n: anytype) ![]@TypeOf(n) {
     // to prevent variable p overflow
     const P = std.meta.Int(.unsigned, @typeInfo(T).int.bits * 2); // u128 in long-hand
 
-    var result: std.ArrayList(T) = .init(allocator);
+    var result: std.ArrayList(T) = .empty;
     const s = std.math.sqrt(n);
     var i: T = 2;
     while (i <= s) : (i += 1) {
         var p: P = i * i;
         while (p < n) : (p *= i)
-            try result.append(@intCast(p));
+            try result.append(allocator, @intCast(p));
     }
     uniqueSort(T, &result);
-    return result.toOwnedSlice();
+    return result.toOwnedSlice(allocator);
 }
 
 fn orderU64(context: u64, item: u64) std.math.Order {
@@ -94,7 +103,7 @@ fn orderU64(context: u64, item: u64) std.math.Order {
 fn achilles(allocator: std.mem.Allocator, T: type, from: T, to: T, pps: []T) ![]T {
     if (@typeInfo(T) != .int or @typeInfo(T).int.signedness != .unsigned)
         @compileError("achilles() expected unsigned integer type argument, found " ++ @typeName(T));
-    var result: std.ArrayList(T) = .init(allocator);
+    var result: std.ArrayList(T) = .empty;
     const c: T = @intFromFloat(std.math.cbrt(@as(f64, @floatFromInt(to / 4))));
     const s = std.math.sqrt(to / 8);
     var b: T = 2;
@@ -106,11 +115,11 @@ fn achilles(allocator: std.mem.Allocator, T: type, from: T, to: T, pps: []T) ![]
             if (p >= to)
                 break;
             if (p >= from and std.sort.binarySearch(T, pps, p, orderU64) == null)
-                try result.append(p);
+                try result.append(allocator, p);
         }
     }
     uniqueSort(T, &result);
-    return result.toOwnedSlice();
+    return result.toOwnedSlice(allocator);
 }
 
 // /// Simple implementation of totient
@@ -178,6 +187,3 @@ fn phi(n: anytype) @TypeOf(n) {
         result += @intFromBool(coprime(k, n) == 1);
     return result;
 }
-// ==============================================================
-
-const std = @import("std");

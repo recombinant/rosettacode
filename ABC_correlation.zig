@@ -1,4 +1,6 @@
 // https://rosettacode.org/wiki/ABC_correlation
+// {{works with|Zig|0.15.1}}
+const std = @import("std");
 
 // Assuming only lower case ASCII letters ('a' to 'z' inclusive)
 // other ASCII characters encountered will be ignored.
@@ -18,13 +20,15 @@ fn isAbcWord(word: []const u8) bool {
 }
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const words = "aluminium abc internet adb cda blank black mercury venus earth mars jupiter saturn uranus neptune pluto";
     var it1 = std.mem.tokenizeScalar(u8, words, ' ');
     while (it1.next()) |word|
         if (isAbcWord(word))
-            try writer.print("{s} is an \"abc\" word\n", .{word});
+            try stdout.print("{s} is an \"abc\" word\n", .{word});
 
     const data = @embedFile("data/unixdict.txt");
     var count: usize = 0;
@@ -33,8 +37,12 @@ pub fn main() !void {
         if (isAbcWord(word)) {
             count += 1;
         };
-    try writer.print("\nThere are {} abc words in unixdict.txt\n", .{count});
+    try stdout.print("\nThere are {} abc words in unixdict.txt\n", .{count});
+
+    try stdout.flush();
 }
+
+const testing = std.testing;
 
 test isAbcWord {
     try testing.expect(!isAbcWord("")); // no 'a', 'b' or 'c'
@@ -47,6 +55,3 @@ test isAbcWord {
     try testing.expect(isAbcWord("DaEbFcGcHbIaJ"));
     try testing.expect(isAbcWord("AbacC"));
 }
-
-const std = @import("std");
-const testing = std.testing;

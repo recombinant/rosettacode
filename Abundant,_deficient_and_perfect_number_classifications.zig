@@ -1,8 +1,12 @@
 // https://rosettacode.org/wiki/Abundant,_deficient_and_perfect_number_classifications
+// {{works with|Zig|0.15.1}}
+const std = @import("std");
+const assert = std.debug.assert;
+
 pub fn main() !void {
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var deficient: u64 = 1; // 1 is deficient by default, add it to deficient
     var perfect: u64 = 0;
@@ -23,7 +27,7 @@ pub fn main() !void {
     try stdout.print("  Perfect   = {d}\n", .{perfect});
     try stdout.print("  Abundant  = {d}\n", .{abundant});
 
-    try bw.flush();
+    try stdout.flush();
 }
 
 // From the C implementation. Less looping.
@@ -42,6 +46,3 @@ fn sumProperDivisors(number: u64) u64 {
     }
     return sum;
 }
-
-const std = @import("std");
-const assert = std.debug.assert;
