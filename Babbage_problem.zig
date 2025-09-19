@@ -1,7 +1,7 @@
 // https://rosettacode.org/wiki/Babbage_problem
-// Translation of D
+// {{works with|Zig|0.15.1}}
+// {{trans|D}}
 const std = @import("std");
-const math = std.math;
 const print = std.debug.print;
 
 // Quote from the D example:
@@ -13,13 +13,13 @@ pub fn main() void {
     const Integer = u32; // 32 binary bits to represent integer number.
 
     // The number. Start at minimum number possible.
-    var n: Integer = math.sqrt(269696);
+    var n: Integer = std.math.sqrt(269696);
 
     if (n % 2 == 1) // If root is odd, make it even.
         n -= 1;
 
     // Largest number that can represent the square root of target.
-    const upper_bound: Integer = math.sqrt(math.maxInt(Integer));
+    const upper_bound: Integer = std.math.sqrt(std.math.maxInt(Integer));
 
     // Cycle through the numbers.
     // Remainder division to check if last 6 last digits are 269696
