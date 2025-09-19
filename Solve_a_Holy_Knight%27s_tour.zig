@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Solve_a_Holy_Knight%27s_tour
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 const assert = std.debug.assert;
 
@@ -28,26 +29,34 @@ const board2 =
     ".....x.x.....";
 
 pub fn main() anyerror!void {
-    const stdout = std.io.getStdOut().writer();
+    // unbuffered
+    var stderr_buffer: [0]u8 = undefined;
+    var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
+    const stderr = &stderr_writer.interface;
+    // buffered
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     findSolution(stdout, board1, 8) catch |err| {
         switch (err) {
-            SolutionError.CannotSolve => try std.io.getStdErr().writer().print("Cannot solve this puzzle!", .{}),
+            SolutionError.CannotSolve => try stderr.print("Cannot solve this puzzle!", .{}),
             else => return err,
         }
     };
+    try stdout.flush();
 
-    try stdout.print("\n", .{});
-
+    try stdout.writeByte('\n');
     findSolution(stdout, board2, 13) catch |err| {
         switch (err) {
-            SolutionError.CannotSolve => try std.io.getStdErr().writer().print("Cannot solve this puzzle!", .{}),
+            SolutionError.CannotSolve => try stderr.print("Cannot solve this puzzle!", .{}),
             else => return err,
         }
     };
+    try stdout.flush();
 }
 
-// This could have been a member of BoardState - it here to demonstrate uses
+// This could have been a member of BoardState - it is here to demonstrate uses
 // of Zig comptime
 fn solve(comptime sz: usize, pz: *BoardState(sz), sx: usize, sy: usize, idx: u9, cnt: usize) bool {
     if (idx > cnt) return true;
@@ -147,8 +156,8 @@ fn BoardState(comptime sz: usize) type {
 const SolutionError = error{
     CannotSolve,
 };
-fn findSolution(writer: anytype, board: []const u8, comptime sz: usize) anyerror!void {
-    var pz = BoardState(sz){};
+fn findSolution(w: *std.Io.Writer, board: []const u8, comptime sz: usize) anyerror!void {
+    var pz: BoardState(sz) = .{};
 
     const start = try pz.populate(board);
 
@@ -156,11 +165,11 @@ fn findSolution(writer: anytype, board: []const u8, comptime sz: usize) anyerror
         for (0..sz) |j| {
             for (0..sz) |i|
                 switch (pz.at(i, j).*) {
-                    .index => |n| try writer.print("{d:0>2}  ", .{n}),
-                    .blocked => try writer.print("--  ", .{}),
+                    .index => |n| try w.print("{d:0>2}  ", .{n}),
+                    .blocked => try w.print("--  ", .{}),
                     .available => unreachable,
                 };
-            try writer.print("\n", .{});
+            try w.writeByte('\n');
         }
         return;
     } else {
