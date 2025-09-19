@@ -1,8 +1,11 @@
 // https://rosettacode.org/wiki/Bell_numbers
 const std = @import("std");
+// {{works with|Zig|0.15.1}}
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const rows = 50;
     const bt = bellTriangle(rows);
@@ -21,6 +24,8 @@ pub fn main() !void {
             try stdout.print(", {d:5}", .{getBell(slice, i, j)});
         try stdout.writeByte('\n');
     }
+
+    try stdout.flush();
 }
 
 /// row starts with 1; col < row
