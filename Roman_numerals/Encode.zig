@@ -1,15 +1,16 @@
 // https://rosettacode.org/wiki/Roman_numerals/Encode
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
-const testing = std.testing;
 
 pub fn main() !void {
     // ------------------------------------------ allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // --------------------------------------------- stdout
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // ----------------------------------------------------
 
     const sample_numbers = [_]u16{
@@ -26,10 +27,12 @@ pub fn main() !void {
         defer allocator.free(r);
         try stdout.print("{d:4}: {s}\n", .{ number, r });
     }
+
+    try stdout.flush();
 }
 
 // Caller owns returned memory slice.
-fn encode(allocator: mem.Allocator, n_: u16) ![]const u8 {
+fn encode(allocator: std.mem.Allocator, n_: u16) ![]const u8 {
     const pairs = comptime [_]struct { roman: []const u8, arabic: u16 }{
         .{ .roman = "M", .arabic = 1000 }, .{ .roman = "CM", .arabic = 900 },
         .{ .roman = "D", .arabic = 500 },  .{ .roman = "CD", .arabic = 400 },
@@ -42,19 +45,20 @@ fn encode(allocator: mem.Allocator, n_: u16) ![]const u8 {
 
     var n = n_;
 
-    var array = std.ArrayList(u8).init(allocator);
-    const writer = array.writer();
+    var array: std.ArrayList(u8) = .empty;
 
     for (pairs) |pair|
         while (n >= pair.arabic) {
-            try writer.writeAll(pair.roman);
+            try array.appendSlice(allocator, pair.roman);
             n -= pair.arabic;
         };
 
-    return array.toOwnedSlice();
+    return array.toOwnedSlice(allocator);
 }
 
-fn testEncode(allocator: mem.Allocator, roman: u16, arabic: []const u8) !void {
+const testing = std.testing;
+
+fn testEncode(allocator: std.mem.Allocator, roman: u16, arabic: []const u8) !void {
     const actual = try encode(allocator, roman);
     try testing.expectEqualStrings(arabic, actual);
     allocator.free(actual);

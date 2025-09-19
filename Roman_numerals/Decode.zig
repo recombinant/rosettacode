@@ -1,14 +1,18 @@
 // https://rosettacode.org/wiki/Roman_numerals/Decode
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const math = std.math;
 const testing = std.testing;
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const samples = [_][]const u8{ "MCMXC", "MMVIII", "MDCLXVI", "IV", "I", "MLXVI", "IIC" };
     for (samples) |r|
         try stdout.print("{s} {d}\n", .{ r, try decode(r) });
+
+    try stdout.flush();
 }
 
 fn decode(roman: []const u8) RomanDecodeError!u16 {
@@ -20,7 +24,7 @@ fn decode(roman: []const u8) RomanDecodeError!u16 {
         const rd = try rdecode(roman[i]);
         const rd1 = try rdecode(roman[i + 1]);
         sum += rd;
-        switch (math.order(rd, rd1)) {
+        switch (std.math.order(rd, rd1)) {
             .lt => result -%= sum,
             .eq => continue,
             .gt => result +%= sum,
