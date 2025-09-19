@@ -1,55 +1,59 @@
 // https://rosettacode.org/wiki/Extensible_prime_generator
+// {{works with|Zig|0.15.1}}
 // Copied from rosettacode
+
 const std = @import("std");
-const fmt = std.fmt;
-const io = std.io;
-const heap = std.heap;
-const math = std.math;
-const time = std.time;
 // const sieve = @import("sieve.zig");
-const sieve = @import("Extensible_prime_generator_alternate.zig");
 // const sieve = @import("Extensible_prime_generator.zig");
+const sieve = @import("Extensible_prime_generator_alternate.zig");
 const PrimeGen = sieve.PrimeGen;
 
 pub fn main() !void {
-    var t0 = try time.Timer.start();
+    var t0: std.time.Timer = try .start();
 
-    const stdout = io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     try part1(stdout);
     try part2(stdout);
     try part3(stdout);
 
-    try stdout.print("\nprocessed in {}\n", .{fmt.fmtDuration(t0.read())});
+    try stdout.flush();
+
+    std.log.info("processed in {D}", .{t0.read()});
 }
 
 // exercise 1: Print small primes
-fn part1(writer: anytype) !void {
-    var arena = heap.ArenaAllocator.init(heap.page_allocator);
+fn part1(w: *std.Io.Writer) !void {
+    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    var primes = PrimeGen(u8).init(allocator);
+    var primes: PrimeGen(u8) = .init(allocator);
     defer primes.deinit();
 
-    try writer.print("The first 20 primes:", .{});
+    try w.writeAll("The first 20 primes:");
     while (try primes.next()) |p| {
-        try writer.print(" {}", .{p});
+        try w.print(" {}", .{p});
         if (primes.count == 20)
             break;
     }
-    try writer.print("\nThe primes between 100 and 150:", .{});
+    try w.writeAll("\nThe primes between 100 and 150:");
     while (try primes.next()) |p| if (p >= 100 and p <= 150)
-        try writer.print(" {}", .{p});
-    try writer.print("\n", .{});
+        try w.print(" {}", .{p});
+    try w.writeByte('\n');
+
+    try w.flush();
 }
 
 // exercise 2: count medium primes
-fn part2(writer: anytype) !void {
-    var arena = heap.ArenaAllocator.init(heap.page_allocator);
+fn part2(w: *std.Io.Writer) !void {
+    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    var primes = PrimeGen(sieve.AutoSieveType(8000)).init(allocator);
+    var primes: PrimeGen(sieve.AutoSieveType(8000)) = .init(allocator);
     defer primes.deinit();
 
     const lower = 7700;
@@ -67,19 +71,20 @@ fn part2(writer: anytype) !void {
     var buffer1: [max_chars]u8 = undefined;
     var buffer2: [max_chars]u8 = undefined;
 
-    try writer.print(
+    try w.print(
         "There are {} primes between {s} and {s}.\n",
         .{ count, try commatize(&buffer1, lower), try commatize(&buffer2, upper) },
     );
+    try w.flush();
 }
 
 // exercise 3: find big primes
-fn part3(writer: anytype) !void {
-    var arena = heap.ArenaAllocator.init(heap.page_allocator);
+fn part3(w: *std.Io.Writer) !void {
+    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    var primes = PrimeGen(u32).init(allocator);
+    var primes: PrimeGen(u32) = .init(allocator);
     defer primes.deinit();
 
     const max_chars = comptime maxDecimalCommatized();
@@ -89,10 +94,11 @@ fn part3(writer: anytype) !void {
     var c: u32 = 10;
     while (try primes.next()) |p| {
         if (primes.count == c) {
-            try writer.print(
+            try w.print(
                 "The {s}th prime is {s}\n",
                 .{ try commatize(&buffer1, c), try commatize(&buffer2, p) },
             );
+            try w.flush();
             if (c == 100_000_000)
                 break;
             c *= 10;
@@ -103,20 +109,19 @@ fn part3(writer: anytype) !void {
 fn commatize(buffer: []u8, n: u64) ![]const u8 {
     // number as string without commas
     var buffer2: [maxDecimalChars(@TypeOf(n))]u8 = undefined;
-    const size = fmt.formatIntBuf(&buffer2, n, 10, .lower, .{});
+    const size = std.fmt.printInt(&buffer2, n, 10, .lower, .{});
     const s = buffer2[0..size];
     //
-    var stream = io.fixedBufferStream(buffer);
-    const writer = stream.writer();
+    var w: std.Io.Writer = .fixed(buffer);
 
     // write number string as string with inserted commas
     const last = s.len - 1;
     for (s, 0..) |c, idx| {
-        try writer.writeByte(c);
+        try w.writeByte(c);
         if (last - idx != 0 and (last - idx) % 3 == 0)
-            try writer.writeByte(',');
+            try w.writeByte(',');
     }
-    return stream.getWritten();
+    return w.buffered();
 }
 
 fn maxDecimalCommatized() usize {
@@ -130,7 +135,7 @@ fn maxDecimalCommatized() usize {
 fn maxDecimalChars(comptime T: type) usize {
     if (@typeInfo(T) != .int or @typeInfo(T).int.signedness != .unsigned)
         @compileError("type must be an unsigned integer.");
-    const max_int: comptime_float = @floatFromInt(math.maxInt(T));
+    const max_int: comptime_float = @floatFromInt(std.math.maxInt(T));
     return @intFromFloat(@log10(max_int) + 1);
 }
 
@@ -145,12 +150,11 @@ const testing = std.testing;
 
 test part2 {
     var buffer: [200]u8 = undefined;
-    var stream = io.fixedBufferStream(&buffer);
-    const writer = stream.writer();
+    var w: std.Io.Writer = .fixed(&buffer);
 
-    try part2(writer);
+    try part2(&w);
 
-    const expected = "There are 30 primes between 7700 and 8000.\n";
+    const expected = "There are 30 primes between 7,700 and 8,000.\n";
 
-    try testing.expectEqualStrings(expected, stream.getWritten());
+    try testing.expectEqualStrings(expected, w.buffered());
 }

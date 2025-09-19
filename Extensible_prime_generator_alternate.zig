@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Extensible_prime_generator
+// {{works with|Zig|0.15.1}}
 // Copied from rosettacode
 
 // Alternative version based on "Two Compact Incremental Prime Sieves" by Jonathon P. Sorenson.
@@ -28,86 +29,6 @@
 // than using an indirection (e.g. linked list of integer cells)
 //
 const std = @import("std");
-const math = std.math;
-const meta = std.meta;
-const mem = std.mem;
-const assert = std.debug.assert;
-
-fn assertInt(comptime T: type) void {
-    if (@typeInfo(T) != .int)
-        @compileError("data type must be an integer.");
-    const info = @typeInfo(T).int;
-    if (info.signedness == .signed or info.bits % 2 == 1 or info.bits < 4 or info.bits > 64)
-        @compileError("type must be an unsigned integer with even bit size (of at least 4 bits).");
-}
-
-// given a type, return the maximum stack size required by the algorthm.
-fn listSize(comptime T: type) usize {
-    assertInt(T);
-    const primes = [_]u6{
-        2,  3,  5,  7,  11, 13, 17, 19,
-        23, 29, 31, 37, 41, 43, 47, 53,
-    };
-    // Find the first primorial that will overflow type T.
-    // the size of the list is the primorial index minus one,
-    // since the sieve doesn't include 2.
-    //
-    var i: usize = 0;
-    var pi: T = 1;
-    while (true) {
-        pi, const overflow = @mulWithOverflow(pi, primes[i]);
-        if (overflow == 0)
-            i += 1
-        else
-            break;
-    }
-    return i - 1;
-}
-
-fn SqrtType(comptime T: type) type {
-    assertInt(T);
-    return meta.Int(.unsigned, @typeInfo(T).int.bits / 2);
-}
-
-// stack type (actually just an array list)
-fn ArrayList(comptime T: type) type {
-    assertInt(T);
-    return [listSize(T)]SqrtType(T);
-}
-
-// given an upper bound, max, return the most restrictive sieving data type.
-pub fn AutoSieveType(comptime max: u64) type {
-    if (max == 0)
-        @compileError("The maximum sieving size must be non-zero.");
-    var bit_len = 64 - @clz(max);
-    if (max & (max - 1) == 0) // power of two
-        bit_len -= 1;
-    if (bit_len % 2 == 1)
-        bit_len += 1;
-    if (bit_len < 4)
-        bit_len = 4;
-    return meta.Int(.unsigned, bit_len);
-}
-
-const testing = std.testing;
-
-test "type meta functions" {
-    try testing.expect(SqrtType(u20) == u10);
-    try testing.expect(AutoSieveType(8000) == u14);
-    try testing.expect(AutoSieveType(9000) == u14);
-    try testing.expect(AutoSieveType(16384) == u14);
-    try testing.expect(AutoSieveType(16385) == u16);
-    try testing.expect(AutoSieveType(32768) == u16);
-    try testing.expect(AutoSieveType(1000) == u10);
-    try testing.expect(AutoSieveType(10) == u4);
-    try testing.expect(AutoSieveType(4) == u4);
-    try testing.expect(AutoSieveType(math.maxInt(u32)) == u32);
-    try testing.expect(listSize(u64) == 14);
-    try testing.expect(listSize(u32) == 8);
-    try testing.expect(@sizeOf(ArrayList(u32)) == 16);
-    try testing.expect(@sizeOf(ArrayList(u36)) == 36);
-    try testing.expect(@sizeOf(ArrayList(u64)) == 56);
-}
 
 pub fn PrimeGen(comptime T: type) type {
     assertInt(T);
@@ -116,6 +37,7 @@ pub fn PrimeGen(comptime T: type) type {
         const Sieve = std.ArrayList(ArrayList(T));
 
         sieve: Sieve,
+        allocator: std.mem.Allocator,
         count: usize,
         candidate: T,
         rt: SqrtType(T),
@@ -124,8 +46,8 @@ pub fn PrimeGen(comptime T: type) type {
 
         // grow the sieve by a comptime fixed amount
         fn growBy(self: *Self, comptime n: usize) !void {
-            var chunk: [n]ArrayList(T) = mem.zeroes([n]ArrayList(T));
-            try self.sieve.appendSlice(&chunk);
+            var chunk: [n]ArrayList(T) = std.mem.zeroes([n]ArrayList(T));
+            try self.sieve.appendSlice(self.allocator, &chunk);
         }
 
         // add a known prime number to the sieve at postion k
@@ -140,10 +62,11 @@ pub fn PrimeGen(comptime T: type) type {
             unreachable;
         }
 
-        pub fn init(alloc: mem.Allocator) Self {
+        pub fn init(alloc: std.mem.Allocator) Self {
             return Self{
                 .count = 0,
-                .sieve = Sieve.init(alloc),
+                .sieve = .empty,
+                .allocator = alloc,
                 .candidate = 3,
                 .rt = 3,
                 .sq = 9,
@@ -152,7 +75,7 @@ pub fn PrimeGen(comptime T: type) type {
         }
 
         pub fn deinit(self: *Self) void {
-            self.sieve.deinit();
+            self.sieve.deinit(self.allocator);
         }
 
         pub fn next(self: *Self) !?T {
@@ -203,7 +126,7 @@ pub fn PrimeGen(comptime T: type) type {
                     //
                     self.candidate, const overflow = @addWithOverflow(self.candidate, 2);
                     if (overflow != 0) {
-                        assert(!is_prime);
+                        std.debug.assert(!is_prime);
                         return null;
                     }
                     self.pos += 1;
@@ -217,4 +140,80 @@ pub fn PrimeGen(comptime T: type) type {
             }
         }
     };
+}
+
+// given a type, return the maximum stack size required by the algorthm.
+fn listSize(comptime T: type) usize {
+    assertInt(T);
+    const primes = [_]u6{
+        2,  3,  5,  7,  11, 13, 17, 19,
+        23, 29, 31, 37, 41, 43, 47, 53,
+    };
+    // Find the first primorial that will overflow type T.
+    // the size of the list is the primorial index minus one,
+    // since the sieve doesn't include 2.
+    //
+    var i: usize = 0;
+    var pi: T = 1;
+    while (true) {
+        pi, const overflow = @mulWithOverflow(pi, primes[i]);
+        if (overflow == 0)
+            i += 1
+        else
+            break;
+    }
+    return i - 1;
+}
+
+fn SqrtType(comptime T: type) type {
+    assertInt(T);
+    return std.meta.Int(.unsigned, @typeInfo(T).int.bits / 2);
+}
+
+// stack type (actually just an array list)
+fn ArrayList(comptime T: type) type {
+    assertInt(T);
+    return [listSize(T)]SqrtType(T);
+}
+
+// given an upper bound, max, return the most restrictive sieving data type.
+pub fn AutoSieveType(comptime max: u64) type {
+    if (max == 0)
+        @compileError("The maximum sieving size must be non-zero.");
+    var bit_len = 64 - @clz(max);
+    if (max & (max - 1) == 0) // power of two
+        bit_len -= 1;
+    if (bit_len % 2 == 1)
+        bit_len += 1;
+    if (bit_len < 4)
+        bit_len = 4;
+    return std.meta.Int(.unsigned, bit_len);
+}
+
+fn assertInt(comptime T: type) void {
+    if (@typeInfo(T) != .int)
+        @compileError("data type must be an integer.");
+    const info = @typeInfo(T).int;
+    if (info.signedness == .signed or info.bits % 2 == 1 or info.bits < 4 or info.bits > 64)
+        @compileError("type must be an unsigned integer with even bit size (of at least 4 bits).");
+}
+
+const testing = std.testing;
+
+test "type meta functions" {
+    try testing.expect(SqrtType(u20) == u10);
+    try testing.expect(AutoSieveType(8000) == u14);
+    try testing.expect(AutoSieveType(9000) == u14);
+    try testing.expect(AutoSieveType(16384) == u14);
+    try testing.expect(AutoSieveType(16385) == u16);
+    try testing.expect(AutoSieveType(32768) == u16);
+    try testing.expect(AutoSieveType(1000) == u10);
+    try testing.expect(AutoSieveType(10) == u4);
+    try testing.expect(AutoSieveType(4) == u4);
+    try testing.expect(AutoSieveType(std.math.maxInt(u32)) == u32);
+    try testing.expect(listSize(u64) == 14);
+    try testing.expect(listSize(u32) == 8);
+    try testing.expect(@sizeOf(ArrayList(u32)) == 16);
+    try testing.expect(@sizeOf(ArrayList(u36)) == 36);
+    try testing.expect(@sizeOf(ArrayList(u64)) == 56);
 }
