@@ -1,26 +1,28 @@
 // https://rosettacode.org/wiki/Factorial
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const math = std.math;
-const mem = std.mem;
 
-const Int = math.big.int.Managed;
+const Int = std.math.big.int.Managed;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var factorial = try Factorial.init(allocator);
+    var factorial: Factorial = try .init(allocator);
     defer factorial.deinit();
 
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+    stdout.flush() catch @panic("failed stdout. flush()");
     for (0..41) |i| {
         var f1 = try factorial.recursive(@intCast(i));
         defer f1.deinit();
         var f2 = try factorial.iterative(@intCast(i));
         defer f2.deinit();
 
-        try stdout.print("{d:2} {} {} {!} {!}\n", .{
+        try stdout.print("{d:2} {f} {f} {!} {!}\n", .{
             i,
             f1,
             f2,
@@ -35,10 +37,10 @@ const FactorialError = error{
 };
 
 const Factorial = struct {
-    allocator: mem.Allocator,
+    allocator: std.mem.Allocator,
     one: Int,
 
-    fn init(allocator: mem.Allocator) !Factorial {
+    fn init(allocator: std.mem.Allocator) !Factorial {
         return Factorial{
             .allocator = allocator,
             .one = try Int.initSet(allocator, 1),
@@ -79,7 +81,7 @@ const Factorial = struct {
         defer n.deinit();
         defer i.deinit();
         // n < 2
-        if (n.order(i) == math.Order.lt)
+        if (n.order(i) == std.math.Order.lt)
             return result;
 
         var tmp = try Int.init(self.allocator); // used to avoid aliasing
@@ -141,7 +143,7 @@ const Factorial = struct {
         if (bits == 2)
             return 2;
 
-        var max = @log2(@as(f64, @floatFromInt(math.maxInt(T))));
+        var max = @log2(@as(f64, @floatFromInt(std.math.maxInt(T))));
         var n: u16 = 2;
 
         while (true) : (n += 1) {

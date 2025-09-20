@@ -1,27 +1,31 @@
 // https://rosettacode.org/wiki/Fibonacci_word
-// Translation of Nim
+// {{works with|Zig|0.15.1}}
+// {{trans|Nim}}
 const std = @import("std");
-const heap = std.heap;
-const mem = std.mem;
-const print = std.debug.print;
 
 pub fn main() !void {
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    print(" n    length       entropy\n", .{});
-    print("————————————————————————————————\n", .{});
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    try stdout.print(" n    length       entropy\n", .{});
+    try stdout.print("————————————————————————————————\n", .{});
+    try stdout.flush();
 
     var n: usize = 0;
 
-    var fibword = try FibWord.init(allocator);
+    var fibword: FibWord = try .init(allocator);
     defer fibword.deinit();
 
     while (true) {
         const str = try fibword.next();
         n += 1;
-        print("{d:2}  {d:8}  {d:16.16}\n", .{ n, str.len, entropy(str) });
+        try stdout.print("{d:2}  {d:8}  {d:16.16}\n", .{ n, str.len, entropy(str) });
+        try stdout.flush();
         if (n == 37)
             break;
     }
@@ -47,12 +51,12 @@ fn entropy(s: []const u8) f64 {
 const FibWord = struct {
     const State = enum { first, second, many };
 
-    allocator: mem.Allocator,
+    allocator: std.mem.Allocator,
     a: []const u8,
     b: []const u8,
     state: State = .first,
 
-    fn init(allocator: mem.Allocator) !FibWord {
+    fn init(allocator: std.mem.Allocator) !FibWord {
         return .{
             .allocator = allocator,
             .a = try allocator.dupe(u8, "1"),
@@ -80,7 +84,7 @@ const FibWord = struct {
                 @memcpy(new[self.b.len..], self.a);
                 self.allocator.free(old);
                 self.a = new; // a = b ++ a
-                mem.swap([]const u8, &self.a, &self.b);
+                std.mem.swap([]const u8, &self.a, &self.b);
                 return self.b;
             },
         }
