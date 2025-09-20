@@ -1,5 +1,6 @@
 // https://www.rosettacode.org/wiki/Almost_prime
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 
 fn kprime(n0: u32, k: u32) bool {
@@ -16,7 +17,9 @@ fn kprime(n0: u32, k: u32) bool {
 }
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var k: u32 = 1;
     while (k <= 5) : (k += 1) {
@@ -32,4 +35,5 @@ pub fn main() !void {
 
         try stdout.writeByte('\n');
     }
+    try stdout.flush();
 }

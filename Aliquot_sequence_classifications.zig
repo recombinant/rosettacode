@@ -1,8 +1,11 @@
 // https://rosettacode.org/wiki/Aliquot_sequence_classifications
+// {{works with|Zig|0.15.1}}
+const std = @import("std");
+
 pub fn main() !void {
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
@@ -29,9 +32,8 @@ pub fn main() !void {
     }
 
     try stdout.writeByte('\n');
-    try stdout.print("Processed in {}\n", .{std.fmt.fmtDuration(t0.read())});
-
-    try bw.flush();
+    try stdout.flush();
+    std.log.info("processed in {D}", .{t0.read()});
 }
 
 //  Classification categories.
@@ -46,7 +48,7 @@ const Category = enum {
     non_terminating,
 
     /// Limit beyond which the category is considered to be "non_terminating".
-    const limit = math.pow(u64, 2, 47);
+    const limit = std.math.pow(u64, 2, 47);
 
     fn string(category: Category) []const u8 {
         return switch (category) {
@@ -66,7 +68,7 @@ const Category = enum {
 fn sumProperDivisors(n: u64) u64 {
     if (n == 1) return 0;
     var result: u64 = 1;
-    for (2..math.sqrt(n) + 1) |d| {
+    for (2..std.math.sqrt(n) + 1) |d| {
         if ((n % d) == 0) {
             result += d;
             if (n / d != d)
@@ -96,11 +98,11 @@ const AliquotSequenceIterator = struct {
 
 /// Return the category of the Aliquot Sequence of a number "n" and the sequence itself.
 /// Caller owns returned slice memory for "sequence".
-fn classification(allocator: mem.Allocator, n: u64) !struct { category: Category, sequence: []u64 } {
+fn classification(allocator: std.mem.Allocator, n: u64) !struct { category: Category, sequence: []u64 } {
     var count: usize = 0;
     var previous = n;
     var category = Category.unknown;
-    var sequence: std.ArrayList(u64) = .init(allocator);
+    var sequence: std.ArrayList(u64) = .empty;
 
     var it = iterateAliquotSequence(n);
     while (it.next()) |k| {
@@ -117,17 +119,13 @@ fn classification(allocator: mem.Allocator, n: u64) !struct { category: Category
             category = Category.non_terminating
         else if (k == previous)
             category = Category.aspiring
-        else if (mem.indexOfScalar(u64, sequence.items, k) != null)
+        else if (std.mem.indexOfScalar(u64, sequence.items, k) != null)
             category = Category.cyclic;
         previous = k;
-        try sequence.append(k);
+        try sequence.append(allocator, k);
         if (category != Category.unknown)
             break;
     }
     // Caller owns and should free memory slice .sequence.
-    return .{ .category = category, .sequence = try sequence.toOwnedSlice() };
+    return .{ .category = category, .sequence = try sequence.toOwnedSlice(allocator) };
 }
-
-const std = @import("std");
-const math = std.math;
-const mem = std.mem;

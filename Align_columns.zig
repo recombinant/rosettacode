@@ -1,7 +1,7 @@
 // https://www.rosettacode.org/wiki/Align_columns
+// {{works with|Zig|0.15.1}}
 // Based on C
 const std = @import("std");
-const mem = std.mem;
 
 const MaxCols = 1024;
 
@@ -24,24 +24,24 @@ const AlignError = error{
     MaxColsExceeded,
 };
 
-fn alignColumns(writer: anytype, lines: []const u8, alignment: Alignment) !void {
-    var widths: [MaxCols]usize = [1]usize{0} ** MaxCols;
+fn alignColumns(w: *std.Io.Writer, lines: []const u8, alignment: Alignment) !void {
+    var widths: [MaxCols]usize = @splat(0);
     // Determine the required width of each column using maximum field lengths
     {
-        var lines_iterator = mem.splitScalar(u8, lines, '\n');
+        var lines_iterator = std.mem.splitScalar(u8, lines, '\n');
         while (lines_iterator.next()) |line| {
             var column: usize = 0;
-            var field_iterator = mem.splitScalar(u8, line, '$');
+            var field_iterator = std.mem.splitScalar(u8, line, '$');
             while (field_iterator.next()) |field| : (column += 1)
                 widths[column] = @max(widths[column], field.len);
         }
     }
     // Knowing the width of each column print the justified fields
     {
-        var lines_iterator = mem.splitScalar(u8, lines, '\n');
+        var lines_iterator = std.mem.splitScalar(u8, lines, '\n');
         while (lines_iterator.next()) |line| {
             var column: usize = 0;
-            var field_iterator = mem.splitScalar(u8, line, '$');
+            var field_iterator = std.mem.splitScalar(u8, line, '$');
             while (field_iterator.next()) |field| : (column += 1) {
                 const rpad = switch (alignment) {
                     .left => widths[column] - field.len,
@@ -50,17 +50,19 @@ fn alignColumns(writer: anytype, lines: []const u8, alignment: Alignment) !void 
                 };
                 const lpad = widths[column] - field.len - rpad;
 
-                try writer.writeByteNTimes(' ', lpad);
-                try writer.writeAll(field);
-                try writer.writeByteNTimes(' ', rpad);
+                _ = try w.splatByte(' ', lpad);
+                try w.writeAll(field);
+                _ = try w.splatByte(' ', rpad);
             }
-            try writer.writeByte('\n');
+            try w.writeByte('\n');
         }
     }
 }
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     try stdout.writeAll("\n----  right ----\n");
     try alignColumns(stdout, str, .right);
@@ -70,4 +72,6 @@ pub fn main() !void {
 
     try stdout.writeAll("\n---- center ----\n");
     try alignColumns(stdout, str, .center);
+
+    try stdout.flush();
 }

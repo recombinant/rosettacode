@@ -1,17 +1,23 @@
 // https://rosettacode.org/wiki/Air_mass
-// Translation of C code from https://rosettacode.org/wiki/Air_mass#C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
-    try writer.writeAll("Angle     0 m              13700 m\n");
-    try writer.writeAll("------------------------------------\n");
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    try stdout.writeAll("Angle     0 m              13700 m\n");
+    try stdout.writeAll("------------------------------------\n");
     var z: f64 = 0;
     while (z <= 90) : (z += 5)
-        try writer.print(
+        try stdout.print(
             "{d:2}      {d:11.8}      {d:11.8}\n",
             .{ z, calcAirmass(0.0, z), calcAirmass(13700.0, z) },
         );
+
+    try stdout.flush();
 }
 
 const RE = 6371000; // Earth radius in meters

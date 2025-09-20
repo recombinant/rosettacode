@@ -1,4 +1,7 @@
 // https://rosettacode.org/wiki/Anadromes
+// {{works with|Zig|0.15.1}}
+const std = @import("std");
+
 pub fn main() !void {
     // Assume lexicographically sorted for ordered printout.
     const text = @embedFile("data/words.txt");
@@ -8,28 +11,34 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     // Insertion order is preserved.
     var word_set: std.StringArrayHashMap(void) = .init(allocator);
     defer word_set.deinit();
 
-    var it = mem.splitScalar(u8, text, '\n');
+    var it = std.mem.splitScalar(u8, text, '\n');
     while (it.next()) |word| {
         if (word.len > word_cutoff and !isPalindrome(word))
             try word_set.put(word, {});
     }
 
-    var buffer: std.ArrayList(u8) = .init(allocator);
-    defer buffer.deinit();
+    var buffer: std.ArrayList(u8) = .empty;
+    defer buffer.deinit(allocator);
 
-    print("Anadrome pairs with more than {} letters are:\n", .{word_cutoff});
+    try stdout.print("Anadrome pairs with more than {} letters are:\n", .{word_cutoff});
     for (word_set.keys()) |word| {
         buffer.clearRetainingCapacity();
-        try buffer.appendSlice(word);
-        mem.reverse(u8, buffer.items);
+        try buffer.appendSlice(allocator, word);
+        std.mem.reverse(u8, buffer.items);
 
-        if (word_set.get(buffer.items) != null and mem.order(u8, word, buffer.items) == .lt)
-            print("{s} -> {s}\n", .{ word, buffer.items });
+        if (word_set.get(buffer.items) != null and std.mem.order(u8, word, buffer.items) == .lt)
+            try stdout.print("{s} -> {s}\n", .{ word, buffer.items });
     }
+
+    try stdout.flush();
 }
 
 fn isPalindrome(s: []const u8) bool {
@@ -41,13 +50,10 @@ fn isPalindrome(s: []const u8) bool {
     return true;
 }
 
+const testing = std.testing;
+
 test isPalindrome {
     try testing.expect(isPalindrome("abccba"));
     try testing.expect(isPalindrome("abcdcba"));
     try testing.expect(!isPalindrome("abcdecba"));
 }
-
-const std = @import("std");
-const mem = std.mem;
-const testing = std.testing;
-const print = std.debug.print;

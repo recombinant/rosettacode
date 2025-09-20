@@ -1,38 +1,38 @@
 // https://rosettacode.org/wiki/Anaprimes
-const std = @import("std");
-const fmt = std.fmt;
-const heap = std.heap;
-const time = std.time;
-
-const assert = std.debug.assert;
-const print = std.debug.print;
+// {{works with|Zig|0.15.1}}
 
 // https://rosettacode.org/wiki/Extensible_prime_generator
+const std = @import("std");
+
 const PrimeGen = @import("sieve.zig").PrimeGen;
 
 const AnaprimeLookup = std.AutoArrayHashMap(u40, std.ArrayList(u64));
 
 pub fn main() !void {
-    var t0 = try time.Timer.start();
+    var t0: std.time.Timer = try .start();
+
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const max: u64 = 1_000_000_000;
     var limit: u64 = 1_000;
 
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var primegen = PrimeGen(u64).init(allocator);
+    var primegen: PrimeGen(u64) = .init(allocator);
     defer primegen.deinit();
 
-    var anaprimes = AnaprimeLookup.init(allocator);
+    var anaprimes: AnaprimeLookup = .init(allocator);
     defer {
-        clear(&anaprimes);
+        clear(allocator, &anaprimes);
         anaprimes.deinit();
     }
 
-    var longest = std.ArrayList([]const u64).init(allocator);
-    defer longest.deinit();
+    var longest: std.ArrayList([]const u64) = .empty;
+    defer longest.deinit(allocator);
 
     while (true) {
         const p = (try primegen.next()).?;
@@ -43,44 +43,46 @@ pub fn main() !void {
             // find the longest groups
             for (anaprimes.values()) |primes| {
                 if (longest.items.len == 0 or longest.items[0].len == primes.items.len)
-                    try longest.append(primes.items)
+                    try longest.append(allocator, primes.items)
                 else if (primes.items.len > longest.items[0].len) {
                     longest.clearRetainingCapacity();
-                    try longest.append(primes.items);
+                    try longest.append(allocator, primes.items);
                 }
             }
             // print the longest groups
             const plural: []const u8 = if (longest.items.len > 1) "s" else "";
-            print(
+            try stdout.print(
                 "Largest anaprime group{s} less than {} - {} group{s} of {} primes\n",
                 .{ plural, limit, longest.items.len, plural, longest.items[0].len },
             );
             for (longest.items) |primes| {
-                assert(primes.len > 1);
-                print("  {}, ", .{primes[0]});
-                if (primes.len > 1) print("... ", .{});
-                print("{}\n", .{primes[primes.len - 1]});
+                std.debug.assert(primes.len > 1);
+                try stdout.print("  {}, ", .{primes[0]});
+                if (primes.len > 1) try stdout.writeAll("... ");
+                try stdout.print("{}\n", .{primes[primes.len - 1]});
             }
-            print("\n", .{});
+            try stdout.writeByte('\n');
+            try stdout.flush();
             //
             limit *= 10;
             if (limit >= max)
                 break; // finished
-            clear(&anaprimes);
+            clear(allocator, &anaprimes);
         }
         const key = calcSignature(@TypeOf(p), p);
         const gop = try anaprimes.getOrPut(key);
         if (!gop.found_existing)
-            gop.value_ptr.* = std.ArrayList(u64).init(allocator);
+            gop.value_ptr.* = .empty;
 
-        try gop.value_ptr.append(p);
+        try gop.value_ptr.append(allocator, p);
     }
-    print("\nprocessed in {}\n", .{fmt.fmtDuration(t0.read())});
+
+    std.log.info("processed in {D}", .{t0.read()});
 }
 
-fn clear(anaprimes: *std.AutoArrayHashMap(u40, std.ArrayList(u64))) void {
-    for (anaprimes.values()) |primes|
-        primes.deinit();
+fn clear(allocator: std.mem.Allocator, anaprimes: *std.AutoArrayHashMap(u40, std.ArrayList(u64))) void {
+    for (anaprimes.values()) |*primes|
+        primes.deinit(allocator);
     anaprimes.clearRetainingCapacity();
 }
 
