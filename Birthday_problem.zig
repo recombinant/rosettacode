@@ -1,19 +1,22 @@
 // https://rosettacode.org/wiki/Birthday_problem
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 
 pub fn main() !void {
     // -------------------------------------------- random number
-    var prng = std.Random.DefaultPrng.init(blk: {
+    var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
         std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
         break :blk seed;
     });
     const random = prng.random();
     // ----------------------------------------------------------
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var bp = BirthdayProblem(.{}).init(random);
+    var bp: BirthdayProblem(.{}) = .init(random);
     var n: usize = 2;
     while (n <= 5) : (n += 1) {
         const result = bp.findHalfChance(n);
@@ -21,6 +24,7 @@ pub fn main() !void {
             "{d} collision: {d} people, P = {d} +/- {d}\n",
             .{ n, result.np, result.p, result.d },
         );
+        try stdout.flush();
     }
 }
 

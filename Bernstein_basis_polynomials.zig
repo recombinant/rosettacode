@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Bernstein_basis_polynomials
-// Translation of: Go
+// {{works with|Zig|0.15.1}}
+// {{trans|Go}}
 const std = @import("std");
 
 const print = std.debug.print;
@@ -56,21 +57,21 @@ fn evalMono3(a: []const f64, t: f64) f64 {
 }
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var pm = std.ArrayList(f64).init(allocator);
-    defer pm.deinit();
-    try pm.appendSlice(&[_]f64{ 1, 0, 0 });
+    var pm: std.ArrayList(f64) = .empty;
+    defer pm.deinit(allocator);
+    try pm.appendSlice(allocator, &[_]f64{ 1, 0, 0 });
 
-    var qm = std.ArrayList(f64).init(allocator);
-    defer qm.deinit();
-    try qm.appendSlice(&[_]f64{ 1, 2, 3 });
+    var qm: std.ArrayList(f64) = .empty;
+    defer qm.deinit(allocator);
+    try qm.appendSlice(allocator, &[_]f64{ 1, 2, 3 });
 
-    var rm = std.ArrayList(f64).init(allocator);
-    defer rm.deinit();
-    try rm.appendSlice(&[_]f64{ 1, 2, 3, 4 });
+    var rm: std.ArrayList(f64) = .empty;
+    defer rm.deinit(allocator);
+    try rm.appendSlice(allocator, &[_]f64{ 1, 2, 3, 4 });
 
     var x: f64 = undefined;
     var y: f64 = undefined;
@@ -78,8 +79,8 @@ pub fn main() !void {
     print("Subprogram(1) examples:\n", .{});
     const pb2 = toBern2(pm.items);
     const qb2 = toBern2(qm.items);
-    print("mono {d} --> bern {d}\n", .{ pm.items, pb2 });
-    print("mono {d} --> bern {d}\n", .{ qm.items, qb2 });
+    print("mono {any} --> bern {any}\n", .{ pm.items, pb2 });
+    print("mono {any} --> bern {any}\n", .{ qm.items, qb2 });
 
     print("\nSubprogram(2) examples:\n", .{});
     x = 0.25;
@@ -100,12 +101,12 @@ pub fn main() !void {
     print("q({d:.2}) = {d:6.2} (mono {d:6.2})\n", .{ x, y, m });
 
     print("\nSubprogram(3) examples:\n", .{});
-    try pm.append(0);
-    try qm.append(0);
+    try pm.append(allocator, 0);
+    try qm.append(allocator, 0);
     const pb3 = toBern3(pm.items);
     const qb3 = toBern3(qm.items);
     const rb3 = toBern3(rm.items);
-    const f = "mono {d} --> bern {d}\n";
+    const f = "mono {any} --> bern {any}\n";
     print(f, .{ pm.items, pb3 });
     print(f, .{ qm.items, qb3 });
     print(f, .{ rm.items, rb3 });
@@ -139,6 +140,6 @@ pub fn main() !void {
     print("\nSubprogram(5) examples:\n", .{});
     const pc = bern2to3(&pb2);
     const qc = bern2to3(&qb2);
-    print("mono {d} --> bern {d}\n", .{ pb2, pc });
-    print("mono {d} --> bern {d}\n", .{ qb2, qc });
+    print("mono {any} --> bern {any}\n", .{ pb2, pc });
+    print("mono {any} --> bern {d:.2}\n", .{ qb2, @as(@Vector(4, f64), qc) });
 }

@@ -1,9 +1,12 @@
 // https://rosettacode.org/wiki/Calculating_the_value_of_e
-// update of existing Rosetta Zig implementation to Zig 0.11.0
+// {{works with|Zig|0.15.1}}
+// update of existing Rosetta Zig implementation to Zig 0.15.1
 const std = @import("std");
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var n: u32 = 0;
     var state: u2 = 0;
@@ -46,6 +49,7 @@ pub fn main() !void {
         try stdout.print("e ~= {d:>19} / {d:>19} = ", .{ p2, q2 });
         try decPrint(stdout, p2, q2, 36);
         try stdout.writeByte('\n');
+        try stdout.flush();
         p0 = p1;
         p1 = p2;
         q0 = q1;

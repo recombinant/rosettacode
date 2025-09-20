@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Brzozowski_Algebraic_Method
-// Translation of C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
 
 // The main difference from the C++ solution is that this Zig solution
 // uses a memory pool whereas C++ uses shared pointers.
@@ -11,11 +12,11 @@
 const std = @import("std");
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     //
-    var pool = RegularExpressionPool.init(std.heap.page_allocator);
+    var pool: RegularExpressionPool = .init(std.heap.page_allocator);
     defer _ = pool.deinit();
     //
     // Define the NFA transition matrix a
@@ -41,17 +42,22 @@ pub fn main() !void {
     b[1] = try EmptyExpr.init(&pool);
     b[2] = try EmptyExpr.init(&pool);
     //
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     // Apply Brzozowski's algorithm
     const dfa_expr = try brzozowski(&pool, a, b);
 
     // Print the regular expression
-    try writer.print("{}\n\n", .{dfa_expr});
+    try stdout.print("{f}\n\n", .{dfa_expr});
 
     // Apply recursive simplification
     const simplified_expr = try recursiveSimplify(&pool, dfa_expr, 0);
-    try writer.print("{}\n", .{simplified_expr});
+    try stdout.print("{f}\n", .{simplified_expr});
+
+    // --------------------------------
+    try stdout.flush();
 }
 
 fn brzozowski(pool: *RegularExpressionPool, a_: [][]*RegularExpression, b_: []*RegularExpression) !*RegularExpression {
@@ -119,10 +125,9 @@ const RegularExpression = union(RegularExpressionType) {
             inline else => |*re| return re.simplify(pool),
         }
     }
-    // refer to std.fmt.format documentation
-    pub fn format(self: *const Self, comptime _: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
+    pub fn format(self: *const Self, w: *std.Io.Writer) std.Io.Writer.Error!void {
         switch (self.*) {
-            inline else => |re| try re.write(writer),
+            inline else => |re| try re.write(w),
         }
     }
     fn getFieldName(comptime T: type) []const u8 {
@@ -145,7 +150,7 @@ const EmptyExpr = struct {
             else => false,
         };
     }
-    fn write(_: *const EmptyExpr, writer: anytype) !void {
+    fn write(_: *const EmptyExpr, writer: *std.Io.Writer) !void {
         try writer.writeByte('0');
     }
 };
@@ -162,7 +167,7 @@ const EpsilonExpr = struct {
             else => false,
         };
     }
-    fn write(_: *const EpsilonExpr, writer: anytype) !void {
+    fn write(_: *const EpsilonExpr, writer: *std.Io.Writer) !void {
         try writer.writeByte('1');
     }
 };
@@ -180,7 +185,7 @@ const CarExpr = struct {
             else => false,
         };
     }
-    fn write(self: *const CarExpr, writer: anytype) !void {
+    fn write(self: *const CarExpr, writer: *std.Io.Writer) !void {
         try writer.writeByte(self.c);
     }
 };
@@ -223,8 +228,8 @@ const UnionExpr = struct {
         const name = comptime RegularExpression.getFieldName(@TypeOf(self.*));
         return @fieldParentPtr(name, self);
     }
-    fn write(self: *const UnionExpr, writer: anytype) !void {
-        try writer.print("{}+{}", .{ self.e, self.f });
+    fn write(self: *const UnionExpr, writer: *std.Io.Writer) !void {
+        try writer.print("{f}+{f}", .{ self.e, self.f });
     }
 };
 
@@ -266,8 +271,8 @@ const ConcatExpr = struct {
         const name = comptime RegularExpression.getFieldName(@TypeOf(self.*));
         return @fieldParentPtr(name, self);
     }
-    fn write(self: *const ConcatExpr, writer: anytype) !void {
-        try writer.print("({})({})", .{ self.e, self.f });
+    fn write(self: *const ConcatExpr, writer: *std.Io.Writer) !void {
+        try writer.print("({f})({f})", .{ self.e, self.f });
     }
 };
 
@@ -299,7 +304,7 @@ const StarExpr = struct {
         const name = comptime RegularExpression.getFieldName(@TypeOf(self.*));
         return @fieldParentPtr(name, self);
     }
-    fn write(self: *const StarExpr, writer: anytype) !void {
-        try writer.print("({})*", .{self.e});
+    fn write(self: *const StarExpr, writer: *std.Io.Writer) !void {
+        try writer.print("({f})*", .{self.e});
     }
 };

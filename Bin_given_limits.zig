@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Bin_given_limits
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 const print = std.debug.print;
 
@@ -44,7 +45,7 @@ pub fn main() void {
 }
 
 fn fillBins(comptime T: type, comptime limits: []const T, data: []const T) [limits.len + 1]u32 {
-    var result: [limits.len + 1]u32 = [1]u32{0} ** (limits.len + 1);
+    var result: [limits.len + 1]u32 = @splat(0);
 
     for (data) |d|
         result[upperBound(T, limits, d)] += 1;

@@ -1,37 +1,36 @@
 // https://rosettacode.org/wiki/Brilliant_numbers
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const fmt = std.fmt;
-const math = std.math;
-const time = std.time;
-
-const print = std.debug.print;
-
-// --------------------------------------------------------------
 
 pub fn main() !void {
-    main1(); // Brute force
+    try main1(); // Brute force
     try main2();
 }
 
-fn main1() void {
-    var t0 = time.Timer.start() catch unreachable;
+fn main1() !void {
+    var t0 = std.time.Timer.start() catch unreachable;
 
-    print("First 100 brilliant numbers:\n", .{});
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    try stdout.writeAll("First 100 brilliant numbers:\n");
     var n: u64 = 1;
     var position: usize = 0;
     while (position < 100) : (n += 1) {
         if (isBrilliant(n)) {
             position += 1;
             const sep: u8 = if (position % 10 == 0) '\n' else ' ';
-            print("{d:4}{c}", .{ n, sep });
+            try stdout.print("{d:4}{c}", .{ n, sep });
         }
     }
-    print("\n", .{});
+    try stdout.writeByte('\n');
+    try stdout.flush();
 
-    const stop_after = math.powi(u64, 10, 6) catch unreachable;
+    const stop_after = std.math.powi(u64, 10, 6) catch unreachable;
 
     var pow: u64 = 1;
-    var trigger = math.powi(u64, 10, pow) catch unreachable;
+    var trigger = std.math.powi(u64, 10, pow) catch unreachable;
 
     n = 1;
     position = 0;
@@ -39,7 +38,7 @@ fn main1() void {
         if (isBrilliant(n)) {
             position += 1;
             if (n >= trigger) {
-                print("First brilliant number >= 10^{d} is {d} at position {d}\n", .{ pow, n, position });
+                try stdout.print("First brilliant number >= 10^{d} is {d} at position {d}\n", .{ pow, n, position });
                 pow += 1;
                 trigger *= 10;
                 if (n > stop_after)
@@ -47,7 +46,9 @@ fn main1() void {
             }
         }
     }
-    print("\nprocessed in {}\n\n\n", .{fmt.fmtDuration(t0.read())});
+    try stdout.flush();
+
+    std.log.info("processed in {D}", .{t0.read()});
 }
 
 /// Find all the prime factor(s)
@@ -62,7 +63,7 @@ pub fn isBrilliant(n_: anytype) bool {
     if (n_ < 4)
         return false;
 
-    var fc = FactorChecker(T).init(n_);
+    var fc: FactorChecker(T) = .init(n_);
 
     var n = n_;
     while (n % 2 == 0) {
@@ -110,11 +111,11 @@ fn FactorChecker(comptime T: type) type {
 
         fn init(n: T) Self {
             return Self{
-                .expected_log = math.log10_int(n) / 2,
+                .expected_log = std.math.log10_int(n) / 2,
             };
         }
         fn appendPrime(self: *Self, n: T) !void {
-            if (math.log10_int(n) != self.expected_log)
+            if (std.math.log10_int(n) != self.expected_log)
                 return FactorCheckerError.FactorMagnitudeOutOfRange;
             self.count += 1;
             switch (self.count) {
@@ -130,10 +131,6 @@ fn FactorChecker(comptime T: type) type {
 
 // --------------------------------------------------------------
 
-const heap = std.heap;
-const mem = std.mem;
-const sort = std.sort;
-
 // Probably quicker by importing primesieve using its C interface:
 // https://github.com/kimwalisch/primesieve
 
@@ -143,12 +140,16 @@ const PrimeGen = @import("Extensible_prime_generator_alternate.zig").PrimeGen;
 const AutoSieveType = @import("Extensible_prime_generator_alternate.zig").AutoSieveType;
 
 fn main2() !void {
-    var t0 = try time.Timer.start();
+    var t0: std.time.Timer = try .start();
+
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const max_prime = 1_000_000_000;
     // var maximum = math.powi(u64, 10, 12);
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -158,30 +159,32 @@ fn main2() !void {
         allocator.free(primes_by_digits);
     }
     // --------------------------------
-    print("First 100 brilliant numbers:\n", .{});
-    var brilliant_numbers = std.ArrayList(u64).init(allocator);
-    defer brilliant_numbers.deinit();
+    try stdout.print("\nFirst 100 brilliant numbers:\n", .{});
+    var brilliant_numbers: std.ArrayList(u64) = .empty;
+    defer brilliant_numbers.deinit(allocator);
     for (primes_by_digits) |primes| {
         for (primes, 0..) |p1, i|
             for (primes[i..]) |p2|
-                try brilliant_numbers.append(p1 * p2);
+                try brilliant_numbers.append(allocator, p1 * p2);
         if (brilliant_numbers.items.len >= 100)
             break;
     }
-    mem.sort(u64, brilliant_numbers.items, {}, sort.asc(u64));
+    std.mem.sortUnstable(u64, brilliant_numbers.items, {}, std.sort.asc(u64));
     for (brilliant_numbers.items[0..100], 1..) |number, i| {
         const c: u8 = if (i % 10 == 0) '\n' else ' ';
-        print("{d:4}{c}", .{ number, c });
+        try stdout.print("{d:4}{c}", .{ number, c });
     }
-    print("\n", .{});
+    try stdout.writeByte('\n');
     // --------------------------------
     // digits in the answer, not in the primes.
     for (2..14) |digits| {
         const count, const first = try getBrilliant(primes_by_digits, digits);
-        print("First brilliant number >= 10^{d} is {d} at position {d}\n", .{ digits - 1, first, count });
+        try stdout.print("First brilliant number >= 10^{d} is {d} at position {d}\n", .{ digits - 1, first, count });
+        try stdout.flush();
     }
+    try stdout.flush();
     // --------------------------------
-    print("\nprocessed in {}\n\n\n", .{fmt.fmtDuration(t0.read())});
+    std.log.info("processed in {D}", .{t0.read()});
 }
 
 /// In this instance the C++ and Nim solutions are faster and
@@ -193,9 +196,9 @@ fn main2() !void {
 ///       whereas `digits` refers to the number of digit wanted in the
 ///       result `next`.
 fn getBrilliant(primes_by_digits: []const []const u64, digits: usize) !struct { u64, u64 } {
-    const limit = try math.powi(u64, 10, digits - 1);
+    const limit = try std.math.powi(u64, 10, digits - 1);
     var count: usize = 0;
-    var next: u64 = math.maxInt(u64);
+    var next: u64 = std.math.maxInt(u64);
     for (primes_by_digits[0 .. (digits + 1) / 2]) |primes| {
         outer: for (primes, 0..) |p1, i| {
             for (primes[i..]) |p2| {
@@ -215,23 +218,23 @@ fn getBrilliant(primes_by_digits: []const []const u64, digits: usize) !struct { 
 }
 
 /// Load all the necessary primes using a prime generator.
-fn getPrimesByDigits(allocator: mem.Allocator, comptime max_prime: u64) ![]const []const u64 {
+fn getPrimesByDigits(allocator: std.mem.Allocator, comptime max_prime: u64) ![]const []const u64 {
     const T = AutoSieveType(max_prime);
-    var primegen = PrimeGen(T).init(allocator);
+    var primegen: PrimeGen(T) = .init(allocator);
     defer primegen.deinit();
 
-    var primes_by_digits = std.ArrayList([]u64).init(allocator);
-    var primes = std.ArrayList(u64).init(allocator);
-    defer primes.deinit();
+    var primes_by_digits: std.ArrayList([]u64) = .empty;
+    var primes: std.ArrayList(u64) = .empty;
+    defer primes.deinit(allocator);
 
     var p: u64 = 10;
     while (p < max_prime) {
         const prime = (try primegen.next()).?;
         if (prime > p) {
-            try primes_by_digits.append(try primes.toOwnedSlice());
+            try primes_by_digits.append(allocator, try primes.toOwnedSlice(allocator));
             p *= 10;
         }
-        try primes.append(prime);
+        try primes.append(allocator, prime);
     }
-    return primes_by_digits.toOwnedSlice();
+    return primes_by_digits.toOwnedSlice(allocator);
 }

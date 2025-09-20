@@ -1,12 +1,13 @@
 // https://rosettacode.org/wiki/Bifid_cipher
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const ascii = std.ascii;
-const mem = std.mem;
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -29,58 +30,59 @@ pub fn main() !void {
         try stdout.print("Decrypted : {s}\n", .{decrypted});
         if (i != polys.len - 1) try stdout.writeByte('\n');
     }
+    try stdout.flush();
 }
 
 const Bifid = struct {
     polybius: *const [25:0]u8,
 
-    fn encrypt(self: *const Bifid, allocator: mem.Allocator, message: []const u8) ![]const u8 {
-        var encrypted = try std.ArrayList(u8).initCapacity(allocator, message.len);
+    fn encrypt(self: *const Bifid, allocator: std.mem.Allocator, message: []const u8) ![]const u8 {
+        var encrypted: std.ArrayList(u8) = try .initCapacity(allocator, message.len);
 
         var converted = blk: {
-            var x = try std.ArrayList(u5).initCapacity(allocator, 2 * message.len);
-            var y = try std.ArrayList(u5).initCapacity(allocator, message.len);
-            defer y.deinit();
+            var x: std.ArrayList(u5) = try .initCapacity(allocator, 2 * message.len);
+            var y: std.ArrayList(u5) = try .initCapacity(allocator, message.len);
+            defer y.deinit(allocator);
             for (message) |c| {
-                const up = ascii.toUpper(c);
-                const possible_idx = mem.indexOfScalar(u8, self.polybius, if (up == 'J') 'I' else up);
+                const up = std.ascii.toUpper(c);
+                const possible_idx = std.mem.indexOfScalar(u8, self.polybius, if (up == 'J') 'I' else up);
                 if (possible_idx) |idx| {
-                    try x.append(@as(u5, @truncate(@divTrunc(idx, 5))));
-                    try y.append(@as(u5, @truncate(@rem(idx, 5))));
+                    try x.append(allocator, @as(u5, @truncate(@divTrunc(idx, 5))));
+                    try y.append(allocator, @as(u5, @truncate(@rem(idx, 5))));
                 }
             }
-            try x.appendSlice(y.items);
+            try x.appendSlice(allocator, y.items);
             break :blk x;
         };
-        defer converted.deinit();
+        defer converted.deinit(allocator);
 
-        mem.reverse(u5, converted.items); // to use pop()
+        std.mem.reverse(u5, converted.items); // to use pop()
         while (converted.items.len != 0) {
-            const row = converted.pop();
-            const col = converted.pop();
+            const row = converted.pop().?;
+            const col = converted.pop().?;
             const c = self.polybius[col + row * 5];
-            try encrypted.append(c);
+            try encrypted.append(allocator, c);
         }
-        return try encrypted.toOwnedSlice();
+        return try encrypted.toOwnedSlice(allocator);
     }
 
-    fn decrypt(self: *const Bifid, allocator: mem.Allocator, message: []const u8) ![]const u8 {
-        var decrypted = try std.ArrayList(u8).initCapacity(allocator, message.len);
+    fn decrypt(self: *const Bifid, allocator: std.mem.Allocator, message: []const u8) ![]const u8 {
+        var decrypted: std.ArrayList(u8) = try .initCapacity(allocator, message.len);
 
-        var collected = try std.ArrayList(u5).initCapacity(allocator, 2 * message.len);
+        var collected: std.ArrayList(u5) = try .initCapacity(allocator, 2 * message.len);
         for (message) |c| {
-            const idx = mem.indexOfScalar(u8, self.polybius, ascii.toUpper(c)).?;
-            try collected.append(@as(u5, @truncate(@divTrunc(idx, 5))));
-            try collected.append(@as(u5, @truncate(@rem(idx, 5))));
+            const idx = std.mem.indexOfScalar(u8, self.polybius, std.ascii.toUpper(c)).?;
+            try collected.append(allocator, @as(u5, @truncate(@divTrunc(idx, 5))));
+            try collected.append(allocator, @as(u5, @truncate(@rem(idx, 5))));
         }
-        const slice = try collected.toOwnedSlice();
+        const slice = try collected.toOwnedSlice(allocator);
         defer allocator.free(slice);
         const rows = slice[0 .. slice.len / 2];
         const cols = slice[slice.len / 2 ..];
 
         for (rows, cols) |row, col|
-            try decrypted.append(self.polybius[col + row * 5]);
+            try decrypted.append(allocator, self.polybius[col + row * 5]);
 
-        return try decrypted.toOwnedSlice();
+        return try decrypted.toOwnedSlice(allocator);
     }
 };

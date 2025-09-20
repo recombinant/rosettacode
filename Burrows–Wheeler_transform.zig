@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Burrows%E2%80%93Wheeler_transform
+// {{works with|Zig|0.15.1}}
 // https://en.wikipedia.org/wiki/Burrows%E2%80%93Wheeler_transform
 // This code follows the wikipedia example and explanation,
 // it is not a translation of the wikipedia Python Sample.
@@ -16,29 +17,33 @@ pub fn main() !void {
         "SIX.MIXED.PIXIES.SIFT.SIXTY.PIXIE.DUST.BOXES",
         "\x02ABC\x03",
     };
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     for (strings) |s| {
-        try printString(s, stx, etx, writer);
-        try writer.writeByte('\n');
+        try printString(s, stx, etx, stdout);
+        try stdout.writeByte('\n');
 
-        try writer.writeAll(" --> ");
+        try stdout.writeAll(" --> ");
         if (try bwt(allocator, s, stx, etx)) |t| {
             defer allocator.free(t);
-            try printString(t, stx, etx, writer);
-            try writer.writeAll("\n --> ");
+            try printString(t, stx, etx, stdout);
+            try stdout.writeAll("\n --> ");
 
             const r = try ibwt(allocator, t, stx, etx);
             defer allocator.free(r);
-            try printString(r, stx, etx, writer);
-            try writer.writeByte('\n');
+            try printString(r, stx, etx, stdout);
+            try stdout.writeByte('\n');
         }
-        try writer.writeByte('\n');
+        try stdout.writeByte('\n');
     }
+
+    try stdout.flush();
 }
 
 /// Allocates memory for the result, which must be freed by the caller.
@@ -48,11 +53,11 @@ fn bwt(allocator: std.mem.Allocator, s_: []const u8, stx: u8, etx: u8) !?[]const
         return null;
     }
     const s = blk: {
-        var a = try std.ArrayList(u8).initCapacity(allocator, s_.len + 2);
-        try a.append(stx);
-        try a.appendSlice(s_);
-        try a.append(etx);
-        break :blk try a.toOwnedSlice();
+        var a: std.ArrayList(u8) = try .initCapacity(allocator, s_.len + 2);
+        try a.append(allocator, stx);
+        try a.appendSlice(allocator, s_);
+        try a.append(allocator, etx);
+        break :blk try a.toOwnedSlice(allocator);
     };
     defer allocator.free(s);
 
@@ -93,7 +98,7 @@ fn ibwt(allocator: std.mem.Allocator, r: []const u8, stx: u8, etx: u8) ![]const 
     for (1..r.len + 1) |i| {
         for (table, r) |*row, c|
             row.*[r.len - i] = c;
-        std.mem.sort([]const u8, table, [2]u8{ stx, etx }, lessThan);
+        std.mem.sort([]u8, table, [2]u8{ stx, etx }, lessThan);
     }
 
     for (table) |row|
@@ -106,7 +111,7 @@ fn ibwt(allocator: std.mem.Allocator, r: []const u8, stx: u8, etx: u8) ![]const 
 }
 
 /// Allocates memory for the result, which must be freed by the caller.
-fn printString(s: []const u8, comptime stx: u8, comptime etx: u8, writer: anytype) !void {
+fn printString(s: []const u8, comptime stx: u8, comptime etx: u8, writer: *std.Io.Writer) !void {
     for (s) |c| {
         const out = switch (c) {
             stx => if (std.ascii.isPrint(c)) c else '^',
