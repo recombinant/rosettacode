@@ -1,6 +1,14 @@
 // https://rosettacode.org/wiki/Abelian_sandpile_model
+// {{works with|Zig|0.15.1}}
+const std = @import("std");
+
+const PPM = enum { P3, P6 }; // NetPBM formats
+const ppm = PPM.P3;
+
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
@@ -21,23 +29,25 @@ pub fn main() !void {
     defer allocator.free(name);
     try sand_pile.writePpmFile(name);
     try stdout.print("PPM image written in \"{s}\".\n", .{name});
+
+    try stdout.flush();
 }
 
 /// Abelian sandpile.
 const SandPile = struct {
-    allocator: mem.Allocator,
+    allocator: std.mem.Allocator,
     tiles: []u32,
     side_len: usize, // sand pile is square
     boundary: struct { x0: usize, y0: usize, xn: usize, yn: usize },
 
-    fn init(allocator: mem.Allocator, init_val: u32) !SandPile {
+    fn init(allocator: std.mem.Allocator, init_val: u32) !SandPile {
         const side_len = sideLength(init_val);
 
         const tiles = try allocator.alloc(u32, side_len * side_len);
         @memset(tiles, 0);
 
         const origin = @divTrunc(side_len, 2);
-        var sand_pile = SandPile{
+        var sand_pile: SandPile = .{
             .allocator = allocator,
             .tiles = tiles,
             .side_len = side_len,
@@ -62,10 +72,9 @@ const SandPile = struct {
         return &self.tiles[(self.side_len * y) + x];
     }
 
-    /// Return the tile grid side length needed for "init_val" sand
-    /// particles.
+    /// Return the tile grid side length needed for "init_val" sand particles.
     fn sideLength(init_val: u32) u32 {
-        const result: u32 = @intFromFloat(math.sqrt(@as(f64, @floatFromInt(init_val)) / 1.75) + 3);
+        const result: u32 = @intFromFloat(std.math.sqrt(@as(f64, @floatFromInt(init_val)) / 1.75) + 3);
         // Ensure that the returned value is odd.
         return result + (result & 1) ^ 1;
     }
@@ -103,18 +112,18 @@ const SandPile = struct {
     }
 
     /// Display the tile grid as a 2D array of tile values.
-    fn display(self: *SandPile, writer: anytype, init_val: u32) !void {
-        try writer.print("Starting with {d} particles.\n\n", .{init_val});
+    fn display(self: *SandPile, w: *std.Io.Writer, init_val: u32) !void {
+        try w.print("Starting with {d} particles.\n\n", .{init_val});
 
         for (0..self.side_len) |y| {
-            for (0..self.side_len) |x| try writer.print("{d:2}", .{self.at(x, y)});
-            try writer.print("\n", .{});
+            for (0..self.side_len) |x| try w.print("{d:2}", .{self.at(x, y)});
+            try w.writeByte('\n');
         }
-        try writer.print("\n", .{});
+        try w.writeByte('\n');
     }
 
     /// Colors to use for PPM files.
-    const Colors: [4]struct { r: u8, g: u8, b: u8 } = .{
+    const colors: [4]struct { r: u8, g: u8, b: u8 } = .{
         .{ .r = 100, .g = 40, .b = 15 },
         .{ .r = 117, .g = 87, .b = 30 },
         .{ .r = 181, .g = 134, .b = 47 },
@@ -126,64 +135,79 @@ const SandPile = struct {
         var file = try std.fs.cwd().createFile(name, .{});
         defer file.close();
 
-        var bw = std.io.bufferedWriter(file.writer());
-        var out = bw.writer();
+        var buffer: [4096]u8 = undefined;
+        var file_writer = file.writer(&buffer);
+        const w = &file_writer.interface;
 
-        // P6 (binary) NetPDM file
-        try out.print("P6 {d} {d}\n", .{ self.side_len, self.side_len });
-        try out.print("255\n", .{});
-        for (self.tiles) |value| {
-            try out.writeByte(Colors[value].r);
-            try out.writeByte(Colors[value].g);
-            try out.writeByte(Colors[value].b);
+        switch (ppm) {
+            .P3 => { // P3 (ASCII) NetPBM file
+                try w.print("P3 {d} {d}\n", .{ self.side_len, self.side_len });
+                try w.print("# {s}\n", .{name});
+                try w.print("255\n", .{});
+                for (self.tiles, 0..) |value, i| {
+                    if (i % self.side_len == 0) try w.writeByte('\n');
+                    const c = colors[value];
+                    try w.print("{d} {d} {d}\n", .{ c.r, c.g, c.b });
+                }
+            },
+            .P6 => { // P6 (binary) NetPDM file
+                try w.print("P6 {d} {d}\n", .{ self.side_len, self.side_len });
+                try w.print("255\n", .{});
+                for (self.tiles) |value| {
+                    try w.writeByte(colors[value].r);
+                    try w.writeByte(colors[value].g);
+                    try w.writeByte(colors[value].b);
+                }
+            },
         }
-
-        // // P3 (ASCII) NetPBM file
-        // try out.print("P3 {d} {d}\n", .{ self.side_len, self.side_len });
-        // try out.print("# {s}\n", .{name});
-        // try out.print("255\n", .{});
-        // for (self.tiles, 0..) |value, i| {
-        //     if (i % self.side_len == 0) try out.writeByte('\n');
-        //     for (Colors[value]) |c| try out.print("{d} ", .{c});
-        // }
-
-        try bw.flush();
+        try w.flush();
     }
 };
 
 /// Ask user for the number of sand particles.
 fn askInitVal() !u32 {
-    const stderr = std.io.getStdErr().writer();
-    const stdout = std.io.getStdOut().writer();
-    const stdin = std.io.getStdIn().reader();
-    const len = comptime math.log10_int(@as(u32, math.maxInt(u32))) + 2;
+    var stderr_buffer: [1024]u8 = undefined;
+    var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
+    const stderr = &stderr_writer.interface;
+
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    var stdin_buffer: [512]u8 = undefined;
+    var stdin_reader = std.fs.File.stdin().reader(&stdin_buffer);
+    const stdin = &stdin_reader.interface;
+
+    const len = comptime std.math.log10_int(@as(u32, std.math.maxInt(u32))) + 2;
     var buf: [len]u8 = undefined;
-    var fbs = std.io.fixedBufferStream(&buf);
+    var w: std.Io.Writer = .fixed(&buf);
+
     while (true) {
-        fbs.reset();
+        _ = w.consumeAll();
+
         try stdout.print("Number of particles? ", .{});
-        stdin.streamUntilDelimiter(fbs.writer(), '\n', fbs.buffer.len) catch |e| {
-            switch (e) {
-                error.StreamTooLong => {
-                    while (try stdin.readByte() != '\n') {}
-                    try stderr.print("Invalid input\n", .{});
-                    continue; // await further input
-                },
-                else => return e,
-            }
-        };
-        const output = mem.trim(u8, fbs.getWritten(), "\r\n\t ");
+        try stdout.flush();
+
+        _ = try stdin.streamDelimiter(&w, '\n');
+        _ = try stdin.takeByte(); // consume the '\n'
+
+        const output = std.mem.trim(u8, w.buffered(), "\r\n\t ");
+        if (output.len == 0) {
+            try stderr.print("No input\n", .{});
+            try stderr.flush();
+            continue; // await further input
+        }
         if (std.fmt.parseInt(u32, output, 10)) |number| {
             if (number < 4) {
-                try stderr.print("Value expected in range: 4..{d}\n", .{math.maxInt(u32)});
+                try stderr.print("Value expected in range: 4..{d}\n", .{std.math.maxInt(u32)});
+                try stderr.flush();
                 continue; // await further input
             }
             return number;
-        } else |_| try stderr.print("Invalid input\n", .{});
+        } else |_| {
+            try stderr.print("Invalid input\n", .{});
+            try stderr.flush();
+        }
         // await further input
     }
 }
-
-const std = @import("std");
-const math = std.math;
-const mem = std.mem;

@@ -21,7 +21,7 @@ pub fn main() !void {
     try stdout.flush();
 
     _ = try stdin.streamDelimiter(&w, '\n');
-    const text = std.mem.trimRight(u8, w.buffered(), "\r");
+    const text = std.mem.trimEnd(u8, w.buffered(), "\r");
 
     var it = std.mem.tokenizeScalar(u8, text, ' ');
     while (it.next()) |value|

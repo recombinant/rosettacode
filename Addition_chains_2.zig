@@ -1,6 +1,9 @@
 // https://rosettacode.org/wiki/Addition_chains
-// Translation of Go
-// The slower version.
+// {{works with|Zig|0.15.1}}
+// {{trans|Go}}
+// Translation of the slower Go version.
+const std = @import("std");
+
 const max_len = 13;
 const max_non_brauer = 382;
 
@@ -10,23 +13,27 @@ var brauer_example: []const u64 = undefined;
 var non_brauer_example: []const u64 = undefined;
 
 pub fn main() !void {
-    var arena: heap.ArenaAllocator = .init(heap.page_allocator);
+    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
     // var gpa: std.heap.DebugAllocator(.{}) = .init;
     // defer _ = gpa.deinit();
     // const allocator = gpa.allocator();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var t0: time.Timer = try .start();
+    var t0: std.time.Timer = try .start();
 
     const nums = [_]u64{ 7, 14, 21, 29, 32, 42, 64, 47, 79, 191, 382, 379 };
     // const nums = [_]u64{ 47, 79, 191, 382, 379, 12509 };
 
-    print("Searching for Brauer chains up to a minimum length of {d}\n", .{max_len - 1});
+    try stdout.print("Searching for Brauer chains up to a minimum length of {d}\n", .{max_len - 1});
+    try stdout.flush();
     for (nums) |num| {
         _ = arena.reset(.retain_capacity);
 
-        var t1: time.Timer = try .start();
+        var t1: std.time.Timer = try .start();
 
         brauer_count = 0;
         non_brauer_count = 0;
@@ -39,19 +46,20 @@ pub fn main() !void {
         defer allocator.free(chosen);
 
         const le = try additionChains(allocator, num, max_len, chosen);
-        print("\nN = {}\n", .{num});
-        print("Minimum length of chains : L({}) = {}\n", .{ num, le - 1 });
-        print("Number of minimum length Brauer chains: {}\n", .{brauer_count});
+        try stdout.print("\nN = {}\n", .{num});
+        try stdout.print("Minimum length of chains : L({}) = {}\n", .{ num, le - 1 });
+        try stdout.print("Number of minimum length Brauer chains: {}\n", .{brauer_count});
         if (brauer_count > 0)
-            print("Brauer example: {any}\n", .{brauer_example});
-        print("Number of minimum length non-Brauer chains: {}\n", .{non_brauer_count});
+            try stdout.print("Brauer example: {any}\n", .{brauer_example});
+        try stdout.print("Number of minimum length non-Brauer chains: {}\n", .{non_brauer_count});
         if (non_brauer_count > 0)
-            print("Non-Brauer example: {any}\n", .{non_brauer_example});
+            try stdout.print("Non-Brauer example: {any}\n", .{non_brauer_example});
+        try stdout.flush();
 
-        print("processed in {}\n", .{fmt.fmtDuration(t1.read())});
+        std.log.info("processed in {D}", .{t1.read()});
     }
 
-    print("\nprocessed in {}\n", .{fmt.fmtDuration(t0.read())});
+    std.log.info("processed in {D}", .{t0.read()});
 }
 
 fn isBrauer(a: []const u64) bool {
@@ -67,7 +75,7 @@ fn isBrauer(a: []const u64) bool {
     return true;
 }
 
-fn additionChains(allocator: mem.Allocator, target: u64, length_: usize, chosen_: []const u64) !usize {
+fn additionChains(allocator: std.mem.Allocator, target: u64, length_: usize, chosen_: []const u64) !usize {
     var le = chosen_.len;
     var last = chosen_[le - 1];
     if (last == target) {
@@ -104,17 +112,17 @@ fn additionChains(allocator: mem.Allocator, target: u64, length_: usize, chosen_
             }
         }
     } else {
-        var ndone: std.ArrayList(u64) = .init(allocator);
-        defer ndone.deinit();
+        var ndone: std.ArrayList(u64) = .empty;
+        defer ndone.deinit(allocator);
         while (true) {
             var i = le;
             while (i != 0) {
                 i -= 1;
                 const next = last + chosen_[i];
                 if (next <= target and next > chosen_[chosen_.len - 1] and i < length and
-                    mem.indexOfScalar(u64, ndone.items, next) == null)
+                    std.mem.indexOfScalar(u64, ndone.items, next) == null)
                 {
-                    try ndone.append(next);
+                    try ndone.append(allocator, next);
                     var chosen2 = try allocator.alloc(u64, chosen_.len + 1);
                     defer allocator.free(chosen2);
                     @memcpy(chosen2[0..chosen_.len], chosen_);
@@ -132,10 +140,3 @@ fn additionChains(allocator: mem.Allocator, target: u64, length_: usize, chosen_
     }
     return length;
 }
-
-const std = @import("std");
-const fmt = std.fmt;
-const heap = std.heap;
-const mem = std.mem;
-const time = std.time;
-const print = std.debug.print;

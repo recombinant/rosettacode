@@ -1,27 +1,35 @@
 // https://rosettacode.org/wiki/Addition_chains
+// {{works with|Zig|0.15.1}}
+
 // Only handles Brauer addition chains.
+const std = @import("std");
+
 pub fn main() !void {
-    var arena: heap.ArenaAllocator = .init(heap.page_allocator);
+    var t0: std.time.Timer = try .start();
+
+    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    var t0 = try time.Timer.start();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const nums = [_]u64{ 7, 13, 14, 21, 29, 32, 42, 64, 47, 79, 191, 382, 379 };
     // const nums = [_]u64{ 47, 79, 191, 382, 379, 12509 };
     inline for (nums) |i| {
-        try brauer(allocator, i);
+        try brauer(allocator, i, stdout);
         _ = arena.reset(.retain_capacity);
     }
 
-    try std.io.getStdOut().writer().print("\nprocessed in {}\n", .{fmt.fmtDuration(t0.read())});
+    std.log.info("processed in {D}", .{t0.read()});
 }
 
 fn Brauer(comptime n: u64) type {
     return struct {
         const Self = @This();
 
-        allocator: mem.Allocator,
+        allocator: std.mem.Allocator,
 
         chain: [n]u64 = undefined,
         in_chain: [n + 1]bool = undefined,
@@ -29,18 +37,18 @@ fn Brauer(comptime n: u64) type {
         best_len: usize = n,
         cnt: u64 = 0,
 
-        fn init(allocator: mem.Allocator) Self {
-            var b = Self{
+        fn init(allocator: std.mem.Allocator) Self {
+            var b: Self = .{
                 .allocator = allocator,
-                .best = .init(allocator),
+                .best = .empty,
             };
             @memset(&b.chain, 0);
             @memset(&b.in_chain, false);
             return b;
         }
 
-        fn deinit(self: Self) void {
-            self.best.deinit();
+        fn deinit(self: *Self) void {
+            self.best.deinit(self.allocator);
         }
 
         fn extend_chain(self: *Self, params: struct { x: usize = 1, pos: usize = 0 }) !void {
@@ -55,7 +63,7 @@ fn Brauer(comptime n: u64) type {
 
                 const diff = self.best_len - pos;
                 // Avoid shifting a u64 more than 63 bits left.
-                if (diff < comptime math.maxInt(u6)) {
+                if (diff < comptime std.math.maxInt(u6)) {
                     // With overflow then (diff > n) and no need to check.
                     const ov = @shlWithOverflow(x, @as(u6, @intCast(diff)));
                     if (ov[1] == 0) {
@@ -75,7 +83,7 @@ fn Brauer(comptime n: u64) type {
                     self.cnt += 1;
                 } else {
                     self.best.clearRetainingCapacity();
-                    try self.best.appendSlice(self.chain[0..pos]);
+                    try self.best.appendSlice(self.allocator, self.chain[0..pos]);
                     self.best_len = pos;
                     self.cnt = 1;
                 }
@@ -131,21 +139,24 @@ fn isAdditionChain(a: []const u64) bool {
     return true;
 }
 
-fn brauer(allocator: mem.Allocator, comptime n: usize) !void {
-    var b = Brauer(n).init(allocator);
+fn brauer(allocator: std.mem.Allocator, comptime n: usize, w: *std.Io.Writer) !void {
+    var b: Brauer(n) = .init(allocator);
     defer b.deinit();
 
     try b.extend_chain(.{});
-    try b.best.append(n);
+    try b.best.append(allocator, n);
 
-    const best = try b.best.toOwnedSlice();
+    const best = try b.best.toOwnedSlice(allocator);
     defer allocator.free(best);
 
-    try std.io.getStdOut().writer().print(
+    try w.print(
         "L({d}) = {d}, count of Brauer minimum chain: {d}\ne.g.: {any}\n\n",
         .{ n, best.len - 1, b.cnt, best },
     );
+    try w.flush();
 }
+
+const testing = std.testing;
 
 test "isBrauer" {
     try testing.expect(isBrauer(&[_]u64{ 1, 2, 3, 5, 8, 13 }));
@@ -162,11 +173,3 @@ test "isBrauer" {
     try testing.expect(isAdditionChain(&[_]u64{ 1, 2, 4, 5, 8, 13 }));
     try testing.expect(!isAdditionChain(&[_]u64{ 1, 2, 4, 5, 7, 13 }));
 }
-
-const std = @import("std");
-const fmt = std.fmt;
-const heap = std.heap;
-const math = std.math;
-const mem = std.mem;
-const time = std.time;
-const testing = std.testing;

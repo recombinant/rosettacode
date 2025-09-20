@@ -1,7 +1,10 @@
 // https://www.rosettacode.org/wiki/Abundant_odd_numbers
+// {{works with|Zig|0.15.1}}
 // based on C
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var n: u64 = 1;
     var rank: u64 = 0;
@@ -9,6 +12,7 @@ pub fn main() !void {
         if (n < sumProperDivisors(n)) {
             rank += 1;
             try stdout.print("{d}: {d}\n", .{ rank, n });
+            try stdout.flush();
         };
 
     while (rank < 1_000) : (n += 2) {
@@ -17,12 +21,14 @@ pub fn main() !void {
     }
 
     try stdout.print("\nThe one thousandth abundant odd number is: {d}\n", .{n});
+    try stdout.flush();
 
     n = 1_000_000_001;
     while (true) : (n += 2)
         if (n < sumProperDivisors(n))
             break;
     try stdout.print("\nThe first abundant odd number above one billion is: {d}\n", .{n});
+    try stdout.flush();
 }
 
 // The following function is for odd numbers ONLY
