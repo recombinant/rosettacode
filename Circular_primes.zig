@@ -1,24 +1,24 @@
 // https://rosettacode.org/wiki/Circular_primes
+// {{works with|Zig|0.15.1}}
+
 // Copied from rosettacode
 const std = @import("std");
-const math = std.math;
-const heap = std.heap;
-const sort = std.sort;
 
-// TODO: second task
+// todo: second task not implemented
 
 pub fn main() !void {
-    var arena = heap.ArenaAllocator.init(heap.page_allocator);
+    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
-
     const allocator = arena.allocator();
 
-    var candidates = std.PriorityQueue(u32, void, orderU32).init(allocator, {});
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    var candidates: std.PriorityQueue(u32, void, orderU32) = .init(allocator, {});
     defer candidates.deinit();
 
-    const stdout = std.io.getStdOut().writer();
-
-    try stdout.print("The circular primes are:\n", .{});
+    try stdout.writeAll("The circular primes are:\n");
     try stdout.print("{:10}" ** 4, .{ 2, 3, 5, 7 });
 
     var c: u32 = 4;
@@ -31,18 +31,20 @@ pub fn main() !void {
             try stdout.print("{:10}", .{n});
             c += 1;
             if (c % 10 == 0)
-                try stdout.print("\n", .{});
+                try stdout.writeByte('\n');
         }
         try candidates.add(10 * n + 1);
         try candidates.add(10 * n + 3);
         try candidates.add(10 * n + 7);
         try candidates.add(10 * n + 9);
     }
-    try stdout.print("\n", .{});
+    try stdout.writeByte('\n');
+
+    try stdout.flush();
 }
 
-fn orderU32(_: void, a: u32, b: u32) math.Order {
-    return math.order(a, b);
+fn orderU32(_: void, a: u32, b: u32) std.math.Order {
+    return std.math.order(a, b);
 }
 
 fn circular(n0: u32) bool {
@@ -65,7 +67,7 @@ fn rotate(n: u32) u32 {
     else {
         // const d = math.log(u32, 10, n);
         const d: u32 = @intFromFloat(@log10(@as(f32, @floatFromInt(n)))); // digit count - 1
-        const m = math.pow(u32, 10, d);
+        const m = std.math.pow(u32, 10, d);
         return (n % m) * 10 + n / m;
     }
 }

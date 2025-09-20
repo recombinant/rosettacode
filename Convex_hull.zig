@@ -1,33 +1,38 @@
 // https://rosettacode.org/wiki/Convex_hull
+// {{works with|Zig|0.15.1}}
 // Translation of
 // https://algoteka.com/samples/35/graham-scan-convex-hull-algorithm-c-plus-plus-o%2528n-log-n%2529-readable-solution
 const std = @import("std");
 
-const print = std.debug.print;
-
 pub fn main() !void {
     // ---------------------------------------------------- allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // --------------------------------------------------------------
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+    // --------------------------------------------------------------
     var points = [_]Point{
-        Point.init(16, 3),  Point.init(12, 17), Point.init(0, 6),
-        Point.init(-4, -6), Point.init(16, 6),  Point.init(16, -7),
-        Point.init(16, -3), Point.init(17, -4), Point.init(5, 19),
-        Point.init(19, -8), Point.init(3, 16),  Point.init(12, 13),
-        Point.init(3, -4),  Point.init(17, 5),  Point.init(-3, 15),
-        Point.init(-3, -9), Point.init(0, 11),  Point.init(-9, -3),
-        Point.init(-4, -2), Point.init(12, 10),
+        .init(16, 3),  .init(12, 17), .init(0, 6),
+        .init(-4, -6), .init(16, 6),  .init(16, -7),
+        .init(16, -3), .init(17, -4), .init(5, 19),
+        .init(19, -8), .init(3, 16),  .init(12, 13),
+        .init(3, -4),  .init(17, 5),  .init(-3, 15),
+        .init(-3, -9), .init(0, 11),  .init(-9, -3),
+        .init(-4, -2), .init(12, 10),
     };
     const hull = try grahamScan(allocator, &points);
     defer allocator.free(hull);
     for (hull, 1..) |pt, i| {
-        print("{}", .{pt});
+        try stdout.print("{f}", .{pt});
         if (i != hull.len)
-            print(", ", .{});
+            try stdout.print(", ", .{});
     }
-    print("\n", .{});
+    try stdout.writeByte('\n');
+    // --------------------------------------------------------------
+    try stdout.flush();
 }
 
 /// Caller owns returned slice memory.
@@ -44,9 +49,9 @@ fn grahamScan(allocator: std.mem.Allocator, points: []Point) ![]Point {
         break :blk pt0;
     };
     // Sort the points by angle to the chosen first point
-    std.mem.sort(Point, points, first_point, Point.lessThanPolarAngle);
+    std.mem.sortUnstable(Point, points, first_point, Point.lessThanPolarAngle);
 
-    var result = std.ArrayList(Point).init(allocator);
+    var result: std.ArrayList(Point) = .empty;
     for (points) |pt| {
         // For as long as the last 3 points cause the hull to be non-convex, discard the middle one
         while (result.items.len >= 2) {
@@ -56,9 +61,9 @@ fn grahamScan(allocator: std.mem.Allocator, points: []Point) ![]Point {
             else
                 break;
         }
-        try result.append(pt);
+        try result.append(allocator, pt);
     }
-    return result.toOwnedSlice();
+    return result.toOwnedSlice(allocator);
 }
 
 const Point = struct {
@@ -67,9 +72,7 @@ const Point = struct {
     fn init(x: f64, y: f64) Point {
         return .{ .x = x, .y = y };
     }
-    pub fn format(self: *const Point, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
-        _ = fmt;
-        _ = options;
+    pub fn format(self: *const Point, writer: *std.Io.Writer) std.Io.Writer.Error!void {
         try writer.print("({d}, {d})", .{ self.x, self.y });
     }
     fn lessThan(self: Point, other: Point) bool {

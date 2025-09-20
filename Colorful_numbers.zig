@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Colorful_numbers
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 
 fn isColorful(n: u32) bool {
@@ -78,32 +79,36 @@ const Colorful = struct {
 };
 
 pub fn main() !void {
-    var t0 = try std.time.Timer.start();
+    var t0: std.time.Timer = try .start();
 
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    try writer.writeAll("Colorful numbers less than 100:\n");
+    try stdout.writeAll("Colorful numbers less than 100:\n");
 
     var n: u32 = 0;
     var count1: usize = 0;
     while (n < 100) : (n += 1)
         if (isColorful(n)) {
             count1 += 1;
-            try writer.print("{d:2}{c}", .{ n, @as(u8, if (count1 % 10 == 0) '\n' else ' ') });
+            try stdout.print("{d:2}{c}", .{ n, @as(u8, if (count1 % 10 == 0) '\n' else ' ') });
         };
 
-    var c = Colorful{};
+    var c: Colorful = .{};
     c.countColorful(0, 0, 0);
-    try writer.print("\n\nLargest colorful number: {d}\n", .{c.largest});
+    try stdout.print("\n\nLargest colorful number: {d}\n", .{c.largest});
 
-    try writer.writeAll("\nCount of colorful numbers by number of digits:\n");
+    try stdout.writeAll("\nCount of colorful numbers by number of digits:\n");
     var total: u32 = 0;
     var d: u32 = 0;
     while (d < 8) : (d += 1) {
-        try writer.print("{d} {d}\n", .{ d + 1, c.count[d] });
+        try stdout.print("{d} {d}\n", .{ d + 1, c.count[d] });
         total += c.count[d];
     }
-    try writer.print("\nTotal: {d}\n", .{total});
+    try stdout.print("\nTotal: {d}\n\n", .{total});
 
-    std.log.info("processed in {}\n", .{std.fmt.fmtDuration(t0.read())});
+    try stdout.flush();
+
+    std.log.info("processed in {D}", .{t0.read()});
 }
