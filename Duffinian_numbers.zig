@@ -41,9 +41,9 @@ fn isDuffinian(n_: anytype) bool {
 pub fn main() !void {
     var stdout_buffer: [1024]u8 = undefined;
     var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
-    const w = &stdout_writer.interface;
+    const stdout = &stdout_writer.interface;
 
-    try w.writeAll("First 50 Duffinian numbers:\n");
+    try stdout.writeAll("First 50 Duffinian numbers:\n");
     {
         var count: usize = 0;
         var n: u16 = 1;
@@ -51,11 +51,11 @@ pub fn main() !void {
             if (isDuffinian(n)) {
                 count += 1;
                 const sep: u8 = if (count % 10 == 0) '\n' else ' ';
-                try w.print("{d:3}{c}", .{ n, sep });
+                try stdout.print("{d:3}{c}", .{ n, sep });
             }
         }
     }
-    try w.writeAll("\nFirst 50 Duffinian triplets:\n");
+    try stdout.writeAll("\nFirst 50 Duffinian triplets:\n");
     {
         var count: usize = 0;
         var n: u32 = 1;
@@ -68,11 +68,11 @@ pub fn main() !void {
                 var bw: std.Io.Writer = .fixed(&buffer);
                 try bw.print("({d}, {d}, {d})", .{ n - 2, n - 1, n });
                 const sep: u8 = if (count % 3 == 0) '\n' else ' ';
-                try w.print("{s:<24}{c}", .{ bw.buffered(), sep });
+                try stdout.print("{s:<24}{c}", .{ bw.buffered(), sep });
             }
         }
     }
-    try w.writeByte('\n');
+    try stdout.writeByte('\n');
 
-    try w.flush();
+    try stdout.flush();
 }

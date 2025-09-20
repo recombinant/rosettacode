@@ -21,7 +21,7 @@ pub fn main() !void {
 
     var stdout_buffer: [1024]u8 = undefined;
     var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
-    const w = &stdout_writer.interface;
+    const stdout = &stdout_writer.interface;
 
     var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
@@ -43,17 +43,17 @@ pub fn main() !void {
             try numbers_list.append(allocator, number);
         }
         // write numbers and statistics
-        try w.writeAll("Numbers:");
+        try stdout.writeAll("Numbers:");
         for (numbers_list.items) |number|
-            try w.print(" {d}", .{number});
-        try w.print("\n min: {d}\n max: {d}\n", .{ min, max });
+            try stdout.print(" {d}", .{number});
+        try stdout.print("\n min: {d}\n max: {d}\n", .{ min, max });
         //
-        try writeSparkline(numbers_list.items, max, min, w);
+        try writeSparkline(numbers_list.items, max, min, stdout);
         //
-        _ = try w.splatByte('\n', 2);
+        _ = try stdout.splatByte('\n', 2);
     }
 
-    try w.flush();
+    try stdout.flush();
 }
 
 const testing = std.testing;
