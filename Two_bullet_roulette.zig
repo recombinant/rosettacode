@@ -118,9 +118,10 @@ const Revolver = struct {
         self.cylinder[0] = true;
         self.rshift();
     }
+    /// Cylinder to take a random position from 1 to 6
     fn spin(self: *Revolver) void {
-        const limit = self.rand.uintLessThan(u3, self.cylinder.len) + 1;
-        for (0..limit) |_|
+        const rotation = self.rand.uintLessThan(u3, self.cylinder.len);
+        for (0..rotation) |_|
             self.rshift();
     }
     fn fire(self: *Revolver) bool {
