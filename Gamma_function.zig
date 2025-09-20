@@ -1,12 +1,12 @@
 // https://rosettacode.org/wiki/Gamma_function
-// Translation of C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
 const std = @import("std");
-const mem = std.mem;
-const math = std.math;
+
 const print = std.debug.print;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -27,7 +27,7 @@ pub fn main() !void {
 
     print("{s:16}{s:16}{s:16}{s:16}{s:16}\n", .{ "gamma( x ) =", "Spouge 1", "Spouge 4", "Spouge 10", "built-in" });
     for (inputs) |x| {
-        const g = math.gamma(f64, x); // built-in gamma function
+        const g = std.math.gamma(f64, x); // built-in gamma function
 
         // `fmt` parameter to print has to comptime known.
         // Floating point printed as decimal or scientific is decided here.
@@ -52,14 +52,14 @@ pub fn main() !void {
 
 /// Calculate the coefficients used by Spouge's approximation (based on the C implementation)
 /// Caller owns returned memory.
-fn calculateCoefficients(allocator: mem.Allocator, num_coeff: usize) ![]f64 {
+fn calculateCoefficients(allocator: std.mem.Allocator, num_coeff: usize) ![]f64 {
     const f_num_coeff: f64 = @floatFromInt(num_coeff);
     var c = try allocator.alloc(f64, num_coeff);
     var k1_factrl: f64 = 1.0;
-    c[0] = @sqrt(2.0 * math.pi);
+    c[0] = @sqrt(2.0 * std.math.pi);
     for (1..num_coeff) |k| {
         const f_k: f64 = @floatFromInt(k);
-        c[k] = @exp(f_num_coeff - f_k) * math.pow(f64, f_num_coeff - f_k, f_k - 0.5) / k1_factrl;
+        c[k] = @exp(f_num_coeff - f_k) * std.math.pow(f64, f_num_coeff - f_k, f_k - 0.5) / k1_factrl;
         k1_factrl *= -f_k;
     }
     return c;
@@ -74,6 +74,6 @@ fn gamma(coeffs: []const f64, x: f64) f64 {
     for (1..num_coeff) |k| {
         accm += coeffs[k] / (x + @as(f64, @floatFromInt(k)));
     }
-    accm *= @exp(-(x + f_num_coeff)) * math.pow(f64, x + f_num_coeff, x + 0.5);
+    accm *= @exp(-(x + f_num_coeff)) * std.math.pow(f64, x + f_num_coeff, x + 0.5);
     return accm / x;
 }

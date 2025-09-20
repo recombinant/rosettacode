@@ -1,31 +1,36 @@
 // https://rosettacode.org/wiki/Dijkstra%27s_algorithm
-// Translation of Nim
+// {{works with|Zig|0.15.1}}
+// {{trans|Nim}}
 const std = @import("std");
 
 pub fn main() !void {
-    // var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    // var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     // defer arena.deinit();
     // const allocator = arena.allocator();
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     const allocator = gpa.allocator();
     defer _ = gpa.deinit();
 
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var graph = try Graph.init(allocator, &[_]Edge{
+    var graph: Graph = try .init(allocator, &[_]Edge{
         .{ "a", "b", 7 },  .{ "a", "c", 9 },  .{ "a", "f", 14 },
         .{ "b", "c", 10 }, .{ "b", "d", 15 }, .{ "c", "d", 11 },
         .{ "c", "f", 2 },  .{ "d", "e", 6 },  .{ "e", "f", 9 },
     });
-    defer graph.deinit();
+    defer graph.deinit(allocator);
 
     const path1 = try graph.dijkstraPath(allocator, "a", "e");
     defer allocator.free(path1);
-    try printPath(writer, path1);
+    try printPath(stdout, path1);
 
     const path2 = try graph.dijkstraPath(allocator, "a", "f");
     defer allocator.free(path2);
-    try printPath(writer, path2);
+    try printPath(stdout, path2);
+
+    try stdout.flush();
 }
 
 /// Print a path.
@@ -52,9 +57,9 @@ const Graph = struct {
     /// Initialize a graph from an edge list.
     /// Use floats for costs in order to compare to Inf value.
     fn init(allocator: std.mem.Allocator, edges: []const Edge) !Graph {
-        var g = Graph{
-            .vertices = std.StringArrayHashMap(void).init(allocator),
-            .neighbours = std.StringArrayHashMap(DestCostList).init(allocator),
+        var g: Graph = .{
+            .vertices = .init(allocator),
+            .neighbours = .init(allocator),
         };
         for (edges) |edge| {
             const src, const dst, const cost = edge;
@@ -63,23 +68,23 @@ const Graph = struct {
 
             const gop = try g.neighbours.getOrPut(src);
             if (!gop.found_existing)
-                gop.value_ptr.* = DestCostList.init(allocator);
-            try gop.value_ptr.append(.{ dst, cost });
+                gop.value_ptr.* = .empty;
+            try gop.value_ptr.append(allocator, .{ dst, cost });
         }
         return g;
     }
-    fn deinit(self: *Graph) void {
+    fn deinit(self: *Graph, allocator: std.mem.Allocator) void {
         self.vertices.deinit();
-        for (self.neighbours.values()) |list|
-            list.deinit();
+        for (self.neighbours.values()) |*list|
+            list.deinit(allocator);
         self.neighbours.deinit();
     }
     /// Find the path from "first" to "last" which minimizes the cost.
     /// Allocates memory for the result, which must be freed by the caller.
     fn dijkstraPath(graph: *Graph, allocator: std.mem.Allocator, first: []const u8, last: []const u8) ![][]const u8 {
-        var dist = std.StringArrayHashMap(u64).init(allocator);
+        var dist: std.StringArrayHashMap(u64) = .init(allocator);
         defer dist.deinit();
-        var previous = std.StringArrayHashMap([]const u8).init(allocator);
+        var previous: std.StringArrayHashMap([]const u8) = .init(allocator);
         defer previous.deinit();
         var not_seen = try graph.vertices.clone();
         defer not_seen.deinit();
@@ -116,13 +121,13 @@ const Graph = struct {
                 };
         }
         // Build the path.
-        var result = std.ArrayList([]const u8).init(allocator);
+        var result: std.ArrayList([]const u8) = .empty;
         var optional_vertex: ?[]const u8 = last;
         while (optional_vertex) |vertex| {
-            try result.append(vertex);
+            try result.append(allocator, vertex);
             optional_vertex = previous.get(vertex);
         }
         std.mem.reverse([]const u8, result.items);
-        return result.toOwnedSlice();
+        return result.toOwnedSlice(allocator);
     }
 };

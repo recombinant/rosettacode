@@ -1,51 +1,45 @@
 // https://rosettacode.org/wiki/Discrete_Fourier_transform
-// Translation of Wren
+// {{works with|Zig|0.15.1}}
+// {{trans|Wren}}
 const std = @import("std");
-const fmt = std.fmt;
-const mem = std.mem;
-const math = std.math;
-const complex = math.complex;
 
 const Float = f64;
-const FloatFmt = "{d:.2}";
-const Complex = complex.Complex(Float);
+const Complex = std.math.complex.Complex(Float);
 
 pub fn main() !void {
-    // Allocator ------------------------------------------
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    // ------------------------------------------ allocator
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
+    // --------------------------------------------- stdout
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    // stdout ---------------------------------------------
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
-
-    // Sequence -------------------------------------------
+    // ------------------------------------------- sequence
     const sequence = [_]Float{ 2, 3, 5, 7, 11 };
     const x = try allocator.alloc(Complex, sequence.len);
     defer allocator.free(x);
     for (sequence, x) |i, *xx|
         xx.* = Complex{ .re = i, .im = 0 };
-    try printComplexSlice(allocator, stdout, x, "\nOriginal sequence:");
+    try printComplexSlice(x, "\nOriginal sequence:", stdout);
 
-    // DFT ------------------------------------------------
+    // ------------------------------------------------ DFT
     const y = try dft(allocator, x);
     defer allocator.free(y);
-    try printComplexSlice(allocator, stdout, y, "\nAfter applying the Discrete Fourier Transform:");
+    try printComplexSlice(y, "\nAfter applying the Discrete Fourier Transform:", stdout);
 
-    // IDFT -----------------------------------------------
+    // ----------------------------------------------- IDFT
     const inv = try idft(allocator, y);
     defer allocator.free(inv);
-    try printComplexSlice(allocator, stdout, inv, "\nAfter applying the Inverse Discrete Fourier Transform to the above transform:");
+    try printComplexSlice(inv, "\nAfter applying the Inverse Discrete Fourier Transform to the above transform:", stdout);
 
-    // stdout ---------------------------------------------
-    try stdout.writeByte('\n');
-    try bw.flush();
+    // --------------------------------------------- stdout
+    try stdout.flush();
 }
 
 /// Caller owns returned memory
-fn dft(allocator: mem.Allocator, x: []Complex) ![]Complex {
+fn dft(allocator: std.mem.Allocator, x: []Complex) ![]Complex {
     const N = x.len;
     const zero = Complex{ .re = 0, .im = 0 };
     const Nf: Float = @floatFromInt(N);
@@ -57,16 +51,16 @@ fn dft(allocator: mem.Allocator, x: []Complex) ![]Complex {
         for (x, 0..) |xx, n| {
             const kf: Float = @floatFromInt(k);
             const nf: Float = @floatFromInt(n);
-            const t = Complex{ .re = 0, .im = -2 * math.pi * kf * nf / Nf };
-            // x[n] = x[n] +  y[k] * exp(t)
-            yy.* = yy.*.add(xx.mul(complex.exp(t)));
+            const t = Complex{ .re = 0, .im = -2 * std.math.pi * kf * nf / Nf };
+            // x[n] = x[n] + y[k] * exp(t)
+            yy.* = yy.*.add(xx.mul(std.math.complex.exp(t)));
         }
     }
     return y;
 }
 
 /// Caller owns returned memory
-fn idft(allocator: mem.Allocator, y: []Complex) ![]Complex {
+fn idft(allocator: std.mem.Allocator, y: []Complex) ![]Complex {
     const N = y.len;
     const zero = Complex{ .re = 0, .im = 0 };
     const Nf: Float = @floatFromInt(N);
@@ -78,38 +72,40 @@ fn idft(allocator: mem.Allocator, y: []Complex) ![]Complex {
         for (y, 0..) |yy, k| {
             const kf: Float = @floatFromInt(k);
             const nf: Float = @floatFromInt(n);
-            const t = Complex{ .re = 0, .im = 2 * math.pi * kf * nf / Nf };
-            // x[n] = x[n] +  y[k] * exp(t)
-            xx.* = xx.*.add(yy.mul(complex.exp(t)));
+            const t = Complex{ .re = 0, .im = 2 * std.math.pi * kf * nf / Nf };
+            // x[n] = x[n] + y[k] * exp(t)
+            xx.* = xx.*.add(yy.mul(std.math.complex.exp(t)));
         }
         // x[n] = x[n] / N
         xx.* = xx.*.div(Complex{ .re = Nf, .im = 0 });
         // clean x[n] to remove very small imaginary values
-        if (math.approxEqAbs(Float, 0, xx.im, 1e-14)) xx.* = Complex{ .re = xx.*.re, .im = 0 };
+        if (std.math.approxEqAbs(Float, 0, xx.im, 1e-14)) xx.* = Complex{ .re = xx.*.re, .im = 0 };
     }
     return x;
 }
 
 /// Print title followed by complex numbers
-fn printComplexSlice(allocator: mem.Allocator, writer: anytype, sequence: []const Complex, title: []const u8) !void {
-    try writer.writeAll(title);
+fn printComplexSlice(sequence: []const Complex, title: []const u8, w: *std.Io.Writer) !void {
+    try w.writeAll(title);
     var sep: []const u8 = " ";
     for (sequence) |c| {
-        try writer.writeAll(sep);
-        try printComplex(allocator, writer, c);
+        try w.writeAll(sep);
+        try printComplex(c, w);
         sep = ", ";
     }
 }
 
 /// Print complex number. Omit imaginary component if zero.
-fn printComplex(allocator: mem.Allocator, writer: anytype, c: Complex) !void {
-    const format = "(" ++ FloatFmt ++ ", " ++ FloatFmt ++ "i)"; // comptime evaluated
+fn printComplex(c: Complex, w: *std.Io.Writer) !void {
+    const options: std.fmt.Number = .{ .precision = 2 };
 
-    const s = if (c.im == 0)
-        try fmt.allocPrint(allocator, FloatFmt, .{c.re})
-    else
-        try fmt.allocPrint(allocator, format, .{ c.re, c.im });
-
-    try writer.print("{s}", .{s});
-    allocator.free(s);
+    if (c.im == 0)
+        try w.printFloat(c.re, options)
+    else {
+        try w.writeByte('(');
+        try w.printFloat(c.re, options);
+        try w.writeAll(", ");
+        try w.printFloat(c.im, options);
+        try w.writeAll("i)");
+    }
 }

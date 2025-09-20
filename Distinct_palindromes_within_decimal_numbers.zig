@@ -1,29 +1,32 @@
 // https://rosettacode.org/wiki/Distinct_palindromes_within_decimal_numbers
-// Translation of C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
 const std = @import("std");
 
 pub fn main() !void {
     // ArenaAllocator with its facility to reset obviates the
     // requirement to individually free()/deinit() any allocated
     // memory.
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer _ = arena.deinit();
     const allocator = arena.allocator();
 
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // --------------------------------------------------- task 1
-    try writer.writeAll("Number  Palindromes\n");
+    try stdout.writeAll("Number  Palindromes\n");
     var i: u32 = 100;
     while (i <= 125) : (i += 1) {
         var buf: [3]u8 = undefined;
         const s = try std.fmt.bufPrint(&buf, "{d}", .{i});
         const palindromes: [][]const u8 = try allPalindromes(allocator, s);
         defer _ = arena.reset(.retain_capacity);
-        try writer.print("{}  ", .{i});
+        try stdout.print("{}  ", .{i});
         std.mem.sort([]const u8, palindromes, {}, lessThan);
         for (palindromes) |palindrome|
-            try writer.print("{s:5}", .{palindrome});
-        try writer.writeByte('\n');
+            try stdout.print("{s:5}", .{palindrome});
+        try stdout.writeByte('\n');
     }
     // --------------------------------------------------- task 2
     const numbers = [_][]const u8{
@@ -33,24 +36,26 @@ pub fn main() !void {
         "1234567905432098769",       "123456790165432098769", "83071934127905179083",
         "1320267947849490361205695",
     };
-    try writer.writeAll("\nNumber            Has no >= 2 digit palindromes\n");
+    try stdout.writeAll("\nNumber            Has no >= 2 digit palindromes\n");
     for (numbers) |number| {
         const palindromes = try allPalindromes(allocator, number);
         defer _ = arena.reset(.retain_capacity);
         const none = !hasSignificantStrings(palindromes);
-        try writer.print("{s: <26} {}\n", .{ number, none });
+        try stdout.print("{s: <26} {}\n", .{ number, none });
     }
+
+    try stdout.flush();
 }
 /// This function does not free any of its allocated memory.
 /// Freeing relies upon the allocator's parent being reset
 /// i.e. ArenaAllocator in this solution.
 fn allPalindromes(allocator: std.mem.Allocator, number: []const u8) ![][]const u8 {
-    var substrings = std.ArrayList([]const u8).init(allocator);
+    var substrings: std.ArrayList([]const u8) = .empty;
     for (0..number.len) |i|
         for (1..number.len - i + 1) |j|
-            try substrings.append(number[i .. i + j]);
+            try substrings.append(allocator, number[i .. i + j]);
 
-    var palindrome_set = std.StringArrayHashMap(void).init(allocator);
+    var palindrome_set: std.StringArrayHashMap(void) = .init(allocator);
     for (substrings.items) |string|
         if (isPalindrome(string))
             try palindrome_set.put(string, {});

@@ -1,20 +1,26 @@
 // https://rosettacode.org/wiki/Digital_root
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
-const print = std.debug.print;
 
-pub fn main() void {
-    // print("{}\n", .{@as(u64, 1) / @as(u64, 10)});
+pub fn main() !void {
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    // try stdout.print("{}\n", .{@as(u64, 1) / @as(u64, 10)});
     const numbers = [_]u64{ 627615, 39390, 588225, 393900588225 };
 
     for (numbers) |n| {
         const p, const d = calcDigitalRoot2(n, 10);
-        print("{}: pers {}, root {}\n", .{ n, p, d });
+        try stdout.print("{}: pers {}, root {}\n", .{ n, p, d });
     }
-    print("\n", .{});
+    try stdout.writeByte('\n');
 
     for (numbers) |n|
-        print("{}: root {}\n", .{ n, calcDigitalRoot(n, 10) });
+        try stdout.print("{}: root {}\n", .{ n, calcDigitalRoot(n, 10) });
+
+    try stdout.flush();
 }
 
 /// Calculate the additive persistence and the digital root.

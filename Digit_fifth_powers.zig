@@ -1,17 +1,23 @@
 // https://rosettacode.org/wiki/Digit_fifth_powers
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     var sum: u64 = 0;
     var i: u64 = 2; // ignore 1
     // up to but not including 6 digits
     while (i < 1e6) : (i += 1)
         if (i == sum5(i)) {
-            try writer.print("{}\n", .{i});
+            try stdout.print("{}\n", .{i});
             sum += i;
         };
-    try writer.print("Sum of all the numbers that can be written as the sum of fifth powers of their digits = {}\n", .{sum});
+    try stdout.print("Sum of all the numbers that can be written as the sum of fifth powers of their digits = {}\n", .{sum});
+
+    try stdout.flush();
 }
 
 fn sum5(n_: u64) u64 {
