@@ -1,7 +1,6 @@
 // https://rosettacode.org/wiki/Doomsday_rule
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const epoch = std.time.epoch;
-const mem = std.mem;
 const c = @cImport({
     @cInclude("time.h");
 });
@@ -22,11 +21,13 @@ pub fn main() anyerror!void {
         .{ .year = 2101, .month = 4, .day = 2 },
     };
 
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const now = c.time(null);
     const tm_now: *c.tm = c.localtime(&now);
-    var tm_task: c.tm = mem.zeroes(c.tm);
+    var tm_task: c.tm = std.mem.zeroes(c.tm);
 
     for (task_dates) |d| {
         const month: []const u8 = months[d.month] orelse return MonthsError.NoMonthZero;
@@ -51,11 +52,12 @@ pub fn main() anyerror!void {
             "{s} {d}, {d} {s} a {s}.\n",
             .{ month, d.day, d.year, tense, weekday(d) },
         );
+        try stdout.flush();
     }
 }
 
 const Date = struct {
-    year: epoch.Year,
+    year: std.time.epoch.Year,
     month: u4,
     day: u5,
 };
@@ -71,6 +73,6 @@ fn weekday(date: Date) []const u8 {
     const t = r % 12;
     const c_anchor = (5 * (century % 4) + 2) % 7;
     const doom = (s + t + t / 4 + c_anchor) % 7;
-    const anchor = (if (epoch.isLeapYear(date.year)) leap_doom else norm_doom)[date.month - 1];
+    const anchor = (if (std.time.epoch.isLeapYear(date.year)) leap_doom else norm_doom)[date.month - 1];
     return days[(7 + doom + date.day - anchor) % 7];
 }

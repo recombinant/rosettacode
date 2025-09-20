@@ -1,12 +1,12 @@
 // https://rosettacode.org/wiki/Linear_congruential_generator
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const math = std.math;
 
 const print = std.debug.print;
 
 pub fn main() void {
     {
-        const RndGen = Microsoft;
+        const RndGen = Microsoft.lcg;
 
         var rnd = RndGen.init(0);
         print("\nMicrosoft random\n", .{});
@@ -17,7 +17,7 @@ pub fn main() void {
         print("{}\n", .{rnd.random().int(i16)});
     }
     {
-        const RndGen = BSD;
+        const RndGen = BSD.lcg;
 
         var rnd = RndGen.init(0);
         print("\nBSD random\n", .{});
@@ -28,7 +28,7 @@ pub fn main() void {
         print("random number is {}\n", .{rnd.random().int(u32)});
     }
     {
-        const RndGen = Microsoft;
+        const RndGen = Microsoft.lcg;
 
         var rnd = RndGen.init(1);
         print("\nMicrosoft random (emulated)\n", .{});
@@ -54,19 +54,19 @@ pub fn main() void {
 }
 
 pub const Microsoft = struct {
-    pub usingnamespace LinearCongruentialGenerator(u16, u15, .{
+    pub const lcg = LinearCongruentialGenerator(u16, u15, .{
         .a = 214013,
         .c = 2531011,
-        .m = math.shl(u32, 1, 31) - 1,
+        .m = std.math.shl(u32, 1, 31) - 1,
         .shift = 16,
     });
 };
 
 const BSD = struct {
-    pub usingnamespace LinearCongruentialGenerator(u16, u31, .{
+    pub const lcg = LinearCongruentialGenerator(u16, u31, .{
         .a = 1103515245,
         .c = 12345,
-        .m = math.shl(u32, 1, 31) - 1,
+        .m = std.math.shl(u32, 1, 31) - 1,
     });
 };
 
@@ -81,7 +81,7 @@ fn LinearCongruentialGenerator(comptime S: type, comptime R: type, comptime para
         s: u64,
 
         pub fn init(init_s: S) Self {
-            var x = Self{
+            var x: Self = .{
                 .s = undefined,
             };
 
@@ -99,7 +99,7 @@ fn LinearCongruentialGenerator(comptime S: type, comptime R: type, comptime para
             return if (self.shift == 0)
                 @truncate(self.s)
             else
-                @truncate(math.shr(u64, self.s, self.shift));
+                @truncate(std.math.shr(u64, self.s, self.shift));
         }
 
         pub fn seed(self: *Self, init_s: u64) void {

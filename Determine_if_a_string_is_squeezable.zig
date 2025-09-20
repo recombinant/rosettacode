@@ -1,9 +1,6 @@
 // https://rosettacode.org/wiki/Determine_if_a_string_is_squeezable
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const heap = std.heap;
-const mem = std.mem;
-const print = std.debug.print;
-const testing = std.testing;
 
 const Data = struct {
     c: u8,
@@ -24,29 +21,35 @@ pub fn main() !void {
         .{ .c = 'r', .s = "                                                   ---  Harry S Truman  " },
     };
 
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     for (data_array) |data| {
-        print("Character: '{c}'\n", .{data.c});
-        print("{d}: <<<{s}>>>\n", .{ data.s.len, data.s });
+        try stdout.print("Character: '{c}'\n", .{data.c});
+        try stdout.print("{d}: <<<{s}>>>\n", .{ data.s.len, data.s });
 
         const squeezed = try squeeze(allocator, data.s, data.c);
-        print("{d}: <<<{s}>>>\n\n", .{ squeezed.len, squeezed });
+        try stdout.print("{d}: <<<{s}>>>\n\n", .{ squeezed.len, squeezed });
 
         allocator.free(squeezed);
     }
+
+    try stdout.flush();
 }
 
-fn squeeze(allocator: mem.Allocator, s: []const u8, c: u8) ![]u8 {
+fn squeeze(allocator: std.mem.Allocator, s: []const u8, c: u8) ![]u8 {
     if (s.len < 2) return try allocator.dupe(u8, s);
 
-    var result = try std.ArrayList(u8).initCapacity(allocator, s.len);
+    var result: std.ArrayList(u8) = try .initCapacity(allocator, s.len);
 
     var i: usize = 0;
     while (i != s.len) {
-        try result.append(s[i]);
+        try result.append(allocator, s[i]);
         if (s[i] == c) {
             var j = i + 1;
             while (j != s.len and s[j] == c)
@@ -56,8 +59,10 @@ fn squeeze(allocator: mem.Allocator, s: []const u8, c: u8) ![]u8 {
             i += 1;
         }
     }
-    return try result.toOwnedSlice();
+    return try result.toOwnedSlice(allocator);
 }
+
+const testing = std.testing;
 
 test "squeeze" {
     const allocator = testing.allocator;

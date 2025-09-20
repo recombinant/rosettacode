@@ -1,12 +1,11 @@
 // https://rosettacode.org/wiki/Double_Twin_Primes
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
-const math = std.math;
-const testing = std.testing;
 const print = std.debug.print;
 
 pub fn main() void {
-    const sieve = Sieve(1000).init();
+    const sieve: Sieve(1000) = .init();
     print("Double twin primes under 1,000:\n", .{});
 
     var i: u32 = 3;
@@ -24,14 +23,14 @@ fn Sieve(comptime max: usize) type {
         primes: T,
 
         fn init() Self {
-            var result = Self{ .primes = T.initFull() };
+            var result: Self = .{ .primes = T.initFull() };
 
             const primes = &result.primes;
             primes.unset(0);
             primes.unset(1);
 
             const limit = max + 1;
-            const root_limit = math.sqrt(limit) + 1;
+            const root_limit = std.math.sqrt(limit) + 1;
             // Sieve of Eratosthenes
             for (2..root_limit) |n|
                 if (primes.isSet(n)) {
@@ -63,8 +62,10 @@ fn Sieve(comptime max: usize) type {
 //     return true;
 // }
 
+const testing = std.testing;
+
 test "isPrime" {
-    const sieve = Sieve(1000).init();
+    const sieve: Sieve(1000) = .init();
 
     const primes = [_]u32{ 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 991, 997 };
     const non_primes = [_]u32{ 0, 1, 4, 6, 8, 9, 10, 12, 14, 15, 16, 18, 996, 998 };

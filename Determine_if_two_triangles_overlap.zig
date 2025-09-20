@@ -1,56 +1,58 @@
 // https://rosettacode.org/wiki/Determine_if_two_triangles_overlap
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
-const math = std.math;
-const mem = std.mem;
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const Trigon = Triangle(f64); // single location to change floating point type
 
     {
-        var t1 = Trigon.init(.{ .x = 0, .y = 0 }, .{ .x = 5, .y = 0 }, .{ .x = 0, .y = 5 });
-        var t2 = Trigon.init(.{ .x = 0, .y = 0 }, .{ .x = 5, .y = 0 }, .{ .x = 0, .y = 6 });
-        try stdout.print("{} and {} overlap = {}\n", .{ t1, t2, Trigon.tri2D(&t1, &t2, .{}) });
+        var t1: Trigon = .init(.{ .x = 0, .y = 0 }, .{ .x = 5, .y = 0 }, .{ .x = 0, .y = 5 });
+        var t2: Trigon = .init(.{ .x = 0, .y = 0 }, .{ .x = 5, .y = 0 }, .{ .x = 0, .y = 6 });
+        try stdout.print("{f} and {f} overlap = {}\n", .{ t1, t2, Trigon.tri2D(&t1, &t2, .{}) });
     }
     {
-        var t1 = Trigon.init(.{ .x = 0, .y = 0 }, .{ .x = 0, .y = 5 }, .{ .x = 5, .y = 0 });
-        var t2 = Trigon.init(.{ .x = 0, .y = 0 }, .{ .x = 0, .y = 5 }, .{ .x = 5, .y = 0 });
-        try stdout.print("{} and {} overlap = {}\n", .{ t1, t2, Trigon.tri2D(&t1, &t2, .{ .allow_reversed = true }) });
+        var t1: Trigon = .init(.{ .x = 0, .y = 0 }, .{ .x = 0, .y = 5 }, .{ .x = 5, .y = 0 });
+        var t2: Trigon = .init(.{ .x = 0, .y = 0 }, .{ .x = 0, .y = 5 }, .{ .x = 5, .y = 0 });
+        try stdout.print("{f} and {f} overlap = {}\n", .{ t1, t2, Trigon.tri2D(&t1, &t2, .{ .allow_reversed = true }) });
     }
     {
-        var t1 = Trigon.init(.{ .x = 0, .y = 0 }, .{ .x = 5, .y = 0 }, .{ .x = 0, .y = 5 });
-        var t2 = Trigon.init(.{ .x = -10, .y = 0 }, .{ .x = -5, .y = 0 }, .{ .x = -1, .y = 6 });
-        try stdout.print("{} and {} overlap = {}\n", .{ t1, t2, Trigon.tri2D(&t1, &t2, .{}) });
+        var t1: Trigon = .init(.{ .x = 0, .y = 0 }, .{ .x = 5, .y = 0 }, .{ .x = 0, .y = 5 });
+        var t2: Trigon = .init(.{ .x = -10, .y = 0 }, .{ .x = -5, .y = 0 }, .{ .x = -1, .y = 6 });
+        try stdout.print("{f} and {f} overlap = {}\n", .{ t1, t2, Trigon.tri2D(&t1, &t2, .{}) });
     }
     {
-        var t1 = Trigon.init(.{ .x = 0, .y = 0 }, .{ .x = 5, .y = 0 }, .{ .x = 2.5, .y = 5 });
-        var t2 = Trigon.init(.{ .x = 0, .y = 4 }, .{ .x = 2.5, .y = -1 }, .{ .x = 5, .y = 4 });
-        try stdout.print("{} and {} overlap = {}\n", .{ t1, t2, Trigon.tri2D(&t1, &t2, .{}) });
+        var t1: Trigon = .init(.{ .x = 0, .y = 0 }, .{ .x = 5, .y = 0 }, .{ .x = 2.5, .y = 5 });
+        var t2: Trigon = .init(.{ .x = 0, .y = 4 }, .{ .x = 2.5, .y = -1 }, .{ .x = 5, .y = 4 });
+        try stdout.print("{f} and {f} overlap = {}\n", .{ t1, t2, Trigon.tri2D(&t1, &t2, .{}) });
     }
     {
-        var t1 = Trigon.init(.{ .x = 0, .y = 0 }, .{ .x = 1, .y = 1 }, .{ .x = 0, .y = 2 });
-        var t2 = Trigon.init(.{ .x = 2, .y = 1 }, .{ .x = 3, .y = 0 }, .{ .x = 3, .y = 2 });
-        try stdout.print("{} and {} overlap = {}\n", .{ t1, t2, Trigon.tri2D(&t1, &t2, .{}) });
+        var t1: Trigon = .init(.{ .x = 0, .y = 0 }, .{ .x = 1, .y = 1 }, .{ .x = 0, .y = 2 });
+        var t2: Trigon = .init(.{ .x = 2, .y = 1 }, .{ .x = 3, .y = 0 }, .{ .x = 3, .y = 2 });
+        try stdout.print("{f} and {f} overlap = {}\n", .{ t1, t2, Trigon.tri2D(&t1, &t2, .{}) });
     }
     {
-        var t1 = Trigon.init(.{ .x = 0, .y = 0 }, .{ .x = 1, .y = 1 }, .{ .x = 0, .y = 2 });
-        var t2 = Trigon.init(.{ .x = 2, .y = 1 }, .{ .x = 3, .y = -2 }, .{ .x = 3, .y = 4 });
-        try stdout.print("{} and {} overlap = {}\n", .{ t1, t2, Trigon.tri2D(&t1, &t2, .{}) });
+        var t1: Trigon = .init(.{ .x = 0, .y = 0 }, .{ .x = 1, .y = 1 }, .{ .x = 0, .y = 2 });
+        var t2: Trigon = .init(.{ .x = 2, .y = 1 }, .{ .x = 3, .y = -2 }, .{ .x = 3, .y = 4 });
+        try stdout.print("{f} and {f} overlap = {}\n", .{ t1, t2, Trigon.tri2D(&t1, &t2, .{}) });
     }
     try stdout.writeAll("\nBarely touching:\n");
     {
-        var t1 = Trigon.init(.{ .x = 0, .y = 0 }, .{ .x = 1, .y = 0 }, .{ .x = 0, .y = 1 });
-        var t2 = Trigon.init(.{ .x = 1, .y = 0 }, .{ .x = 2, .y = 0 }, .{ .x = 1, .y = 1 });
-        try stdout.print("{} and {} overlap = {}\n", .{ t1, t2, Trigon.tri2D(&t1, &t2, .{ .eps = 0.0 }) });
+        var t1: Trigon = .init(.{ .x = 0, .y = 0 }, .{ .x = 1, .y = 0 }, .{ .x = 0, .y = 1 });
+        var t2: Trigon = .init(.{ .x = 1, .y = 0 }, .{ .x = 2, .y = 0 }, .{ .x = 1, .y = 1 });
+        try stdout.print("{f} and {f} overlap = {}\n", .{ t1, t2, Trigon.tri2D(&t1, &t2, .{ .eps = 0.0 }) });
     }
     try stdout.writeAll("\nBarely touching:\n");
     {
-        var t1 = Trigon.init(.{ .x = 0, .y = 0 }, .{ .x = 1, .y = 0 }, .{ .x = 0, .y = 1 });
-        var t2 = Trigon.init(.{ .x = 1, .y = 0 }, .{ .x = 2, .y = 0 }, .{ .x = 1, .y = 1 });
-        try stdout.print("{} and {} overlap = {}\n", .{ t1, t2, Trigon.tri2D(&t1, &t2, .{ .on_boundary = false }) });
+        var t1: Trigon = .init(.{ .x = 0, .y = 0 }, .{ .x = 1, .y = 0 }, .{ .x = 0, .y = 1 });
+        var t2: Trigon = .init(.{ .x = 1, .y = 0 }, .{ .x = 2, .y = 0 }, .{ .x = 1, .y = 1 });
+        try stdout.print("{f} and {f} overlap = {}\n", .{ t1, t2, Trigon.tri2D(&t1, &t2, .{ .on_boundary = false }) });
     }
+    try stdout.flush();
 }
 
 fn Point(comptime T: type) type {
@@ -59,8 +61,8 @@ fn Point(comptime T: type) type {
         x: T,
         y: T,
 
-        pub fn format(self: *const Self, comptime _: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
-            try writer.print("({d},{d})", .{ self.x, self.y });
+        pub fn format(self: *const Self, w: *std.Io.Writer) std.Io.Writer.Error!void {
+            try w.print("({d},{d})", .{ self.x, self.y });
         }
     };
 }
@@ -74,15 +76,15 @@ fn Triangle(comptime T: type) type {
             return Self{ .points = .{ p0, p1, p2 } };
         }
 
-        pub fn format(self: *const Self, comptime _: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
-            try writer.print("{},{},{}", .{ self.points[0], self.points[1], self.points[2] });
+        pub fn format(self: *const Self, w: *std.Io.Writer) std.Io.Writer.Error!void {
+            try w.print("{f},{f},{f}", .{ self.points[0], self.points[1], self.points[2] });
         }
 
         fn tri2D(
             t1: *Triangle(T),
             t2: *Triangle(T),
             params: struct {
-                eps: T = math.floatEps(T),
+                eps: T = std.math.floatEps(T),
                 allow_reversed: bool = false,
                 on_boundary: bool = true,
             },
@@ -142,7 +144,7 @@ fn Triangle(comptime T: type) type {
             const det_tri = Self.det2D(&self.points[0], &self.points[1], &self.points[2]);
             if (det_tri < 0) {
                 if (allow_reversed) {
-                    mem.swap(Point(T), &self.points[1], &self.points[2]);
+                    std.mem.swap(Point(T), &self.points[1], &self.points[2]);
                 } else {
                     return CheckWindingError.PositiveDeterminant;
                 }

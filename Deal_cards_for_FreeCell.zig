@@ -1,29 +1,24 @@
 // https://rosettacode.org/wiki/Deal_cards_for_FreeCell
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const fmt = std.fmt;
-const heap = std.heap;
-const io = std.io;
-const mem = std.mem;
-
-const RndGen = @import("Linear_congruential_generator.zig").Microsoft;
+const RndGen = @import("Linear_congruential_generator.zig").Microsoft.lcg;
 
 pub fn main() !void {
-    const stdout = io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     for ([_]u16{ 1, 617 }) |n| {
-        // TODO: _ = arena.reset(.retain_capacity);
         try stdout.print("Game #{}\n", .{n});
 
         const rnd = RndGen.init(n);
-        try printFreeCell(stdout, rnd);
+        try printFreeCell(rnd, stdout);
         try stdout.writeByte('\n');
     }
+    try stdout.flush();
 }
 
-fn printFreeCell( // TODO: allocator: mem.Allocator,
-    out: anytype,
-    rnd_: anytype,
-) !void {
+fn printFreeCell(rnd_: anytype, w: *std.Io.Writer) !void {
     var rnd = rnd_;
 
     const suits = [4][]const u8{ "♧", "♢", "♡", "♤" };
@@ -34,38 +29,28 @@ fn printFreeCell( // TODO: allocator: mem.Allocator,
     };
     const pack_len = suits.len * ranks.len;
 
-    // Bytes of unicode.
-    const suits_len: usize = comptime blk: {
-        var len: usize = 0;
-        for (suits) |suit| len += suit.len;
-        break :blk len;
-    };
-    const ranks_len: usize = comptime blk: {
-        var len: usize = 0;
-        for (ranks) |rank| len += rank.len;
-        break :blk len;
-    };
-
-    var buffer: [suits_len * 13 + ranks_len * 4]u8 = undefined;
-    var fba = heap.FixedBufferAllocator.init(&buffer);
+    // (utf-8 length for suits + max length of rank (ie. 10)) * pack length
+    var buffer: [(suits[0].len + 2) * 52]u8 = undefined;
+    var fba: std.heap.FixedBufferAllocator = .init(&buffer);
     const allocator = fba.allocator();
 
-    var deck = try std.BoundedArray([]const u8, pack_len).init(0);
+    var deck_buffer: [pack_len][]const u8 = undefined;
+    var deck: std.ArrayList([]const u8) = .initBuffer(&deck_buffer);
     for (ranks) |rank|
         for (suits) |suit| {
-            const buf = try fmt.allocPrint(allocator, "{s}{s}", .{ rank, suit });
-            try deck.append(buf);
+            const buf = try std.fmt.allocPrint(allocator, "{s}{s}", .{ rank, suit });
+            try deck.appendBounded(buf);
         };
 
-    while (deck.len != 0) {
+    while (deck.items.len != 0) {
         for (0..8) |_| {
-            if (deck.len == 0)
+            if (deck.items.len == 0)
                 break; // linefeed
 
-            const n = rnd.random().int(u16) % deck.len;
+            const n = rnd.random().int(u16) % deck.items.len;
             const card = deck.swapRemove(n);
-            try out.print("{s} ", .{card});
+            try w.print("{s} ", .{card});
         }
-        try out.writeByte('\n');
+        try w.writeByte('\n');
     }
 }
