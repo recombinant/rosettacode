@@ -233,7 +233,7 @@ const BalancedTernary = struct {
     }
 
     /// custom formatter for BalancedTernary
-    pub fn format(self: BalancedTernary, w: *std.Io.Writer) std.io.Writer.Error!void {
+    pub fn format(self: BalancedTernary, w: *std.Io.Writer) std.Io.Writer.Error!void {
         const trits = self.trits;
         var i = self.trits.len;
         while (i != 0) {

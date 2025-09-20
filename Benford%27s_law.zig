@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Benford%27s_law
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 
 pub fn main() !void {
@@ -8,13 +9,17 @@ pub fn main() !void {
     const actual = getActualDistribution(data);
     const benford = getBenfordDistribution();
 
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    try writer.writeAll("First 1000 Fibonacci numbers:\n");
-    try writer.writeAll("Digit  Observed  Predicted\n");
+    try stdout.writeAll("First 1000 Fibonacci numbers:\n");
+    try stdout.writeAll("Digit  Observed  Predicted\n");
 
     for (actual, benford, 1..) |a, b, i|
-        try writer.print("  {d}      {d:.3}     {d:.3}\n", .{ i, a, b });
+        try stdout.print("  {d}      {d:.3}     {d:.3}\n", .{ i, a, b });
+
+    try stdout.flush();
 }
 
 fn getActualDistribution(text: []const u8) [9]f64 {

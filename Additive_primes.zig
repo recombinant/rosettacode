@@ -1,13 +1,16 @@
 // https://rosettacode.org/wiki/Additive_primes
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 
 pub fn main() !void {
     const N = 500;
 
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    try writer.print("Rosetta Code: additive primes less than {}:\n", .{N});
+    try stdout.print("Rosetta Code: additive primes less than {}:\n", .{N});
 
     // Pre-calculate the prime numbers below N at comptime.
     const is_prime: std.StaticBitSet(N) = comptime blk: {
@@ -29,13 +32,15 @@ pub fn main() !void {
         inc = 2;
     }) {
         if (is_prime.isSet(n) and is_prime.isSet(sumOfDecimalDigits(n))) {
-            try writer.print("{d:4}", .{n});
+            try stdout.print("{d:4}", .{n});
             count += 1;
             if ((count % 10) == 0)
-                try writer.writeByte('\n');
+                try stdout.writeByte('\n');
         }
     }
-    try writer.print("\nThose were {} additive primes.\n", .{count});
+    try stdout.print("\nThose were {} additive primes.\n", .{count});
+
+    try stdout.flush();
 }
 
 fn isPrime(n: anytype) bool {

@@ -1,15 +1,16 @@
 // https://rosettacode.org/wiki/Append_numbers_at_same_position_in_strings
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const fmt = std.fmt;
-const mem = std.mem;
-const assert = std.debug.assert;
-const print = std.debug.print;
 
 pub fn main() !void {
     // ---------------------------------------------------- allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
+    // --------------------------------------------------------------
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // --------------------------------------------------------------
 
     const list1 = [_]u32{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
@@ -24,26 +25,27 @@ pub fn main() !void {
         allocator.free(result);
     }
 
-    const s = try mem.join(allocator, ",", result);
-    print("list=[{s}]\n", .{s});
+    const s = try std.mem.join(allocator, ", ", result);
+    try stdout.print("list = [ {s} ]\n", .{s});
     allocator.free(s);
+
+    try stdout.flush();
 }
 
 /// Return result as slice of strings. Caller owns returned memory.
-fn concatenateLists(allocator: mem.Allocator, lists: []const []const u32) ![][]const u8 {
-    for (lists[1..]) |list| assert(list.len == lists[0].len);
+fn concatenateLists(allocator: std.mem.Allocator, lists: []const []const u32) ![][]const u8 {
+    for (lists[1..]) |list| std.debug.assert(list.len == lists[0].len);
 
-    var result = std.ArrayList([]const u8).init(allocator);
+    var result: std.ArrayList([]const u8) = .empty;
 
-    var buffer = std.ArrayList(u8).init(allocator);
-    defer buffer.deinit();
-    const writer = buffer.writer();
+    var w: std.Io.Writer.Allocating = .init(allocator);
+    defer w.deinit();
 
     for (0..lists[0].len) |i| {
-        buffer.clearRetainingCapacity();
+        w.clearRetainingCapacity();
         for (lists) |list|
-            try fmt.formatInt(list[i], 10, .lower, .{}, writer);
-        try result.append(try allocator.dupe(u8, buffer.items));
+            try w.writer.printInt(list[i], 10, .lower, .{});
+        try result.append(allocator, try allocator.dupe(u8, w.written()));
     }
-    return try result.toOwnedSlice();
+    return try result.toOwnedSlice(allocator);
 }
