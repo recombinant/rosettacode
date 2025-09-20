@@ -1,14 +1,12 @@
 // https://rosettacode.org/wiki/Eisenstein_primes
-// Translation of Nim
-// TODO: requires a plot - maybe popen gnuplot
+// {{works with|Zig|0.15.1}}
+// {{trans|Nim}}
+// currently lacks a plot
 const std = @import("std");
-const math = std.math;
-const mem = std.mem;
-const sort = std.sort;
-const Complex = math.Complex;
+const Complex = std.math.Complex;
 
 const Eisenstein = struct {
-    const omega = Complex(f64){ .re = -0.5, .im = math.sqrt(@as(f64, 3)) * 0.5 };
+    const omega = Complex(f64){ .re = -0.5, .im = std.math.sqrt(@as(f64, 3)) * 0.5 };
 
     a: i64,
     b: i64,
@@ -37,21 +35,18 @@ const Eisenstein = struct {
         }
     }
 
-    pub fn format(e: Eisenstein, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
-        _ = fmt; // autofix
-        _ = options; // autofix
-
+    pub fn format(e: Eisenstein, w: *std.Io.Writer) std.Io.Writer.Error!void {
         const sign: u8, const imag = if (e.n.im >= 0) .{ '+', e.n.im } else .{ '-', -e.n.im };
 
-        try writer.print("{d:7.4} {c} {d:6.4}i", .{ e.n.re, sign, imag });
+        try w.print("{d:7.4} {c} {d:6.4}i", .{ e.n.re, sign, imag });
     }
 };
 
 fn lessThan(_: void, e1: Eisenstein, e2: Eisenstein) bool {
-    return switch (math.order(e1.norm(), e2.norm())) {
+    return switch (std.math.order(e1.norm(), e2.norm())) {
         .lt => true,
         .gt => false,
-        .eq => switch (math.order(e1.im(), e2.im())) {
+        .eq => switch (std.math.order(e1.im(), e2.im())) {
             .lt => true,
             .gt => false,
             .eq => e1.re() < e2.re(),
@@ -74,38 +69,38 @@ fn isPrimeN(n: u64) bool {
 }
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     // Find Eisenstein primes.
-    var eprimes_list = std.ArrayList(Eisenstein).init(allocator);
+    var eprimes_list: std.ArrayList(Eisenstein) = .empty;
     var a: i64 = -100;
     while (a < 100 + 1) : (a += 1) {
         var b: i64 = -100;
         while (b < 100 + 1) : (b += 1) {
-            const e = Eisenstein.init(a, b);
+            const e: Eisenstein = .init(a, b);
             if (e.isPrimeE())
-                try eprimes_list.append(e);
+                try eprimes_list.append(allocator, e);
         }
     }
 
-    const eprimes = try eprimes_list.toOwnedSlice();
+    const eprimes = try eprimes_list.toOwnedSlice(allocator);
     defer allocator.free(eprimes);
-    sort.insertion(Eisenstein, eprimes, {}, lessThan);
+    std.mem.sortUnstable(Eisenstein, eprimes, {}, lessThan);
 
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     // Display first 100 Eisenstein primes to terminal.
     try stdout.writeAll("First 100 Eisenstein primes nearest zero:\n");
     for (0..100) |i| {
-        try stdout.print("{}", .{eprimes[i]});
+        try stdout.print("{f}", .{eprimes[i]});
         try stdout.print("{s}", .{if (i % 4 == 3) "\n" else "  "});
     }
 
-    try bw.flush();
+    try stdout.flush();
 }
 
 fn isPrimeAlternative(n: u64) bool {

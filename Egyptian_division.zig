@@ -1,7 +1,7 @@
 // https://rosettacode.org/wiki/Egyptian_division
+// {{works with|Zig|0.15.1}}
 // taken from a version on rosettacode.
 const std = @import("std");
-const math = std.math;
 
 pub fn main() !void {
     const result = egyptianDivision(20, 2);
@@ -10,14 +10,14 @@ pub fn main() !void {
 
 fn egyptianDivision(dividend: u64, divisor: u64) [2]u64 {
     const SIZE = 64;
-    var powers = [_]u64{0} ** SIZE;
-    var doublings = [_]u64{0} ** SIZE;
+    var powers: [SIZE]u64 = @splat(0);
+    var doublings: [SIZE]u64 = @splat(0);
 
     var i: u64 = 0;
 
     while (i < SIZE) {
-        powers[i] = math.shl(u64, 1, i);
-        doublings[i] = math.shl(u64, divisor, i);
+        powers[i] = std.math.shl(u64, 1, i);
+        doublings[i] = std.math.shl(u64, divisor, i);
         if (doublings[i] > dividend)
             break;
         i += 1;

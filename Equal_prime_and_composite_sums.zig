@@ -1,11 +1,6 @@
 // https://rosettacode.org/wiki/Equal_prime_and_composite_sums
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const fmt = std.fmt;
-const heap = std.heap;
-const mem = std.mem;
-const time = std.time;
-
-const print = std.debug.print;
 
 // https://rosettacode.org/wiki/Extensible_prime_generator
 const PrimeGen = @import("Extensible_prime_generator_alternate.zig").PrimeGen;
@@ -14,19 +9,24 @@ const AutoSieveType = @import("Extensible_prime_generator_alternate.zig").AutoSi
 pub fn main() !void {
     const limit = 400_000_000;
 
-    var t0 = try time.Timer.start();
+    var t0: std.time.Timer = try .start();
 
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var c = Composite(limit).init(allocator);
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    var c: Composite(limit) = .init(allocator);
     defer c.deinit();
-    var p = Prime(limit).init(allocator);
+    var p: Prime(limit) = .init(allocator);
     defer p.deinit();
 
-    print("          Sum         |   Prime Index   | Composite Index \n", .{});
-    print("──────────────────────────────────────────────────────────\n", .{});
+    try stdout.writeAll("          Sum         |   Prime Index   | Composite Index \n");
+    try stdout.writeAll("──────────────────────────────────────────────────────────\n");
+    try stdout.flush();
 
     var ic, var nc, var csum = c.next();
     var ip, var np, var psum = p.next();
@@ -35,7 +35,8 @@ pub fn main() !void {
         if (psum == csum) {
             ic, nc, csum = c.next();
             ip, np, psum = p.next();
-            print("{d:>21} | {d:>15} | {d:>15}\n", .{ psum, ip, ic });
+            try stdout.print("{d:>21} | {d:>15} | {d:>15}\n", .{ psum, ip, ic });
+            try stdout.flush();
         } else if (psum < csum)
             ip, np, psum = p.next()
         else
@@ -44,7 +45,8 @@ pub fn main() !void {
         if (np > limit or nc > limit)
             break;
     }
-    print("\nprocessed in {}\n", .{fmt.fmtDuration(t0.read())});
+
+    std.log.info("processed in {D}", .{t0.read()});
 }
 
 fn Prime(comptime limit: u64) type {
@@ -57,7 +59,7 @@ fn Prime(comptime limit: u64) type {
 
         primegen: PrimeGen(T),
 
-        fn init(allocator: mem.Allocator) Self {
+        fn init(allocator: std.mem.Allocator) Self {
             return Self{
                 .primegen = PrimeGen(T).init(allocator),
             };
@@ -86,8 +88,8 @@ fn Composite(comptime limit: u64) type {
         primegen: PrimeGen(T),
         prime: u64,
 
-        fn init(allocator: mem.Allocator) Self {
-            var primegen = PrimeGen(T).init(allocator);
+        fn init(allocator: std.mem.Allocator) Self {
+            var primegen: PrimeGen(T) = .init(allocator);
             const prime = (primegen.next() catch unreachable).?;
             return Self{
                 .primegen = primegen,

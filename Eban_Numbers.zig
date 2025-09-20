@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Eban_numbers
-// Translation of D
+// {{works with|Zig|0.15.1}}
+// {{trans|D}}
 const std = @import("std");
 
 /// start, end, print
@@ -15,13 +16,16 @@ pub fn main() !void {
         .{ 2, 100_000_000, false },
         .{ 2, 1_000_000_000, false },
     };
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     for (intervals) |interval| {
         const start, const end, const print = interval;
         if (start == 2)
-            try writer.print("eban numbers up to an including {}:\n", .{end})
+            try stdout.print("eban numbers up to and including {}:\n", .{end})
         else
-            try writer.print("eban numbers between {} and {} (inclusive):\n", .{ start, end });
+            try stdout.print("eban numbers between {} and {} (inclusive):\n", .{ start, end });
 
         var count: usize = 0;
         var i: u64 = start;
@@ -40,12 +44,13 @@ pub fn main() !void {
                     if (t == 0 or t == 2 or t == 4 or t == 6)
                         if (r == 0 or r == 2 or r == 4 or r == 6) {
                             if (print)
-                                try writer.print("{} ", .{i});
+                                try stdout.print("{} ", .{i});
                             count += 1;
                         };
         }
         if (print)
-            try writer.writeByte('\n');
-        try writer.print("count = {}\n\n", .{count});
+            try stdout.writeByte('\n');
+        try stdout.print("count = {}\n\n", .{count});
+        try stdout.flush();
     }
 }

@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Duffinian_numbers
-// Copied from C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
 const std = @import("std");
 
 fn isDuffinian(n_: anytype) bool {
@@ -38,8 +39,11 @@ fn isDuffinian(n_: anytype) bool {
 }
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
-    try writer.writeAll("First 50 Duffinian numbers:\n");
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const w = &stdout_writer.interface;
+
+    try w.writeAll("First 50 Duffinian numbers:\n");
     {
         var count: usize = 0;
         var n: u16 = 1;
@@ -47,11 +51,11 @@ pub fn main() !void {
             if (isDuffinian(n)) {
                 count += 1;
                 const sep: u8 = if (count % 10 == 0) '\n' else ' ';
-                try writer.print("{d:3}{c}", .{ n, sep });
+                try w.print("{d:3}{c}", .{ n, sep });
             }
         }
     }
-    try writer.writeAll("\nFirst 50 Duffinian triplets:\n");
+    try w.writeAll("\nFirst 50 Duffinian triplets:\n");
     {
         var count: usize = 0;
         var n: u32 = 1;
@@ -61,12 +65,14 @@ pub fn main() !void {
             if (m == 3) {
                 count += 1;
                 var buffer: [80]u8 = undefined;
-                var fbs = std.io.fixedBufferStream(&buffer);
-                try fbs.writer().print("({d}, {d}, {d})", .{ n - 2, n - 1, n });
+                var bw: std.Io.Writer = .fixed(&buffer);
+                try bw.print("({d}, {d}, {d})", .{ n - 2, n - 1, n });
                 const sep: u8 = if (count % 3 == 0) '\n' else ' ';
-                try writer.print("{s:<24}{c}", .{ fbs.getWritten(), sep });
+                try w.print("{s:<24}{c}", .{ bw.buffered(), sep });
             }
         }
     }
-    try writer.writeByte('\n');
+    try w.writeByte('\n');
+
+    try w.flush();
 }

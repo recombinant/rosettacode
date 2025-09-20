@@ -1,15 +1,20 @@
 // https://rosettacode.org/wiki/Entropy
+// {{works with|Zig|0.15.1}}
 // Copied from rosettacode
-// Works with Zig 0.11.0 thru 0.14.0 incl
 const std = @import("std");
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     try stdout.print("{d:.12}\n", .{H("1223334444")});
+
+    try stdout.flush();
 }
 
 fn H(s: []const u8) f64 {
-    var counts = [_]u16{0} ** 256;
+    var counts: [256]u16 = @splat(0);
     for (s) |ch|
         counts[ch] += 1;
 

@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Element-wise_operations
+// {{works with|Zig|0.15.1}}
 // Copied from rosettacode
 const std = @import("std");
 
@@ -38,19 +39,19 @@ fn Matrix(comptime T: type, comptime M: usize, comptime N: usize) type {
         // In standard code it would be better to implement multi-dimensional arrays on
         // linear memory, handle the indexing in the struct and avoid allowing slices as
         // arguments.
-        fn show(a: []const []const T) void {
+        fn show(a: []const []const T, w: *std.Io.Writer) !void {
             for (a) |e|
-                std.debug.print("{d}\n", .{e});
+                try w.print("{any}\n", .{e});
         }
 
-        fn showF(a: [N][M]T) void {
+        fn showF(a: [N][M]T, w: *std.Io.Writer) !void {
             for (a) |e|
-                std.debug.print("{d}\n", .{e});
+                try w.print("{any}\n", .{e});
         }
     };
 }
 
-pub fn main() void {
+pub fn main() !void {
     const matrix = Matrix(f32, 3, 2);
 
     const m1 = [_][]const f32{
@@ -65,25 +66,31 @@ pub fn main() void {
 
     var r = matrix.new();
 
-    std.debug.print("m1:\n", .{});
-    matrix.show(&m1);
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    std.debug.print("m2:\n", .{});
-    matrix.show(&m2);
+    try stdout.writeAll("m1:\n");
+    try matrix.show(&m1, stdout);
+
+    try stdout.writeAll("\nm2:\n");
+    try matrix.show(&m2, stdout);
 
     matrix.apply(&r, &m1, &m2, matrix.ops.add);
-    std.debug.print("\nm1 + m2:\n", .{});
-    matrix.showF(r);
+    try stdout.writeAll("\nm1 + m2:\n");
+    try matrix.showF(r, stdout);
 
     matrix.apply(&r, &m1, &m2, matrix.ops.sub);
-    std.debug.print("m1 - m2:\n", .{});
-    matrix.showF(r);
+    try stdout.writeAll("\nm1 - m2:\n");
+    try matrix.showF(r, stdout);
 
     matrix.apply(&r, &m1, &m2, matrix.ops.mul);
-    std.debug.print("m1 * m2:\n", .{});
-    matrix.showF(r);
+    try stdout.writeAll("\nm1 * m2:\n");
+    try matrix.showF(r, stdout);
 
     matrix.apply(&r, &m1, &m2, matrix.ops.div);
-    std.debug.print("m1 / m2:\n", .{});
-    matrix.showF(r);
+    try stdout.writeAll("\nm1 / m2:\n");
+    try matrix.showF(r, stdout);
+
+    try stdout.flush();
 }
