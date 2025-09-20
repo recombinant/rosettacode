@@ -1,13 +1,19 @@
 // https://rosettacode.org/wiki/Long_multiplication
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 
 pub fn main() !void {
     var buffer: [1024]u8 = undefined;
     const result = longmulti("-18446744073709551616", "-18446744073709551616", &buffer);
 
-    const writer = std.io.getStdOut().writer();
-    try writer.print("{s}\n", .{result});
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    try stdout.print("{s}\n", .{result});
+
+    try stdout.flush();
 }
 
 // Returns a * b.  Caller is responsible for memory.
@@ -68,7 +74,7 @@ fn longmulti(a: []const u8, b: []const u8, output: []u8) []u8 {
     }
     if (output[0] == '0') {
         // Remove leading zero.
-        std.mem.copyForwards(u8, output[0 .. output_len - 1], output[1..output_len]);
+        @memmove(output[0 .. output_len - 1], output[1..output_len]);
         output_len -= 1;
     }
     return output[0..output_len];
@@ -93,6 +99,7 @@ fn chr(n: u8) u8 {
 }
 
 const testing = std.testing;
+
 test "zero" {
     // if either is "0" the result is "0"
     var buffer1: [1]u8 = undefined;

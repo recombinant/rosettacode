@@ -1,27 +1,28 @@
 // https://rosettacode.org/wiki/Balanced_ternary
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
-const testing = std.testing;
 
 pub fn main() !void {
     // ------------------------------------------------------- stdout
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // ---------------------------------------------------- allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // --------------------------------------------------------------
-    const a = try BalancedTernary.initString(allocator, "+-0++0+");
-    const b = try BalancedTernary.initInt(allocator, -436);
-    const c = try BalancedTernary.initString(allocator, "+-++-");
+    const a: BalancedTernary = try .initString(allocator, "+-0++0+");
+    const b: BalancedTernary = try .initInt(allocator, -436);
+    const c: BalancedTernary = try .initString(allocator, "+-++-");
     defer a.deinit();
     defer b.deinit();
     defer c.deinit();
 
     try stdout.writeAll("Balanced ternary numbers:\n");
-    try stdout.print("a = {}\n", .{a});
-    try stdout.print("b = {}\n", .{b});
-    try stdout.print("c = {}\n", .{c});
+    try stdout.print("a = {f}\n", .{a});
+    try stdout.print("b = {f}\n", .{b});
+    try stdout.print("c = {f}\n", .{c});
     try stdout.writeByte('\n');
 
     try stdout.writeAll("Their decimal representation:\n");
@@ -30,15 +31,17 @@ pub fn main() !void {
     try stdout.print("c = {:4}\n", .{try c.toInt()});
     try stdout.writeByte('\n');
 
-    var t = try BalancedTernary.init(allocator);
+    var t: BalancedTernary = try .init(allocator);
     defer t.deinit();
-    var d = try BalancedTernary.init(allocator);
+    var d: BalancedTernary = try .init(allocator);
     defer d.deinit();
     try t.sub(b, c);
     try d.mul(a, t);
     try stdout.writeAll("a × (b - c):\n");
-    try stdout.print(" in ternary: {}\n", .{d});
+    try stdout.print(" in ternary: {f}\n", .{d});
     try stdout.print(" in decimal: {d}\n", .{try d.toInt()});
+
+    try stdout.flush();
 }
 
 const Trit = struct {
@@ -171,10 +174,10 @@ const AddOptions = struct {
 
 const BalancedTernary = struct {
     trits: []Trit,
-    allocator: mem.Allocator,
+    allocator: std.mem.Allocator,
 
     /// Initialise BalancedTernary (to zero)
-    fn init(allocator: mem.Allocator) !BalancedTernary {
+    fn init(allocator: std.mem.Allocator) !BalancedTernary {
         var trit = try allocator.alloc(Trit, 1);
         trit[0] = Trit{ .symbol = .tz };
         return BalancedTernary{
@@ -183,7 +186,7 @@ const BalancedTernary = struct {
         };
     }
     /// Build a BalancedTernary number from its string representation.
-    fn initString(allocator: mem.Allocator, string: []const u8) !BalancedTernary {
+    fn initString(allocator: std.mem.Allocator, string: []const u8) !BalancedTernary {
         var trits = try allocator.alloc(Trit, string.len);
         for (string, 1..) |ch, i| {
             trits[string.len - i] = Trit.fromChar(ch);
@@ -194,18 +197,18 @@ const BalancedTernary = struct {
         };
     }
     /// Build a BalancedTernary number from a decimal integer.
-    fn initInt(allocator: mem.Allocator, integer: i32) !BalancedTernary {
+    fn initInt(allocator: std.mem.Allocator, integer: i32) !BalancedTernary {
         var val = integer;
-        var array = std.ArrayList(Trit).init(allocator);
+        var array: std.ArrayList(Trit) = .empty;
         while (true) {
             const trit = Trit.fromDigit(@intCast(@mod(val, 3)));
-            try array.append(trit);
+            try array.append(allocator, trit);
             val = @divTrunc(val - trit.toDigit(), 3);
             if (val == 0)
                 break;
         }
         return BalancedTernary{
-            .trits = try array.toOwnedSlice(),
+            .trits = try array.toOwnedSlice(allocator),
             .allocator = allocator,
         };
     }
@@ -213,13 +216,13 @@ const BalancedTernary = struct {
         self.allocator.free(self.trits);
     }
 
-    fn clone(self: BalancedTernary) mem.Allocator.Error!BalancedTernary {
+    fn clone(self: BalancedTernary) std.mem.Allocator.Error!BalancedTernary {
         return BalancedTernary{
             .trits = try self.allocator.dupe(Trit, self.trits),
             .allocator = self.allocator,
         };
     }
-    fn cloneFrom(self: *BalancedTernary, other: BalancedTernary) mem.Allocator.Error!void {
+    fn cloneFrom(self: *BalancedTernary, other: BalancedTernary) std.mem.Allocator.Error!void {
         if (self.trits.len == other.trits.len) {
             if (self.trits.ptr != other.trits.ptr)
                 @memcpy(self.trits, other.trits);
@@ -230,20 +233,18 @@ const BalancedTernary = struct {
     }
 
     /// custom formatter for BalancedTernary
-    pub fn format(self: BalancedTernary, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
-        _ = options;
-        _ = fmt;
+    pub fn format(self: BalancedTernary, w: *std.Io.Writer) std.io.Writer.Error!void {
         const trits = self.trits;
         var i = self.trits.len;
         while (i != 0) {
             i -= 1;
-            try writer.writeByte(trits[i].toChar());
+            try w.writeByte(trits[i].toChar());
         }
     }
 
     /// Return the string representation of a BalancedTernary number.
     /// Caller owns returned memory slice.
-    fn toString(self: BalancedTernary, allocator: mem.Allocator) mem.Allocator.Error![]const u8 {
+    fn toString(self: BalancedTernary, allocator: std.mem.Allocator) std.mem.Allocator.Error![]const u8 {
         var string = try allocator.alloc(u8, self.trits.len);
         for (self.trits, 1..) |trit, i| {
             string[self.trits.len - i] = trit.toChar();
@@ -304,33 +305,33 @@ const BalancedTernary = struct {
         else if (b.isZero())
             try self.cloneFrom(a)
         else {
-            var result = std.ArrayList(Trit).init(self.allocator);
+            var result: std.ArrayList(Trit) = .empty;
             const shortest = @min(a.trits.len, b.trits.len);
-            var carry = Trit{ .symbol = Trit.Symbol.tz };
+            var carry: Trit = .{ .symbol = Trit.Symbol.tz };
             for (a.trits[0..shortest], b.trits[0..shortest]) |trit_a, trit_b| {
                 const sum = Trit.addc(trit_a, trit_b, carry);
-                try result.append(sum.trit);
+                try result.append(self.allocator, sum.trit);
                 carry = sum.carry;
             }
             if (a.trits.len == b.trits.len) {
                 if (!carry.isZero())
-                    try result.append(carry);
+                    try result.append(self.allocator, carry);
             } else {
                 const tail_trits = if (a.trits.len > b.trits.len) a.trits[shortest..] else b.trits[shortest..];
                 for (tail_trits) |trit| {
                     const sum = Trit.add(trit, carry);
-                    try result.append(sum.trit);
+                    try result.append(self.allocator, sum.trit);
                     carry = sum.carry;
                 }
                 if (!carry.isZero())
-                    try result.append(carry);
+                    try result.append(self.allocator, carry);
             }
             // remove leading 0 trits
             while (result.items.len > 1 and result.items[result.items.len - 1].symbol == Trit.Symbol.tz)
                 _ = result.pop();
             //
             self.allocator.free(self.trits);
-            self.trits = try result.toOwnedSlice();
+            self.trits = try result.toOwnedSlice(self.allocator);
         }
         return;
     }
@@ -350,8 +351,8 @@ const BalancedTernary = struct {
             @memset(neg_trits, Trit{ .symbol = Trit.Symbol.tz });
             @memcpy(pos_trits[0..a.trits.len], a.trits);
             @memcpy(neg_trits[0..na.trits.len], na.trits);
-            var pos = BalancedTernary{ .trits = pos_trits, .allocator = self.allocator };
-            var neg = BalancedTernary{ .trits = neg_trits, .allocator = self.allocator };
+            var pos: BalancedTernary = .{ .trits = pos_trits, .allocator = self.allocator };
+            var neg: BalancedTernary = .{ .trits = neg_trits, .allocator = self.allocator };
             defer pos.deinit();
             defer neg.deinit();
 
@@ -359,7 +360,7 @@ const BalancedTernary = struct {
             const b_trits = try self.allocator.dupe(Trit, b.trits);
             defer self.allocator.free(b_trits);
 
-            var result = try BalancedTernary.initString(self.allocator, "0");
+            var result: BalancedTernary = try .initString(self.allocator, "0");
             // result.deinit(); // not required
 
             for (b_trits, 0..) |trit, i| {
@@ -368,8 +369,8 @@ const BalancedTernary = struct {
                     .tz => {},
                     .tp => try result.add(result, pos),
                 }
-                mem.copyBackwards(Trit, pos.trits[i + 1 .. i + a.trits.len + 1], pos.trits[i .. i + a.trits.len]);
-                mem.copyBackwards(Trit, neg.trits[i + 1 .. i + a.trits.len + 1], neg.trits[i .. i + a.trits.len]);
+                @memmove(pos.trits[i + 1 .. i + a.trits.len + 1], pos.trits[i .. i + a.trits.len]);
+                @memmove(neg.trits[i + 1 .. i + a.trits.len + 1], neg.trits[i .. i + a.trits.len]);
                 pos.trits[i].symbol = Trit.Symbol.tz;
                 neg.trits[i].symbol = Trit.Symbol.tz;
             }
@@ -378,6 +379,8 @@ const BalancedTernary = struct {
         }
     }
 };
+
+const testing = std.testing;
 
 test "@mod" {
     try testing.expectEqual(@as(i32, 0), @mod(@as(i32, -6), @as(i32, 3)));
@@ -412,9 +415,9 @@ test "conversion" {
         .{ .decimal = 13, .bt = "+++" }, .{ .decimal = -13, .bt = "---" },
     };
     for (table) |line| {
-        const a = try BalancedTernary.initString(allocator, line.bt);
+        const a: BalancedTernary = try .initString(allocator, line.bt);
         defer a.deinit();
-        const b = try BalancedTernary.initInt(allocator, line.decimal);
+        const b: BalancedTernary = try .initInt(allocator, line.decimal);
         defer b.deinit();
         try testing.expect(a.eql(a));
         try testing.expect(b.eql(a));
@@ -431,8 +434,8 @@ test "conversion" {
         try testing.expectEqual(line.decimal, try a.toInt());
         try testing.expectEqual(line.decimal, try b.toInt());
         // ----------------------------------------- negate
-        var c = try BalancedTernary.initString(allocator, line.bt);
-        var d = try BalancedTernary.initInt(allocator, line.decimal);
+        var c: BalancedTernary = try .initString(allocator, line.bt);
+        var d: BalancedTernary = try .initInt(allocator, line.decimal);
         defer c.deinit();
         defer d.deinit();
 
@@ -460,13 +463,13 @@ test "conversion" {
 test "add" {
     const allocator = testing.allocator;
 
-    var result = try BalancedTernary.init(allocator);
+    var result: BalancedTernary = try .init(allocator);
     defer result.deinit();
-    const zero = try BalancedTernary.init(allocator);
+    const zero: BalancedTernary = try .init(allocator);
     defer zero.deinit();
-    const a = try BalancedTernary.initInt(allocator, 1);
+    const a: BalancedTernary = try .initInt(allocator, 1);
     defer a.deinit();
-    const b = try BalancedTernary.initInt(allocator, 9);
+    const b: BalancedTernary = try .initInt(allocator, 9);
     defer b.deinit();
 
     try testing.expect(result.isZero());
@@ -566,11 +569,11 @@ test "balanced ternary add" {
         for (0..64 + 1) |j| {
             const ii = @as(i32, @intCast(i)) - 32;
             const jj = @as(i32, @intCast(j)) - 32;
-            var sum = try BalancedTernary.init(allocator);
+            var sum: BalancedTernary = try .init(allocator);
             defer sum.deinit();
-            const a = try BalancedTernary.initInt(allocator, ii);
+            const a: BalancedTernary = try .initInt(allocator, ii);
             defer a.deinit();
-            const b = try BalancedTernary.initInt(allocator, jj);
+            const b: BalancedTernary = try .initInt(allocator, jj);
             defer b.deinit();
             try sum.add(a, b);
             try testing.expectEqual(ii + jj, try sum.toInt());
@@ -582,8 +585,8 @@ test "balanced ternary add to self" {
 
     const n: i32 = 7;
     const m: i32 = 3;
-    var result = try BalancedTernary.initInt(allocator, n);
-    var addend = try BalancedTernary.initInt(allocator, m);
+    var result: BalancedTernary = try .initInt(allocator, n);
+    var addend: BalancedTernary = try .initInt(allocator, m);
     defer result.deinit();
     defer addend.deinit();
     try result.add(result, addend);
@@ -599,11 +602,11 @@ test "balanced ternary mul" {
         for (0..64 + 1) |j| {
             const ii = @as(i32, @intCast(i)) - 32;
             const jj = @as(i32, @intCast(j)) - 32;
-            var product = try BalancedTernary.init(allocator);
+            var product: BalancedTernary = try .init(allocator);
             defer product.deinit();
-            const a = try BalancedTernary.initInt(allocator, ii);
+            const a: BalancedTernary = try .initInt(allocator, ii);
             defer a.deinit();
-            const b = try BalancedTernary.initInt(allocator, jj);
+            const b: BalancedTernary = try .initInt(allocator, jj);
             defer b.deinit();
             try product.mul(a, b);
             try testing.expectEqual(ii * jj, try product.toInt());
@@ -614,8 +617,8 @@ test "balanced ternary mul by self" {
     const allocator = testing.allocator;
     const n: i32 = 7;
     const m: i32 = 3;
-    var result = try BalancedTernary.initInt(allocator, n);
-    var muliplier = try BalancedTernary.initInt(allocator, m);
+    var result: BalancedTernary = try .initInt(allocator, n);
+    var muliplier: BalancedTernary = try .initInt(allocator, m);
     defer result.deinit();
     defer muliplier.deinit();
     try result.mul(result, muliplier);
