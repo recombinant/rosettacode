@@ -1,27 +1,32 @@
 // https://rosettacode.org/wiki/Count_the_coins
+// {{works with|Zig|0.15.1}}
+// {{trans|Python}}
 // Translation of Python (Fast version)
 const std = @import("std");
-const mem = std.mem;
-const testing = std.testing;
-const print = std.debug.print;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
+
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const us_coins = &[_]u8{ 100, 50, 25, 10, 5, 1 };
     const eu_coins = &[_]u8{ 200, 100, 50, 20, 10, 5, 2, 1 };
 
     for ([_][]const u8{ us_coins, eu_coins }) |coins| {
-        print("{}\n", .{try count(allocator, 1_00, coins[2..])});
-        print("{}\n", .{try count(allocator, 1_000_00, coins)});
-        print("{}\n", .{try count(allocator, 10_000_00, coins)});
-        print("{}\n\n", .{try count(allocator, 100_000_00, coins)});
+        try stdout.print("{}\n", .{try count(allocator, 1_00, coins[2..])});
+        try stdout.print("{}\n", .{try count(allocator, 1_000_00, coins)});
+        try stdout.print("{}\n", .{try count(allocator, 10_000_00, coins)});
+        try stdout.print("{}\n\n", .{try count(allocator, 100_000_00, coins)});
     }
+
+    try stdout.flush();
 }
 
-fn count(allocator: mem.Allocator, amount: u32, coins: []const u8) !u128 {
+fn count(allocator: std.mem.Allocator, amount: u32, coins: []const u8) !u128 {
     const ways = try allocator.alloc(u128, amount + 1);
     defer allocator.free(ways);
     @memset(ways, 0);
@@ -43,14 +48,14 @@ fn countRecursive(sum: u32, coins: []const u8) u32 {
 }
 
 /// This is apparently the faster method in Python.
-fn countFast(allocator: mem.Allocator, amount: u32, coins_: []const u8) !u128 {
+fn countFast(allocator: std.mem.Allocator, amount: u32, coins_: []const u8) !u128 {
     const coins = blk: {
-        var array = std.ArrayList(u8).init(allocator);
+        var array: std.ArrayList(u8) = .empty;
         for (coins_) |coin|
             if (coin <= amount) {
-                try array.append(coin);
+                try array.append(allocator, coin);
             };
-        break :blk try array.toOwnedSlice();
+        break :blk try array.toOwnedSlice(allocator);
     };
     defer allocator.free(coins);
     const n = coins.len;
@@ -90,6 +95,8 @@ fn countFast(allocator: mem.Allocator, amount: u32, coins_: []const u8) !u128 {
     }
     return table[pos - 1];
 }
+
+const testing = std.testing;
 
 test count {
     const coins = &[_]u8{ 100, 50, 25, 10, 5, 1 };

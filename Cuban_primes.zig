@@ -1,24 +1,26 @@
 // https://rosettacode.org/wiki/Cuban_primes
-// Translation of Wren
+// {{works with|Zig|0.15.1}}
+// {{trans|Wren}}
 const std = @import("std");
-const mem = std.mem;
-const time = std.time;
-const print = std.debug.print;
 
 pub fn main() !void {
-    var t0 = try time.Timer.start();
+    var t0: std.time.Timer = try .start();
+    // ------------------------------------------------------- stdout
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // ---------------------------------------------------- allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // --------------------------------------------------------------
 
-    var primes = std.ArrayList(u64).init(allocator);
-    try primes.appendSlice(&.{ 3, 5 });
-    defer primes.deinit();
+    var primes: std.ArrayList(u64) = .empty;
+    defer primes.deinit(allocator);
+    try primes.appendSlice(allocator, &.{ 3, 5 });
     const cutoff = 200;
-    var cubans = std.ArrayList(u64).init(allocator);
-    defer cubans.deinit();
+    var cubans: std.ArrayList(u64) = .empty;
+    defer cubans.deinit(allocator);
     const big_one = 100_000;
     var big_cuban: u64 = undefined;
     var c: u64 = 0;
@@ -26,6 +28,7 @@ pub fn main() !void {
     var u: u64 = 0;
     var v: u64 = 1;
 
+    std.log.info("Calculating the first {d} cuban primes and the {d}th cuban prime...", .{ cutoff, big_one });
     for (1..(1 << 20)) |_| {
         var found = false;
         u += 6;
@@ -53,10 +56,10 @@ pub fn main() !void {
                         }
                     }
                     if (!found_prime)
-                        try primes.append(z);
+                        try primes.append(allocator, z);
                 }
-                try primes.append(v);
-                try cubans.append(v);
+                try primes.append(allocator, v);
+                try cubans.append(allocator, v);
                 if (c == cutoff) show_each = false;
             }
             if (c == big_one) {
@@ -65,16 +68,15 @@ pub fn main() !void {
             }
         }
     }
-    const duration = t0.read();
+    std.log.info("calculated in: {D}", .{t0.read()});
 
-    print("The first {d} cuban primes are:\n", .{cutoff});
+    try stdout.print("The first {d} cuban primes are:\n", .{cutoff});
     for (cubans.items[0..cutoff], 0..) |item, i| {
-        if (i % 10 == 0 and i != 0) print("\n", .{}); // 10 per line say
-        print("{d:10} ", .{item});
+        if (i % 10 == 0 and i != 0) try stdout.writeByte('\n'); // 10 per line say
+        try stdout.print("{d:10} ", .{item});
     }
-    if (cutoff % 10 != 0) print("\n", .{});
+    if (cutoff % 10 != 0) try stdout.writeByte('\n');
 
-    print("\nThe 100,000th cuban prime is: {d}\n", .{big_cuban});
-
-    print("Processed in: {}\n", .{std.fmt.fmtDuration(duration)});
+    try stdout.print("\nThe 100,000th cuban prime is: {d}\n\n", .{big_cuban});
+    try stdout.flush();
 }

@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Coprime_triplets
-// Translation of Nim
+// {{works with|Zig|0.15.1}}
+// {{trans|Nim}}
 const std = @import("std");
 const gcd = std.math.gcd;
 const indexOfScalar = std.mem.indexOfScalar;
@@ -8,24 +9,27 @@ const print = std.debug.print;
 pub fn main() !void {
     const T: type = u8;
     const limit: T = 50;
-    var list = try std.BoundedArray(T, limit).fromSlice(&[2]T{ 1, 2 });
+
+    var buffer: [limit]T = undefined;
+    var list: std.ArrayList(T) = .initBuffer(&buffer);
+    try list.appendSliceBounded(&[2]T{ 1, 2 });
 
     while (true) {
         var n: T = 3;
-        const prev2 = list.get(list.len - 2);
-        const prev1 = list.get(list.len - 1);
-        while (indexOfScalar(T, list.constSlice(), n) != null or gcd(n, prev2) != 1 or gcd(n, prev1) != 1)
+        const prev2 = list.items[list.items.len - 2];
+        const prev1 = list.items[list.items.len - 1];
+        while (indexOfScalar(T, list.items, n) != null or gcd(n, prev2) != 1 or gcd(n, prev1) != 1)
             n += 1;
         if (n > limit)
             break;
-        try list.append(n);
+        try list.appendBounded(n);
     }
     // Pretty print
     print("Coprime triplets under {}:\n", .{limit});
-    for (list.constSlice(), 1..) |n, i|
+    for (list.items, 1..) |n, i|
         print("{d:2}{c}", .{ n, @as(u8, if (i % 10 == 0) '\n' else ' ') });
-    if (list.len % 10 != 0)
+    if (list.items.len % 10 != 0)
         print("\n", .{});
 
-    print("\nFound {} terms.", .{list.len});
+    print("\nFound {} terms.", .{list.items.len});
 }
