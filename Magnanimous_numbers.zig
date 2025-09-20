@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Magnanimous_numbers
-// Translation of Go
+// {{works with|Zig|0.15.1}}
+// {{trans|Go}}
 const std = @import("std");
 
 pub fn main() !void {
@@ -7,14 +8,18 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    try listMags(allocator, 1, 45, 15, writer);
-    try listMags(allocator, 241, 250, 10, writer);
-    try listMags(allocator, 391, 400, 10, writer);
+    try listMags(allocator, 1, 45, 15, stdout);
+    try listMags(allocator, 241, 250, 10, stdout);
+    try listMags(allocator, 391, 400, 10, stdout);
+
+    try stdout.flush();
 }
 
-fn listMags(allocator: std.mem.Allocator, from: u32, thru: u32, perLine: u8, writer: anytype) !void {
+fn listMags(allocator: std.mem.Allocator, from: u32, thru: u32, perLine: u8, writer: *std.Io.Writer) !void {
     if (from < 2)
         try writer.print("\nFirst {} magnanimous numbers:\n", .{thru})
     else {

@@ -1,27 +1,34 @@
 // https://rosettacode.org/wiki/Euclidean_rhythm
+// {{works with|Zig|0.15.1}}
+// {{trans|Python}}
+
 // Copied from rosettacode
-// Translation of Python
 const std = @import("std");
 const allocator = std.heap.page_allocator;
 
 pub fn main() !void {
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     const result = try generateSequence(5, 13);
     for (result) |item|
-        std.debug.print("{}", .{item});
+        try stdout.print("{}", .{item});
 
-    std.debug.print("\n", .{});
+    try stdout.writeByte('\n');
+    try stdout.flush();
 }
 
 fn generateSequence(_k: i32, _n: i32) ![]i32 {
     var k = _k;
     var n = _n;
 
-    var s = std.ArrayList(std.ArrayList(i32)).init(allocator);
+    var s: std.ArrayList(std.ArrayList(i32)) = .empty;
 
     for (0..@as(usize, @intCast(n))) |i| {
-        var innerList = std.ArrayList(i32).init(allocator);
-        try innerList.append(if (i < k) 1 else 0);
-        try s.append(innerList);
+        var innerList: std.ArrayList(i32) = .empty;
+        try innerList.append(allocator, if (i < k) 1 else 0);
+        try s.append(allocator, innerList);
     }
 
     var d: i32 = n - k;
@@ -33,7 +40,7 @@ fn generateSequence(_k: i32, _n: i32) ![]i32 {
         for (0..@as(usize, @intCast(k))) |i| {
             const lastList = s.items[s.items.len - 1 - i];
             for (lastList.items) |item|
-                try s.items[i].append(item);
+                try s.items[i].append(allocator, item);
         }
         s.shrinkRetainingCapacity(s.items.len - @as(usize, @intCast(k)));
         z -= k;
@@ -42,11 +49,11 @@ fn generateSequence(_k: i32, _n: i32) ![]i32 {
         k = @min(k, d);
     }
 
-    var result = std.ArrayList(i32).init(allocator);
+    var result: std.ArrayList(i32) = .empty;
 
     for (s.items) |sublist|
         for (sublist.items) |item|
-            try result.append(item);
+            try result.append(allocator, item);
 
-    return result.toOwnedSlice();
+    return result.toOwnedSlice(allocator);
 }

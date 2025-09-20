@@ -1,15 +1,20 @@
 // https://rosettacode.org/wiki/Ethiopian_multiplication
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const multiplier: u16 = 17;
     const multiplicand: u16 = 34;
     const result = ethiopian(multiplier, multiplicand);
 
-    try writer.writeAll("using Ethiopian multiplication:\n");
-    try writer.print("    {} * {} = {}\n", .{ multiplier, multiplicand, result });
+    try stdout.writeAll("using Ethiopian multiplication:\n");
+    try stdout.print("    {} * {} = {}\n", .{ multiplier, multiplicand, result });
+
+    try stdout.flush();
 }
 
 fn ethiopian(multiplier_: anytype, multiplicand_: anytype) @TypeOf(multiplier_, multiplicand_) {
@@ -50,6 +55,7 @@ fn isEven(n: anytype) bool {
 }
 
 const testing = std.testing;
+
 test halve {
     try testing.expectEqual(5, halve(10));
     try testing.expectEqual(5, halve(11));

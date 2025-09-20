@@ -1,15 +1,17 @@
 // https://rosettacode.org/wiki/Euler%27s_sum_of_powers_conjecture
-// Translation of Python
+// {{works with|Zig|0.15.1}}
+// {{trans|Python}}
 const std = @import("std");
-const math = std.math;
 
 const max_n = 250;
 const Number = u64;
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
 
@@ -20,7 +22,7 @@ pub fn main() !void {
     // lookup table of number vs number⁵
     for (pow5[0..], 0..) |*e, i| {
         const n: Number = @intCast(i);
-        e.* = try math.powi(Number, n, 5);
+        e.* = try std.math.powi(Number, n, 5);
         try pow5_to_n.put(e.*, i);
     }
 
@@ -33,10 +35,12 @@ pub fn main() !void {
 
                     const optional_y = pow5_to_n.get(pow_5_sum);
                     if (optional_y) |y| {
-                        try writer.print("{}⁵ + {}⁵ + {}⁵ + {}⁵ = {}⁵\n", .{ x3, x2, x1, x0, y });
+                        try stdout.print("{}⁵ + {}⁵ + {}⁵ + {}⁵ = {}⁵\n", .{ x3, x2, x1, x0, y });
+                        try stdout.flush();
                         return;
                     }
                 };
 
-    try writer.print("Sorry, no solution found.\n", .{});
+    try stdout.writeAll("Sorry, no solution found.\n");
+    try stdout.flush();
 }

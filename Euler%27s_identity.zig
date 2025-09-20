@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Euler%27s_identity
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 const Complex = std.math.Complex(f64);
 const complex = std.math.complex;
