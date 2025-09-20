@@ -1,17 +1,22 @@
 // https://rosettacode.org/wiki/Find_minimum_number_of_coins_that_make_a_given_value
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    try makeChange(988, writer);
+    try makeChange(988, stdout);
+
+    try stdout.flush();
 }
 
-fn makeChange(total: u32, writer: anytype) !void {
+fn makeChange(total: u32, w: *std.Io.Writer) !void {
     var coins = [_]u32{ 1, 2, 5, 10, 20, 50, 100, 200 };
-    std.mem.sort(u32, &coins, {}, std.sort.desc(u32));
+    std.mem.sortUnstable(u32, &coins, {}, std.sort.desc(u32));
 
-    try writer.print("Available denominations: {any}. Total is to be: {d}.\n", .{ coins, total });
+    try w.print("Available denominations: {any}. Total is to be: {d}.\n", .{ coins, total });
 
     var count: u32 = 0;
     var remaining = total;
@@ -19,11 +24,11 @@ fn makeChange(total: u32, writer: anytype) !void {
         const coins_used = remaining / coin;
         remaining %= coin;
         if (coins_used > 0)
-            try writer.print(" {s:>5} coin{s} of {d:>3}\n", .{ asText(coins_used), plural(coins_used), coin });
+            try w.print(" {s:>5} coin{s} of {d:>3}\n", .{ asText(coins_used), plural(coins_used), coin });
         count += coins_used;
     }
 
-    try writer.print("\nTotal of {s} coin{s} needed.", .{ asText(count), plural(count) });
+    try w.print("\nTotal of {s} coin{s} needed.", .{ asText(count), plural(count) });
 }
 
 fn plural(one_or_other: u32) []const u8 {

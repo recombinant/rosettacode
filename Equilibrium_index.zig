@@ -1,12 +1,15 @@
 // https://rosettacode.org/wiki/Equilibrium_index
-// Translation of Wren
+// {{works with|Zig|0.15.1}}
+// {{trans|Wren}}
 const std = @import("std");
 
 pub fn main() !void {
     // --------------------------------------------------- stdout
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // ------------------------------------------------ allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // ----------------------------------------------------------
@@ -19,22 +22,23 @@ pub fn main() !void {
         &[_]i16{},
     };
 
-    try writer.writeAll("The equilibrium indices for the following sequences are:\n");
+    try stdout.writeAll("The equilibrium indices for the following sequences are:\n");
 
     for (tests) |numbers| {
         const eqm = try equilibrium(allocator, numbers);
         defer allocator.free(eqm);
         const s = try std.fmt.allocPrint(allocator, "{any}", .{numbers});
         defer allocator.free(s);
-        try writer.print("{s:>26} -> {any}\n", .{ s, eqm });
+        try stdout.print("{s:>26} -> {any}\n", .{ s, eqm });
     }
+    try stdout.flush();
 }
 
 /// Allocates memory for the result, which must be freed by the caller.
 fn equilibrium(allocator: std.mem.Allocator, a: []const i16) ![]i16 {
-    var equi = std.ArrayList(i16).init(allocator);
+    var equi: std.ArrayList(i16) = .empty;
     if (a.len == 0)
-        return equi.toOwnedSlice(); // sequence has no indices at all
+        return equi.toOwnedSlice(allocator); // sequence has no indices at all
 
     var rsum: i16 = 0;
     for (a) |x|
@@ -44,8 +48,8 @@ fn equilibrium(allocator: std.mem.Allocator, a: []const i16) ![]i16 {
     for (a, 0..) |x, i| {
         rsum -= x;
         if (rsum == lsum)
-            try equi.append(@intCast(i));
+            try equi.append(allocator, @intCast(i));
         lsum += x;
     }
-    return equi.toOwnedSlice();
+    return equi.toOwnedSlice(allocator);
 }

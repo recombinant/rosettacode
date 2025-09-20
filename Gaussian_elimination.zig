@@ -1,9 +1,7 @@
 // https://rosettacode.org/wiki/Gaussian_elimination
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
-const mem = std.mem;
-const testing = std.testing;
-const assert = std.debug.assert;
 
 pub fn main() !void {
     const b = [_]f128{ -0.01, 0.61, 0.91, 0.99, 0.60, 0.02 };
@@ -15,13 +13,18 @@ pub fn main() !void {
         1.00, 2.51, 6.32, 15.88, 39.90, 100.28,
         1.00, 3.14, 9.87, 31.01, 97.41, 306.02,
     };
-    var matrix = Matrix(f128, 6){ .a = a };
+    var matrix: Matrix(f128, 6) = .{ .a = a };
 
     const x: [b.len]f128 = matrix.gaussEliminate(&b);
 
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     for (x) |value|
-        try stdout.print("{d}\n", .{@as(f64, @floatCast(value))});
+        try stdout.print("{d}\n", .{value});
+
+    try stdout.flush();
 }
 
 /// Simple n x n square matrix.
@@ -39,7 +42,7 @@ fn Matrix(comptime T: type, comptime n: usize) type {
         }
 
         fn gaussEliminate(self: *Self, b_: *const [n]T) [n]T {
-            assert(b_.len == n);
+            std.debug.assert(b_.len == n);
             var b: [n]T = b_.*;
 
             for (0..n) |dia| {
@@ -75,7 +78,7 @@ fn Matrix(comptime T: type, comptime n: usize) type {
                     col -= 1;
                     f -= x[col] * self.at(row, col);
                 }
-                assert(row == col);
+                std.debug.assert(row == col);
                 x[row] = f / self.at(row, col);
             }
             return x;
@@ -87,12 +90,14 @@ fn Matrix(comptime T: type, comptime n: usize) type {
             for (0..n) |col| {
                 const p1 = self.atPtr(r1, col);
                 const p2 = self.atPtr(r2, col);
-                mem.swap(T, p1, p2);
+                std.mem.swap(T, p1, p2);
             }
-            mem.swap(T, &b[r1], &b[r2]);
+            std.mem.swap(T, &b[r1], &b[r2]);
         }
     };
 }
+
+const testing = std.testing;
 
 test "swap row" {
     const a = [9]u8{
@@ -101,7 +106,7 @@ test "swap row" {
         7, 8, 9,
     };
     var b = [3]u8{ 10, 11, 12 };
-    var matrix = Matrix(u8, 3){ .a = a };
+    var matrix: Matrix(u8, 3) = .{ .a = a };
 
     matrix.swapRow(&b, 0, 0);
     try testing.expectEqual(matrix.a, a);
@@ -125,7 +130,7 @@ test "at" {
         1, 2,
         3, 4,
     };
-    var matrix = Matrix(u8, 2){ .a = a };
+    var matrix: Matrix(u8, 2) = .{ .a = a };
     try testing.expectEqual(matrix.at(0, 0), 1);
     try testing.expectEqual(matrix.at(0, 1), 2);
     try testing.expectEqual(matrix.at(1, 0), 3);
@@ -137,7 +142,7 @@ test "atPtr" {
         1, 2,
         3, 4,
     };
-    var matrix = Matrix(u8, 2){ .a = a };
+    var matrix: Matrix(u8, 2) = .{ .a = a };
 
     try testing.expectEqual(matrix.atPtr(0, 0).*, 1);
     try testing.expectEqual(matrix.atPtr(0, 1).*, 2);
