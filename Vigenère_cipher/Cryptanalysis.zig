@@ -1,10 +1,7 @@
 // https://rosettacode.org/wiki/Vigen%C3%A8re_cipher/Cryptanalysis
-// Translation of C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
 const std = @import("std");
-const ascii = std.ascii;
-const mem = std.mem;
-const sort = std.sort;
-const print = std.debug.print;
 
 pub fn main() !void {
     const input =
@@ -34,19 +31,24 @@ pub fn main() !void {
         0.01974, 0.00074,
     };
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var va = VigenereAnalyser.init(english);
+    var va: VigenereAnalyser = .init(english);
     const output = try va.analyze(allocator, input);
     defer {
         allocator.free(output.text);
         allocator.free(output.key);
     }
 
-    print("Key: {s}\n\n", .{output.key});
-    print("Text: {s}\n", .{output.text});
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    try stdout.print("Key: {s}\n\n", .{output.key});
+    try stdout.print("Text: {s}\n", .{output.text});
+    try stdout.flush();
 }
 
 const Pair = struct {
@@ -70,7 +72,7 @@ const VigenereAnalyser = struct {
 
     fn init(target_frequencies: [26]f64) VigenereAnalyser {
         var sorted_targets = target_frequencies;
-        sort.pdq(f64, &sorted_targets, {}, sort.asc(f64));
+        std.mem.sortUnstable(f64, &sorted_targets, {}, std.sort.asc(f64));
         return VigenereAnalyser{
             .targets = target_frequencies,
             .sorted_targets = sorted_targets,
@@ -78,13 +80,13 @@ const VigenereAnalyser = struct {
     }
 
     /// Caller owns the two returned strings - but not the struct itself.
-    fn analyze(self: *Self, allocator: mem.Allocator, input: []const u8) !struct { text: []const u8, key: []const u8 } {
+    fn analyze(self: *Self, allocator: std.mem.Allocator, input: []const u8) !struct { text: []const u8, key: []const u8 } {
         const cleaned = blk: {
-            var cleaned = std.ArrayList(u8).init(allocator);
+            var cleaned: std.ArrayList(u8) = .empty;
             for (input) |c|
-                if (ascii.isAlphabetic(c))
-                    try cleaned.append(ascii.toUpper(c));
-            break :blk try cleaned.toOwnedSlice();
+                if (std.ascii.isAlphabetic(c))
+                    try cleaned.append(allocator, std.ascii.toUpper(c));
+            break :blk try cleaned.toOwnedSlice(allocator);
         };
         defer allocator.free(cleaned);
 
@@ -99,7 +101,7 @@ const VigenereAnalyser = struct {
                 defer deinitStringArray(allocator, pieces);
 
                 for (cleaned, 0..) |c, j|
-                    try pieces[j % i].append(c);
+                    try pieces[j % i].append(allocator, c);
 
                 // The correlation increases artificially for smaller
                 // pieces/longer keys, so weigh against them a little
@@ -124,23 +126,23 @@ const VigenereAnalyser = struct {
         const pieces = blk: {
             var pieces = try createStringArray(allocator, best_length);
             for (cleaned, 0..) |c, i|
-                try pieces[i % best_length].append(c);
+                try pieces[i % best_length].append(allocator, c);
             break :blk pieces;
         };
         defer deinitStringArray(allocator, pieces);
 
         const freqs = blk: {
-            var freqs = std.ArrayList(FrequencyArray).init(allocator);
+            var freqs: std.ArrayList(FrequencyArray) = .empty;
             for (0..best_length) |i|
-                try freqs.append(self.updateFreq(pieces[i].items));
-            break :blk try freqs.toOwnedSlice();
+                try freqs.append(allocator, self.updateFreq(pieces[i].items));
+            break :blk try freqs.toOwnedSlice(allocator);
         };
         defer allocator.free(freqs);
 
         const key: []const u8 = blk: {
-            var key = std.ArrayList(u8).init(allocator);
+            var key: std.ArrayList(u8) = .empty;
             for (0..best_length) |i| {
-                sort.pdq(Pair, &freqs[i], {}, Pair.desc);
+                std.mem.sortUnstable(Pair, &freqs[i], {}, Pair.desc);
 
                 var m: u8 = 0;
                 var m_corr: f64 = 0.0;
@@ -157,16 +159,16 @@ const VigenereAnalyser = struct {
                         m_corr = corr;
                     }
                 }
-                try key.append(m + 'A');
+                try key.append(allocator, m + 'A');
             }
-            break :blk try key.toOwnedSlice();
+            break :blk try key.toOwnedSlice(allocator);
         };
 
-        var result = std.ArrayList(u8).init(allocator);
+        var result: std.ArrayList(u8) = .empty;
         for (cleaned, 0..) |c, i|
-            try result.append((c + 26 - key[i % key.len]) % 26 + 'A');
+            try result.append(allocator, (c + 26 - key[i % key.len]) % 26 + 'A');
 
-        return .{ .text = try result.toOwnedSlice(), .key = key };
+        return .{ .text = try result.toOwnedSlice(allocator), .key = key };
     }
 
     fn updateFreq(self: *Self, input: []const u8) [26]Pair {
@@ -183,7 +185,7 @@ const VigenereAnalyser = struct {
         var result: f64 = 0.0;
         _ = self.updateFreq(input);
 
-        sort.pdq(Pair, &self.freq, {}, Pair.asc);
+        std.mem.sortUnstable(Pair, &self.freq, {}, Pair.asc);
 
         for (self.freq, &self.sorted_targets) |pair, target|
             result += pair.frequency * target;
@@ -192,15 +194,15 @@ const VigenereAnalyser = struct {
     }
 };
 
-fn createStringArray(allocator: mem.Allocator, size: usize) ![]std.ArrayList(u8) {
-    var array = try std.ArrayList(std.ArrayList(u8)).initCapacity(allocator, size);
+fn createStringArray(allocator: std.mem.Allocator, size: usize) ![]std.ArrayList(u8) {
+    var array: std.ArrayList(std.ArrayList(u8)) = try .initCapacity(allocator, size);
     for (0..size) |_|
-        try array.append(std.ArrayList(u8).init(allocator));
-    return try array.toOwnedSlice();
+        try array.append(allocator, .empty);
+    return try array.toOwnedSlice(allocator);
 }
 
-fn deinitStringArray(allocator: mem.Allocator, array: []std.ArrayList(u8)) void {
-    for (array) |s|
-        s.deinit();
+fn deinitStringArray(allocator: std.mem.Allocator, array: []std.ArrayList(u8)) void {
+    for (array) |*s|
+        s.deinit(allocator);
     allocator.free(array);
 }
