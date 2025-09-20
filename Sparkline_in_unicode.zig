@@ -1,14 +1,15 @@
 // https://rosettacode.org/wiki/Sparkline_in_unicode
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
-fn writeSparkline(numbers: []const f64, max: f64, min: f64, writer: anytype) !void {
+fn writeSparkline(numbers: []const f64, max: f64, min: f64, w: *std.Io.Writer) !void {
     const bars = [_][]const u8{ "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█" };
     const range = max - min;
     if (range == 0)
-        try writer.writeBytesNTimes(bars[bars.len / 2 - 1], numbers.len)
+        _ = try w.splatBytes(bars[bars.len / 2 - 1], numbers.len)
     else {
         for (numbers) |n|
-            try writer.writeAll(bars[@min(bars.len - 1, @as(usize, @intFromFloat((n - min) / range * bars.len)))]);
+            try w.writeAll(bars[@min(bars.len - 1, @as(usize, @intFromFloat((n - min) / range * bars.len)))]);
     }
 }
 
@@ -18,17 +19,19 @@ pub fn main() !void {
     const input3 = "0, 1, 19, 20";
     const input4 = "0, 999, 4000, 4999, 7000, 7999";
 
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const w = &stdout_writer.interface;
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     for ([_][]const u8{ input1, input2, input3, input4 }) |input| {
         std.debug.assert(input.len != 0); // more code required?
 
-        var numbers_list = std.ArrayList(f64).init(allocator);
-        defer numbers_list.deinit();
+        var numbers_list: std.ArrayList(f64) = .empty;
+        defer numbers_list.deinit(allocator);
         // parse, min, max and append to number list
         var min: f64 = std.math.floatMax(f64);
         var max: f64 = -min;
@@ -37,34 +40,35 @@ pub fn main() !void {
             const number = try std.fmt.parseFloat(f64, number_string);
             max = @max(max, number);
             min = @min(min, number);
-            try numbers_list.append(number);
+            try numbers_list.append(allocator, number);
         }
         // write numbers and statistics
-        try writer.writeAll("Numbers:");
+        try w.writeAll("Numbers:");
         for (numbers_list.items) |number|
-            try writer.print(" {d}", .{number});
-        try writer.print("\n min: {d}\n max: {d}\n", .{ min, max });
+            try w.print(" {d}", .{number});
+        try w.print("\n min: {d}\n max: {d}\n", .{ min, max });
         //
-        try writeSparkline(numbers_list.items, max, min, writer);
+        try writeSparkline(numbers_list.items, max, min, w);
         //
-        try writer.writeByteNTimes('\n', 2);
+        _ = try w.splatByte('\n', 2);
     }
+
+    try w.flush();
 }
 
 const testing = std.testing;
 test writeSparkline {
     var buffer: [64]u8 = undefined;
-    var stream = std.io.fixedBufferStream(&buffer);
-    const writer = stream.writer();
+    var w: std.Io.Writer = .fixed(&buffer);
 
     // array of repeated number
     const numbers1 = [_]f64{ 42, 42, 42, 42, 42, 42, 42 };
-    try writeSparkline(&numbers1, 42, 42, writer);
-    try std.testing.expectEqualSlices(u8, "▄▄▄▄▄▄▄", stream.getWritten());
+    try writeSparkline(&numbers1, 42, 42, &w);
+    try std.testing.expectEqualSlices(u8, "▄▄▄▄▄▄▄", w.buffered());
 
     // array of length one
-    stream.reset();
+    _ = w.consumeAll();
     const numbers2 = [_]f64{42};
-    try writeSparkline(&numbers2, 42, 42, writer);
-    try std.testing.expectEqualSlices(u8, "▄", stream.getWritten());
+    try writeSparkline(&numbers2, 42, 42, &w);
+    try std.testing.expectEqualSlices(u8, "▄", w.buffered());
 }

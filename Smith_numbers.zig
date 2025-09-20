@@ -1,17 +1,18 @@
 // https://rosettacode.org/wiki/Smith_numbers
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
-const mem = std.mem;
 
 pub fn main() !void {
     // ------------------------------------------ allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // --------------------------------------------- stdout
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     // ----------------------------------------------------
 
     try stdout.writeAll("All the Smith Numbers < 10000 are:\n");
@@ -19,38 +20,38 @@ pub fn main() !void {
     try stdout.print("\nFound {d} Smith numbers.\n", .{count});
 
     // ----------------------------------------------------
-    try bw.flush();
+    try stdout.flush();
 }
 
-fn listAllSmithNumbers(allocator: mem.Allocator, writer: anytype, x: u64) !u16 {
-    var array = std.ArrayList(u64).init(allocator);
-    defer array.deinit();
+fn listAllSmithNumbers(allocator: std.mem.Allocator, w: *std.Io.Writer, x: u64) !u16 {
+    var array: std.ArrayList(u64) = .empty;
+    defer array.deinit(allocator);
 
     var count: u16 = 0;
 
     for (4..x) |a| {
         array.clearRetainingCapacity();
-        try primeFactors(a, &array);
+        try primeFactors(allocator, a, &array);
         if (array.items.len < 2)
             continue;
         if (sumDigits(a) == sumFactors(array.items)) {
-            try writer.print("{d:4}", .{a});
+            try w.print("{d:4}", .{a});
             count += 1;
-            try writer.writeByte(if (count % 20 == 0) '\n' else ' ');
+            try w.writeByte(if (count % 20 == 0) '\n' else ' ');
         }
     }
     return count;
 }
 
-fn primeFactors(x_: u64, array: *std.ArrayList(u64)) !void {
+fn primeFactors(allocator: std.mem.Allocator, x_: u64, array: *std.ArrayList(u64)) !void {
     var p: u64 = 2;
     if (x_ == 1)
-        try array.append(1)
+        try array.append(allocator, 1)
     else {
         var x = x_;
         while (true)
             if ((x % p) == 0) {
-                try array.append(p);
+                try array.append(allocator, p);
                 x /= p;
                 if (x == 1)
                     return;

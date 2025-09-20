@@ -1,18 +1,20 @@
 // https://rosettacode.org/wiki/Sort_primes_from_list_to_a_list
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
     const primes = [_]u8{ 2, 43, 81, 122, 63, 13, 7, 95, 103 };
-    var ba = try std.BoundedArray(u8, primes.len).init(0);
+
+    var buffer: [primes.len]u8 = undefined;
+    var array: std.ArrayList(u8) = .initBuffer(&buffer);
 
     for (primes) |prime|
         if (isPrime(prime))
-            try ba.append(prime);
+            try array.appendBounded(prime);
 
-    const result = ba.slice();
-    std.mem.sort(u8, result, {}, std.sort.asc(u8));
+    std.mem.sortUnstable(u8, array.items, {}, std.sort.asc(u8));
 
-    std.debug.print("Primes are: {any}\n", .{result});
+    std.debug.print("Primes are: {any}\n", .{array.items});
 }
 
 fn isPrime(n: anytype) bool {

@@ -1,15 +1,14 @@
 // https://rosettacode.org/wiki/Sort_numbers_lexicographically
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
-const mem = std.mem;
-const assert = std.debug.assert;
 
 pub fn main() !void {
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -18,7 +17,7 @@ pub fn main() !void {
 
     for (numbers) |num| {
         // Create the ordered values in LexOrder
-        const ordered = try LexOrder(i16).init(allocator, num);
+        const ordered: LexOrder(i16) = try .init(allocator, num);
         defer ordered.deinit();
 
         try stdout.print("{d}: [", .{num});
@@ -29,7 +28,7 @@ pub fn main() !void {
         try stdout.writeAll("]\n");
     }
 
-    try bw.flush();
+    try stdout.flush();
 }
 
 /// A struct is used to limit scope of the type 'T' to the
@@ -38,14 +37,14 @@ fn LexOrder(comptime T: type) type {
     return struct {
         const Self = @This();
 
-        allocator: mem.Allocator,
+        allocator: std.mem.Allocator,
         numbers: []T,
 
         const Pair = struct { n: T, s: []const u8 };
 
-        pub fn init(allocator: mem.Allocator, num: T) !Self {
-            var array = std.ArrayList(Pair).init(allocator);
-            defer array.deinit(); // not necessary after toOwnedSlice()
+        pub fn init(allocator: std.mem.Allocator, num: T) !Self {
+            var array: std.ArrayList(Pair) = .empty;
+            defer array.deinit(allocator); // not necessary after toOwnedSlice()
 
             const lo: T, const hi: T = if (num < 1) .{ num, 1 } else .{ 1, num };
 
@@ -53,16 +52,16 @@ fn LexOrder(comptime T: type) type {
             while (i <= hi) : (i += 1) {
                 const s = try std.fmt.allocPrint(allocator, "{d}", .{i});
                 const pair = Pair{ .n = i, .s = s };
-                try array.append(pair);
+                try array.append(allocator, pair);
             }
-            const pairs = try array.toOwnedSlice();
+            const pairs = try array.toOwnedSlice(allocator);
             defer {
                 for (pairs) |p| allocator.free(p.s);
                 allocator.free(pairs);
             }
 
             // Lexicographically sort on "pair.s" strings
-            mem.sort(Pair, pairs, {}, cmpPairs);
+            std.mem.sortUnstable(Pair, pairs, {}, cmpPairs);
 
             // Retrieve the numbers from the sorted pairs.
             const numbers = try allocator.alloc(T, pairs.len);
@@ -80,11 +79,11 @@ fn LexOrder(comptime T: type) type {
         }
 
         fn cmpPairs(_: void, p1: Pair, p2: Pair) bool {
-            assert(p1.n != p2.n);
+            std.debug.assert(p1.n != p2.n);
             const s1 = p1.s;
             const s2 = p2.s;
             const len = @min(s1.len, s2.len);
-            assert(len != 0);
+            std.debug.assert(len != 0);
 
             for (s1[0..len], s2[0..len]) |a, b|
                 if (a > b)
@@ -92,7 +91,7 @@ fn LexOrder(comptime T: type) type {
                 else if (a < b)
                     return true;
 
-            assert(s1.len != s2.len);
+            std.debug.assert(s1.len != s2.len);
             return s1.len < s2.len;
         }
     };

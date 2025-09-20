@@ -1,16 +1,21 @@
 // https://rosettacode.org/wiki/Sort_the_letters_of_string_in_alphabetical_order
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var s1 = "The quick brown fox jumps over the lazy dog, apparently".*;
     const result1 = sort(&s1);
-    try writer.print("«««{s}»»»\n\n", .{result1});
+    try stdout.print("«««{s}»»»\n\n", .{result1});
 
     var s2 = "Now is the time for all good men to come to the aid of their country.".*;
     const result2 = sort(&s2);
-    try writer.print("«««{s}»»»\n", .{result2});
+    try stdout.print("«««{s}»»»\n", .{result2});
+
+    try stdout.flush();
 }
 
 /// Primitive in-place bubble sort of a slice of u8.

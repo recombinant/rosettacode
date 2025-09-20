@@ -1,38 +1,43 @@
 // https://rosettacode.org/wiki/Solve_triangle_solitaire_puzzle
-// Translation of Kotlin
+// {{works with|Zig|0.15.1}}
+// {{trans|Kotlin}}
 const std = @import("std");
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var board = Board.init();
+    var board: Board = .init();
 
-    var solutions = std.ArrayList(Solution).init(allocator);
-    defer solutions.deinit();
+    var solutions: std.ArrayList(Solution) = .empty;
+    defer solutions.deinit(allocator);
 
     // run once to get solutions
     const empty_start = 1;
     board.start(empty_start); // starting with peg 1 removed
-    try board.solve(&solutions);
+    try board.solve(allocator, &solutions);
     std.debug.assert(board.isSolved());
 
     // restart & replay solutions printing the board
     board.start(empty_start);
-    try board.drawBoard(writer);
-    try writer.print("Starting with peg {X} removed\n", .{empty_start});
+    try board.drawBoard(stdout);
+    try stdout.print("Starting with peg {X} removed\n", .{empty_start});
     for (solutions.items) |solution| {
         board.replayMove(solution);
-        try writer.writeByte('\n');
-        try board.drawBoard(writer);
-        try writer.print(
+        try stdout.writeByte('\n');
+        try board.drawBoard(stdout);
+        try stdout.print(
             "Peg {X} jumped over {X} to land on {X}\n",
             .{ solution.peg, solution.over, solution.land },
         );
     }
+
+    try stdout.flush();
 }
 
 const Solution = struct {
@@ -66,7 +71,7 @@ const Board = struct {
     };
 
     fn init() Board {
-        var b = Board{ .board = undefined };
+        var b: Board = .{ .board = undefined };
         b.clear();
         return b;
     }
@@ -84,7 +89,7 @@ const Board = struct {
         self.board[solution.land] = true;
     }
     /// Recursive function to solve the puzzle
-    fn solve(self: *Board, solutions: *std.ArrayList(Solution)) !void {
+    fn solve(self: *Board, allocator: std.mem.Allocator, solutions: *std.ArrayList(Solution)) !void {
         if (isSolved(self))
             return;
         for (1..self.board.len) |peg| {
@@ -96,8 +101,8 @@ const Board = struct {
                         self.board[peg] = false;
                         self.board[over] = false;
                         self.board[land] = true;
-                        try solutions.append(Solution.init(@truncate(peg), over, land));
-                        try solve(self, solutions);
+                        try solutions.append(allocator, Solution.init(@truncate(peg), over, land));
+                        try solve(self, allocator, solutions);
                         if (self.isSolved())
                             return;
                         // otherwise back-track
@@ -114,7 +119,7 @@ const Board = struct {
             count += @intFromBool(peg);
         return count == 1; // just one peg left
     }
-    fn drawBoard(self: *const Board, writer: anytype) !void {
+    fn drawBoard(self: *const Board, w: *std.Io.Writer) !void {
         var pegs: [16]u8 = undefined;
         @memset(&pegs, '-');
         for (self.board, &pegs, 0..) |peg, *s, i|
@@ -122,10 +127,10 @@ const Board = struct {
                 s.* = if (i < 10) '0' else 'A' - 10;
                 s.* += @truncate(i);
             };
-        try writer.print("       {c}\n", .{pegs[1]});
-        try writer.print("      {c} {c}\n", .{ pegs[2], pegs[3] });
-        try writer.print("     {c} {c} {c}\n", .{ pegs[4], pegs[5], pegs[6] });
-        try writer.print("    {c} {c} {c} {c}\n", .{ pegs[7], pegs[8], pegs[9], pegs[10] });
-        try writer.print("   {c} {c} {c} {c} {c}\n", .{ pegs[11], pegs[12], pegs[13], pegs[14], pegs[15] });
+        try w.print("       {c}\n", .{pegs[1]});
+        try w.print("      {c} {c}\n", .{ pegs[2], pegs[3] });
+        try w.print("     {c} {c} {c}\n", .{ pegs[4], pegs[5], pegs[6] });
+        try w.print("    {c} {c} {c} {c}\n", .{ pegs[7], pegs[8], pegs[9], pegs[10] });
+        try w.print("   {c} {c} {c} {c} {c}\n", .{ pegs[11], pegs[12], pegs[13], pegs[14], pegs[15] });
     }
 };
