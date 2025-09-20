@@ -1,14 +1,12 @@
 // https://rosettacode.org/wiki/Bioinformatics/Global_alignment
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
-const sort = std.sort;
-const testing = std.testing;
 const assert = std.debug.assert;
 const print = std.debug.print;
 
 pub fn main() !void {
     // ------------------------------------------ allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // ------------------------------------- data from task
@@ -45,14 +43,14 @@ pub fn main() !void {
 }
 
 /// Returns shortest common superstrings of a list of strings.
-fn shortestCommonSuperstring(allocator: mem.Allocator, sequences: []const []const u8) ![][]const u8 {
+fn shortestCommonSuperstring(allocator: std.mem.Allocator, sequences: []const []const u8) ![][]const u8 {
     var ss = try deduplicate(allocator, sequences);
     defer allocator.free(ss);
 
     // There may be more than one string of the shortest length.
-    var results = std.ArrayList([]const u8).init(allocator);
+    var results: std.ArrayList([]const u8) = .empty;
     // Initialise using simple concatenation.
-    try results.append(try mem.join(allocator, "", ss));
+    try results.append(allocator, try std.mem.join(allocator, "", ss));
 
     // Only permutate when more than one deduplicated sequence remains.
     if (ss.len > 1) {
@@ -71,65 +69,65 @@ fn shortestCommonSuperstring(allocator: mem.Allocator, sequences: []const []cons
             if (sup.len < results.items[0].len) {
                 for (results.items) |item|
                     allocator.free(item);
-                results.clearAndFree();
+                results.clearAndFree(allocator);
             }
             // for both < and ==
-            try results.append(sup);
+            try results.append(allocator, sup);
         }
     }
-    return results.toOwnedSlice();
+    return results.toOwnedSlice(allocator);
 }
 
 /// Return `s` concatenated with `t`.
 /// The longest suffix of `s` that matches a prefix of `t` will be removed.
 /// Callee (this function) owns slice parameter `s` memory.
 /// Caller owns returned slice memory.
-fn smash(allocator: mem.Allocator, s: []u8, t: []const u8) ![]u8 {
+fn smash(allocator: std.mem.Allocator, s: []u8, t: []const u8) ![]u8 {
     defer allocator.free(s);
-    // alloc() and @memcpy() would probably run faster.
-    // buffer with writer() is simple.
-    var buffer = std.ArrayList(u8).init(allocator);
-    var writer = buffer.writer();
+
+    var a: std.Io.Writer.Allocating = .init(allocator);
+    defer a.deinit();
+    const w = &a.writer;
 
     for (1..s.len) |i|
-        if (mem.startsWith(u8, t, s[i..])) {
-            try buffer.ensureTotalCapacity(i + t.len);
-            try writer.writeAll(s[0..i]);
-            try writer.writeAll(t);
-            return buffer.toOwnedSlice(); // s[:i] + t
+        if (std.mem.startsWith(u8, t, s[i..])) {
+            try a.ensureTotalCapacity(i + t.len);
+            try w.writeAll(s[0..i]);
+            try w.writeAll(t);
+            return a.toOwnedSlice(); // s[:i] + t
         };
-    try buffer.ensureTotalCapacity(s.len + t.len);
-    try writer.writeAll(s);
-    try writer.writeAll(t);
-    return buffer.toOwnedSlice(); // s + t
+    try a.ensureTotalCapacity(s.len + t.len);
+    try w.writeAll(s);
+    try w.writeAll(t);
+    return a.toOwnedSlice(); // s + t
 }
 
 /// Return the array of sequences with those that are a substring
 /// of others removed.
-fn deduplicate(allocator: mem.Allocator, sequences: []const []const u8) ![][]const u8 {
+fn deduplicate(allocator: std.mem.Allocator, sequences: []const []const u8) ![][]const u8 {
     var ss: [][]const u8 = try distinct(allocator, sequences);
     if (ss.len < 2)
         return ss; // must be allocated with "allocator"
     defer allocator.free(ss);
 
-    var filtered = std.ArrayList([]const u8).init(allocator);
+    var filtered: std.ArrayList([]const u8) = .empty;
     // sorted shortest to longest lengths
-    sort.pdq([]const u8, ss, {}, lessThanLength);
+    std.mem.sort([]const u8, ss, {}, lessThanLength);
     for (ss[0 .. ss.len - 1], 0..) |shorter, i| {
         for (ss[i + 1 .. ss.len]) |longer| {
-            if (mem.indexOf(u8, longer, shorter) != null)
+            if (std.mem.indexOf(u8, longer, shorter) != null)
                 break;
         } else {
-            try filtered.append(shorter); // not contained
+            try filtered.append(allocator, shorter); // not contained
         }
     }
-    try filtered.append(ss[ss.len - 1]); // add longest
-    return filtered.toOwnedSlice();
+    try filtered.append(allocator, ss[ss.len - 1]); // add longest
+    return filtered.toOwnedSlice(allocator);
 }
 
 /// Returns all distinct elements from a list of strings.
 /// Caller owns returned slice.
-fn distinct(allocator: mem.Allocator, sequences: []const []const u8) ![][]const u8 {
+fn distinct(allocator: std.mem.Allocator, sequences: []const []const u8) ![][]const u8 {
     var set = std.StringArrayHashMap(void).init(allocator);
     defer set.deinit();
     for (sequences) |s|
@@ -138,7 +136,7 @@ fn distinct(allocator: mem.Allocator, sequences: []const []const u8) ![][]const 
     return try allocator.dupe([]const u8, set.keys());
 }
 
-fn printCounts(allocator: mem.Allocator, sequence: []const u8) !void {
+fn printCounts(allocator: std.mem.Allocator, sequence: []const u8) !void {
     // ----------------------------------------------------
     var base_map = std.AutoArrayHashMap(u8, u64).init(allocator);
     defer base_map.deinit();
@@ -152,7 +150,10 @@ fn printCounts(allocator: mem.Allocator, sequence: []const u8) !void {
     // ----------------------------------------------------
     const bases = [_]u8{ 'A', 'C', 'G', 'T' };
     // ----------------------------------------------------
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+    // ----------------------------------------------------
     try stdout.print("\nNucleotide counts for {s}:\n", .{sequence});
 
     var sum: u64 = 0;
@@ -164,6 +165,8 @@ fn printCounts(allocator: mem.Allocator, sequence: []const u8) !void {
     try stdout.print("{s:10}{d:12}\n", .{ "Other", sequence.len - sum });
     try stdout.writeAll("  ____________________\n");
     try stdout.print("{s:14}{d:8}\n\n", .{ "Total length", sequence.len });
+    // ----------------------------------------------------
+    try stdout.flush();
 }
 
 /// Iterative permutation with the slice to be permutated shadowing an index
@@ -175,16 +178,16 @@ fn Permutator(comptime T: type) type {
         slice: []T,
         indices: []usize,
         remaining: usize,
-        allocator: mem.Allocator,
+        allocator: std.mem.Allocator,
 
-        fn init(allocator: mem.Allocator, slice: []T) !Self {
+        fn init(allocator: std.mem.Allocator, slice: []T) !Self {
             assert(slice.len < 21); // usize factorial limit
             const indices = try allocator.alloc(usize, slice.len);
             for (indices, 0..) |*index, n|
                 index.* = n;
             // reverse so that the first call to next() has indices at 0, 1, 2 usw.
-            mem.reverse(usize, indices);
-            mem.reverse(T, slice);
+            std.mem.reverse(usize, indices);
+            std.mem.reverse(T, slice);
             return Self{
                 .slice = slice,
                 .indices = indices,
@@ -210,8 +213,8 @@ fn Permutator(comptime T: type) type {
             var j = i;
             var k = self.indices.len - 1;
             while (j < k) {
-                mem.swap(usize, &self.indices[k], &self.indices[j]);
-                mem.swap(T, &self.slice[k], &self.slice[j]);
+                std.mem.swap(usize, &self.indices[k], &self.indices[j]);
+                std.mem.swap(T, &self.slice[k], &self.slice[j]);
                 j += 1;
                 k -= 1;
             }
@@ -222,8 +225,8 @@ fn Permutator(comptime T: type) type {
             }
             while (self.indices[j] < self.indices[i - 1])
                 j += 1;
-            mem.swap(usize, &self.indices[j], &self.indices[i - 1]);
-            mem.swap(T, &self.slice[j], &self.slice[i - 1]);
+            std.mem.swap(usize, &self.indices[j], &self.indices[i - 1]);
+            std.mem.swap(T, &self.slice[j], &self.slice[i - 1]);
             return true;
         }
 
@@ -242,8 +245,10 @@ fn lessThanLength(_: void, lhs: []const u8, rhs: []const u8) bool {
 
 /// Returns whether the lexicographical order of `lhs` is lower than `rhs`.
 fn lessThan(_: void, lhs: []const u8, rhs: []const u8) bool {
-    return mem.order(u8, lhs, rhs) == .lt;
+    return std.mem.order(u8, lhs, rhs) == .lt;
 }
+
+const testing = std.testing;
 
 test deduplicate {
     const allocator = testing.allocator;
@@ -253,7 +258,7 @@ test deduplicate {
 
         const result = try deduplicate(allocator, sequences[0..]);
         defer allocator.free(result);
-        sort.pdq([]const u8, result, {}, lessThan);
+        std.mem.sort([]const u8, result, {}, lessThan);
 
         try testing.expectEqual(3, result.len);
         try testing.expectEqualStrings("AAG", result[0]);
@@ -308,7 +313,7 @@ test distinct {
 
         const result = try distinct(allocator, sequences[0..]);
         defer allocator.free(result);
-        sort.heap([]const u8, result, {}, lessThan);
+        std.sort.heap([]const u8, result, {}, lessThan);
 
         try testing.expectEqual(3, result.len);
         try testing.expectEqualStrings("AAG", result[0]);
@@ -343,7 +348,7 @@ test distinct {
 test lessThanLength {
     var sequences = [_][]const u8{ "TA", "ATTAG", "CATTAGGG", "GGG", "TA" };
 
-    sort.pdq([]const u8, sequences[0..], {}, lessThanLength);
+    std.mem.sort([]const u8, sequences[0..], {}, lessThanLength);
     try testing.expectEqual(8, sequences[4].len);
     try testing.expectEqual(5, sequences[3].len);
     try testing.expectEqual(3, sequences[2].len);
@@ -384,7 +389,7 @@ test shortestCommonSuperstring {
         var sequences = [_][]const u8{ "TTAGG", "GGATT" };
 
         const result = try shortestCommonSuperstring(allocator, sequences[0..]);
-        sort.pdq([]const u8, result, {}, lessThan);
+        std.mem.sort([]const u8, result, {}, lessThan);
 
         defer {
             for (result) |s| allocator.free(s);
@@ -415,7 +420,7 @@ test Permutator {
             },
             else => {
                 // shouldn't see the above permutation again
-                try testing.expect(!(mem.eql(u8, "Alice", names[0]) and mem.eql(u8, "Bob", names[1]) and mem.eql(u8, "Charlie", names[2])));
+                try testing.expect(!(std.mem.eql(u8, "Alice", names[0]) and std.mem.eql(u8, "Bob", names[1]) and std.mem.eql(u8, "Charlie", names[2])));
             },
         }
     }

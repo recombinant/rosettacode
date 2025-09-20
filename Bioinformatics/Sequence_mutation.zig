@@ -1,25 +1,25 @@
 // https://rosettacode.org/wiki/Bioinformatics/Sequence_mutation
+// {{trans|C++}}
 const std = @import("std");
-const mem = std.mem;
-const assert = std.debug.assert;
-const print = std.debug.print;
 
 pub fn main() !void {
     // --------------------------------------------- stdout
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // ------------------------------------------ allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // --------------------- pseudo random number generator
-    var prng = std.Random.DefaultPrng.init(blk: {
+    var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        try std.posix.getrandom(mem.asBytes(&seed));
+        try std.posix.getrandom(std.mem.asBytes(&seed));
         break :blk seed;
     });
     const rand = prng.random();
     // ---------------------------------- generate sequence
-    var generator = DnaGenerator.init(allocator, rand);
+    var generator: DnaGenerator = .init(allocator, rand);
 
     var sequence = try generator.generate(200);
     defer sequence.deinit();
@@ -32,10 +32,12 @@ pub fn main() !void {
 
     try stdout.writeByte('\n');
     try sequence.prettyPrint(stdout);
+    // --------------------------------------- flush stdout
+    try stdout.flush();
 }
 
 const DnaSequence = struct {
-    allocator: mem.Allocator,
+    allocator: std.mem.Allocator,
     rand: std.Random,
     sequence: []u8,
 
@@ -62,17 +64,17 @@ const DnaSequence = struct {
         const index = self.rand.uintLessThan(usize, self.sequence.len);
         // 'A', 'C', 'G' or 'T'
         const base = DnaGenerator.bases[self.rand.uintLessThan(usize, DnaGenerator.bases.len)];
-        print("{d:5} swapped {c} for {c}\n", .{ index, self.sequence[index], base });
+        std.log.debug("{d:5} swapped {c} for {c}", .{ index, self.sequence[index], base });
         self.sequence[index] = base;
     }
     fn mutateDelete(self: *DnaSequence) !void {
         const index = self.rand.uintLessThan(usize, self.sequence.len);
         // convert sequence slice to ArrayList for removal
-        var array = std.ArrayList(u8).fromOwnedSlice(self.allocator, self.sequence);
+        var array: std.ArrayList(u8) = .fromOwnedSlice(self.sequence);
         const c = array.orderedRemove(index);
-        print("{d:5} deleted {c}\n", .{ index, c });
+        std.log.debug("{d:5} deleted {c}", .{ index, c });
         // convert ArrayList back to slice
-        self.sequence = try array.toOwnedSlice();
+        self.sequence = try array.toOwnedSlice(self.allocator);
     }
     fn mutateInsert(self: *DnaSequence) !void {
         // insertion can occur after the last element in self.sequence.
@@ -80,11 +82,11 @@ const DnaSequence = struct {
         // 'A', 'C', 'G' or 'T'
         const base = DnaGenerator.bases[self.rand.uintLessThan(usize, DnaGenerator.bases.len)];
         // convert sequence slice to ArrayList for insertion
-        var array = std.ArrayList(u8).fromOwnedSlice(self.allocator, self.sequence);
-        try array.insert(index, base);
-        print("{d:5} inserted {c}\n", .{ index, base });
+        var array: std.ArrayList(u8) = .fromOwnedSlice(self.sequence);
+        try array.insert(self.allocator, index, base);
+        std.log.debug("{d:5} inserted {c}", .{ index, base });
         // convert ArrayList back to slice
-        self.sequence = try array.toOwnedSlice();
+        self.sequence = try array.toOwnedSlice(self.allocator);
     }
 
     /// Pretty print the sequence e.g.
@@ -92,7 +94,7 @@ const DnaSequence = struct {
     ///    50: ACTGAACGAC CAGGGCCAAA AAGCACGCGC GTGTAGGCAA AAACGTTTCT
     ///   100: CAGACACGGT CCGACTTAAT TGTGCGGATG CGTAGGTATG CTCAGGGGGA
     ///   150: CTATCGCCAT TCATTTCCCG CAGAGCTGAC GAGCGCTCGT TCAATTACTT
-    fn prettyPrint(self: *const DnaSequence, writer: anytype) !void {
+    fn prettyPrint(self: *const DnaSequence, writer: *std.Io.Writer) !void {
         const step1 = 50;
         const step2 = 10;
         var start1: usize = 0;
@@ -114,10 +116,10 @@ const DnaSequence = struct {
 
 const DnaGenerator = struct {
     const bases = "ACGT";
-    allocator: mem.Allocator,
+    allocator: std.mem.Allocator,
     rand: std.Random,
 
-    fn init(allocator: mem.Allocator, rand: std.Random) DnaGenerator {
+    fn init(allocator: std.mem.Allocator, rand: std.Random) DnaGenerator {
         return DnaGenerator{
             .allocator = allocator,
             .rand = rand,
@@ -126,7 +128,7 @@ const DnaGenerator = struct {
 
     // Caller owns returned slice memory.
     fn generate(self: DnaGenerator, count: usize) !DnaSequence {
-        assert(count > 0);
+        std.debug.assert(count > 0);
         const sequence = try self.allocator.alloc(u8, count);
         for (sequence) |*base|
             base.* = bases[self.rand.uintLessThan(usize, bases.len)];

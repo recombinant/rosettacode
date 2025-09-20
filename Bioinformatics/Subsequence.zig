@@ -1,25 +1,25 @@
 // https://rosettacode.org/wiki/Bioinformatics/Subsequence
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
-const assert = std.debug.assert;
-const testing = std.testing;
 
 pub fn main() !void {
     // --------------------------------------------- stdout
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // ------------------------------------------ allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // --------------------- pseudo random number generator
-    var prng = std.Random.DefaultPrng.init(blk: {
+    var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        try std.posix.getrandom(mem.asBytes(&seed));
+        try std.posix.getrandom(std.mem.asBytes(&seed));
         break :blk seed;
     });
     const rand = prng.random();
     // ------------------- generate sequence & sub-sequence
-    var generator = DnaGenerator.init(allocator, rand);
+    var generator: DnaGenerator = .init(allocator, rand);
 
     const sequence = try generator.generate(200);
     defer generator.allocator.free(sequence);
@@ -35,9 +35,11 @@ pub fn main() !void {
     defer allocator.free(locations);
     // ----------------------- print sub-sequence locations
     try printDnaLocations(stdout, locations);
+    // --------------------------------------- flush stdout
+    try stdout.flush();
 }
 
-fn printSequence(writer: anytype, sequence: []const u8) !void {
+fn printSequence(writer: *std.Io.Writer, sequence: []const u8) !void {
     const step = 40;
     var start: usize = 0;
     while (start < sequence.len) : (start += step) {
@@ -48,7 +50,7 @@ fn printSequence(writer: anytype, sequence: []const u8) !void {
         try writer.writeByte('\n');
 }
 
-fn printDnaLocations(writer: anytype, locations: []const usize) !void {
+fn printDnaLocations(writer: *std.Io.Writer, locations: []const usize) !void {
     if (locations.len == 0)
         try writer.writeAll("No matches found.\n")
     else {
@@ -63,22 +65,22 @@ fn printDnaLocations(writer: anytype, locations: []const usize) !void {
 }
 
 // Caller owns returned slice memory.
-fn findDnaLocations(allocator: mem.Allocator, haystack: []const u8, needle: []const u8) ![]usize {
-    var locations = std.ArrayList(usize).init(allocator);
+fn findDnaLocations(allocator: std.mem.Allocator, haystack: []const u8, needle: []const u8) ![]usize {
+    var locations: std.ArrayList(usize) = .empty;
     var start: usize = 0;
-    while (mem.indexOf(u8, haystack[start..], needle)) |pos| {
-        try locations.append(start + pos);
+    while (std.mem.indexOf(u8, haystack[start..], needle)) |pos| {
+        try locations.append(allocator, start + pos);
         start += pos + 1;
     }
-    return locations.toOwnedSlice();
+    return locations.toOwnedSlice(allocator);
 }
 
 const DnaGenerator = struct {
     const bases = "ACGT";
-    allocator: mem.Allocator,
+    allocator: std.mem.Allocator,
     rand: std.Random,
 
-    fn init(allocator: mem.Allocator, rand: std.Random) DnaGenerator {
+    fn init(allocator: std.mem.Allocator, rand: std.Random) DnaGenerator {
         return DnaGenerator{
             .allocator = allocator,
             .rand = rand,
@@ -87,13 +89,15 @@ const DnaGenerator = struct {
 
     // Caller owns returned slice memory.
     fn generate(self: DnaGenerator, count: usize) ![]const u8 {
-        assert(count > 0);
+        std.debug.assert(count > 0);
         const sequence = try self.allocator.alloc(u8, count);
         for (sequence) |*base|
             base.* = bases[self.rand.uintLessThan(usize, bases.len)];
         return sequence;
     }
 };
+
+const testing = std.testing;
 
 test "findDnaLocations" {
     const allocator = testing.allocator;

@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Bioinformatics/base_count
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 const sort = std.sort;
 
@@ -15,8 +16,10 @@ const b =
     "GACCGGGGACTTGCATGATGGGAGCAGCTTTGTTAAACTACGAACGTAAT";
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
-
+    // --------------------------------------------- stdout
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // ------------------------------------- print sequence
     {
         try stdout.writeAll("SEQUENCE:\n");
@@ -29,7 +32,7 @@ pub fn main() !void {
             try stdout.writeByte('\n');
     }
     // ------------------------------------------ allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // ----------------------------------------------------
@@ -58,4 +61,6 @@ pub fn main() !void {
     try stdout.writeAll("    ------\n");
     try stdout.print("    Σ: {d:3}\n", .{sum});
     try stdout.writeAll("    ======\n");
+    // --------------------------------------- flush stdout
+    try stdout.flush();
 }
