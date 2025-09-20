@@ -129,15 +129,7 @@ const Revolver = struct {
         return shot;
     }
     fn rshift(self: *Revolver) void {
-        const t: bool = self.cylinder[5];
-
-        var i: usize = 5;
-        while (i > 0) {
-            i -= 1;
-            self.cylinder[i + 1] = self.cylinder[i];
-        }
-
-        self.cylinder[0] = t;
+        std.mem.rotate(bool, &self.cylinder, self.cylinder.len - 1);
     }
 };
 
