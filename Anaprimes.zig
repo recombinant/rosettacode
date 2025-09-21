@@ -6,7 +6,7 @@ const std = @import("std");
 
 const PrimeGen = @import("sieve.zig").PrimeGen;
 
-const AnaprimeLookup = std.AutoArrayHashMap(u40, std.ArrayList(u64));
+const AnaprimeLookup = std.AutoArrayHashMapUnmanaged(u40, std.ArrayList(u64));
 
 pub fn main() !void {
     var t0: std.time.Timer = try .start();
@@ -25,10 +25,10 @@ pub fn main() !void {
     var primegen: PrimeGen(u64) = .init(allocator);
     defer primegen.deinit();
 
-    var anaprimes: AnaprimeLookup = .init(allocator);
+    var anaprimes: AnaprimeLookup = .empty;
     defer {
         clear(allocator, &anaprimes);
-        anaprimes.deinit();
+        anaprimes.deinit(allocator);
     }
 
     var longest: std.ArrayList([]const u64) = .empty;
@@ -70,7 +70,7 @@ pub fn main() !void {
             clear(allocator, &anaprimes);
         }
         const key = calcSignature(@TypeOf(p), p);
-        const gop = try anaprimes.getOrPut(key);
+        const gop = try anaprimes.getOrPut(allocator, key);
         if (!gop.found_existing)
             gop.value_ptr.* = .empty;
 
@@ -80,7 +80,7 @@ pub fn main() !void {
     std.log.info("processed in {D}", .{t0.read()});
 }
 
-fn clear(allocator: std.mem.Allocator, anaprimes: *std.AutoArrayHashMap(u40, std.ArrayList(u64))) void {
+fn clear(allocator: std.mem.Allocator, anaprimes: *std.AutoArrayHashMapUnmanaged(u40, std.ArrayList(u64))) void {
     for (anaprimes.values()) |*primes|
         primes.deinit(allocator);
     anaprimes.clearRetainingCapacity();

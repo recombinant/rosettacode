@@ -15,7 +15,7 @@ pub fn main() !void {
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    var pow5_to_n = std.AutoArrayHashMap(Number, usize).init(allocator);
+    var pow5_to_n: std.AutoArrayHashMapUnmanaged(Number, usize) = .empty;
     // defer pow5_to_n.deinit(); // not necessary with ArenaAllocator
     var pow5: [max_n]Number = undefined;
 
@@ -23,7 +23,7 @@ pub fn main() !void {
     for (pow5[0..], 0..) |*e, i| {
         const n: Number = @intCast(i);
         e.* = try std.math.powi(Number, n, 5);
-        try pow5_to_n.put(e.*, i);
+        try pow5_to_n.put(allocator, e.*, i);
     }
 
     // |power, index| pairs

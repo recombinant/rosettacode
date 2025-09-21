@@ -128,20 +128,20 @@ fn deduplicate(allocator: std.mem.Allocator, sequences: []const []const u8) ![][
 /// Returns all distinct elements from a list of strings.
 /// Caller owns returned slice.
 fn distinct(allocator: std.mem.Allocator, sequences: []const []const u8) ![][]const u8 {
-    var set = std.StringArrayHashMap(void).init(allocator);
-    defer set.deinit();
+    var set: std.StringArrayHashMapUnmanaged(void) = .empty;
+    defer set.deinit(allocator);
     for (sequences) |s|
-        try set.put(s, {});
+        try set.put(allocator, s, {});
 
     return try allocator.dupe([]const u8, set.keys());
 }
 
 fn printCounts(allocator: std.mem.Allocator, sequence: []const u8) !void {
     // ----------------------------------------------------
-    var base_map = std.AutoArrayHashMap(u8, u64).init(allocator);
-    defer base_map.deinit();
+    var base_map: std.AutoArrayHashMapUnmanaged(u8, u64) = .empty;
+    defer base_map.deinit(allocator);
     for (sequence) |base| {
-        const gop = try base_map.getOrPut(base);
+        const gop = try base_map.getOrPut(allocator, base);
         if (gop.found_existing)
             gop.value_ptr.* += 1
         else

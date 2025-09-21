@@ -36,10 +36,10 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // ----------------------------------------------------
-    var basemap = std.AutoArrayHashMap(u8, u64).init(allocator);
-    defer basemap.deinit();
+    var basemap: std.AutoArrayHashMapUnmanaged(u8, u64) = .empty;
+    defer basemap.deinit(allocator);
     for (b) |d| {
-        const gop = try basemap.getOrPut(d);
+        const gop = try basemap.getOrPut(allocator, d);
         if (gop.found_existing)
             gop.value_ptr.* += 1
         else
