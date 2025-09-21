@@ -1,6 +1,7 @@
 // https://rosettacode.org/wiki/Sum_digits_of_an_integer
+// {{works with|Zig|0.15.1}}
+// zig test Sum_digits_of_an_integer.zig
 const std = @import("std");
-const testing = std.testing;
 
 const SumDigitsError = error{
     BaseError,
@@ -17,6 +18,8 @@ fn sumDigits(num: i64, base: u8) !u8 {
     }
     return @intCast(sum + n);
 }
+
+const testing = std.testing;
 
 test sumDigits {
     try testing.expectEqual(0, try sumDigits(0, 10));

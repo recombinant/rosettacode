@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Sudoku
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
@@ -13,14 +14,18 @@ pub fn main() !void {
         0, 1, 7, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 3, 6, 0, 4, 0,
     };
-    var sudoku = Sudoku.init(problem);
+    var sudoku: Sudoku = .init(problem);
 
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     if (sudoku.solve())
-        try stdout.print("{}", .{sudoku})
+        try stdout.print("{f}", .{sudoku})
     else
-        std.log.err("unsolvable puzzle\n", .{});
+        std.log.err("unsolvable puzzle", .{});
+
+    try stdout.flush();
 }
 
 const Sudoku = struct {
@@ -71,16 +76,13 @@ const Sudoku = struct {
         self.grid[i] = 0;
         return false;
     }
-    // refer to std.fmt.format documentation
-    pub fn format(self: *const Sudoku, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
-        _ = fmt;
-        _ = options;
+    pub fn format(self: *const Sudoku, w: *std.Io.Writer) std.Io.Writer.Error!void {
         for (0..9) |y| {
             for (0..9) |x| {
-                if (x != 0) try writer.writeByte(' ');
-                try writer.writeByte(self.grid[9 * y + x] + '0');
+                if (x != 0) try w.writeByte(' ');
+                try w.writeByte(self.grid[9 * y + x] + '0');
             }
-            try writer.writeByte('\n');
+            try w.writeByte('\n');
         }
     }
     fn solve(self: *Sudoku) bool {

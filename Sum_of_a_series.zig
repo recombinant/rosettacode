@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Sum_of_a_series
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 fn f(x: u64) f64 {
@@ -16,6 +17,11 @@ fn sum(comptime func: fn (u64) f64, n: u64) f64 {
 }
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     try stdout.print("S_1000 = {d:.15}\n", .{sum(f, 1000)});
+
+    try stdout.flush();
 }

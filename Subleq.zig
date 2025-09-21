@@ -1,9 +1,10 @@
 // https://rosettacode.org/wiki/Subleq
-// Translation of Kotlin
+// {{works with|Zig|0.15.1}}
+// {{trans|Kotlin}}
 const std = @import("std");
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -13,17 +14,21 @@ pub fn main() !void {
 
 fn subleq(allocator: std.mem.Allocator, program: []const u8) !void {
     // ------------------------------------------- output storage
-    var sb = std.ArrayList(u8).init(allocator);
-    defer sb.deinit();
+    var sb: std.ArrayList(u8) = .empty;
+    defer sb.deinit(allocator);
     // --------------------------------------------- read program
-    var word_list = std.ArrayList(i8).init(allocator);
-    defer word_list.deinit();
+    var word_list: std.ArrayList(i8) = .empty;
+    defer word_list.deinit(allocator);
 
     var it = std.mem.tokenizeScalar(u8, program, ' ');
     while (it.next()) |text|
-        try word_list.append(try std.fmt.parseInt(i8, text, 10));
-    const words = try word_list.toOwnedSlice();
+        try word_list.append(allocator, try std.fmt.parseInt(i8, text, 10));
+    const words = try word_list.toOwnedSlice(allocator);
     defer allocator.free(words);
+    // --------------------------------------------------- stdout
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // ------------------------------------------ execute program
     var ip: usize = 0;
     while (true) {
@@ -32,12 +37,11 @@ fn subleq(allocator: std.mem.Allocator, program: []const u8) !void {
         const c = words[ip + 2];
         ip += 3;
         if (a < 0) {
-            try std.io.getStdOut().writer().writeAll("Enter a \"character\" : ");
-            var buffer: [10]u8 = undefined;
-            const len = try std.io.getStdIn().reader().read(&buffer);
-            words[@intCast(b)] = try std.fmt.parseInt(i8, buffer[0..len], 10);
+            // Kotlin version input character here from stdin
+            // word[b] = char;
+            unreachable;
         } else if (b < 0) {
-            try sb.append(@intCast(words[@intCast(a)]));
+            try sb.append(allocator, @intCast(words[@intCast(a)]));
         } else {
             words[@intCast(b)] -= words[@intCast(a)];
             if (words[@intCast(b)] <= 0) {
@@ -49,5 +53,6 @@ fn subleq(allocator: std.mem.Allocator, program: []const u8) !void {
         }
     }
     // --------------------------------------------- print output
-    try std.io.getStdOut().writer().print("{s}\n", .{sb.items});
+    try stdout.print("{s}\n", .{sb.items});
+    try stdout.flush();
 }
