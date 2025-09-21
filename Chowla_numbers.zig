@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Chowla_numbers
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 const print = std.debug.print;
 
@@ -82,19 +83,18 @@ fn commatize(buffer1: []u8, n: anytype) ![]const u8 {
         @compileError("commatize() expected unsigned integer type argument, found " ++ @typeName(T));
     // number as string without commas
     var buffer2: [maxDecimalChars(T)]u8 = undefined;
-    const size = std.fmt.formatIntBuf(&buffer2, n, 10, .lower, .{});
+    const size = std.fmt.printInt(&buffer2, n, 10, .lower, .{});
     const s = buffer2[0..size];
     //
-    var stream = std.io.fixedBufferStream(buffer1);
-    const writer = stream.writer();
+    var w: std.Io.Writer = .fixed(buffer1);
     // write number string as string with inserted commas
     const last = s.len - 1;
     for (s, 0..) |c, idx| {
-        try writer.writeByte(c);
+        try w.writeByte(c);
         if (last - idx != 0 and (last - idx) % 3 == 0)
-            try writer.writeByte(',');
+            try w.writeByte(',');
     }
-    return stream.getWritten();
+    return w.buffered();
 }
 
 fn maxDecimalCommatized(T: type) usize {

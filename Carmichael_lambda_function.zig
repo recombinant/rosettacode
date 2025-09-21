@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Carmichael_lambda_function
-// Translation of C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
 const std = @import("std");
 
 const PrimePower = struct {
@@ -8,40 +9,48 @@ const PrimePower = struct {
 };
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
+    var t0: std.time.Timer = try .start();
+    // ------------------------------------------------------- stdout
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // ---------------------------------------------------- allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // --------------------------------------------------------------
-    var t0 = try std.time.Timer.start();
 
-    try writer.writeAll(" n   carmichael(n) iterations(n)\n");
-    try writer.writeAll("--------------------------------\n");
+    try stdout.writeAll(" n   carmichael(n) iterations(n)\n");
+    try stdout.writeAll("--------------------------------\n");
     var i: u32 = 1;
     while (i <= 25) : (i += 1)
-        try writer.print("{d:2}{d:10}{d:14}\n", .{ i, try carmichaelLambda(allocator, i), try countIterationsToOne(allocator, i) });
-    try writer.writeByte('\n');
+        try stdout.print("{d:2}{d:10}{d:14}\n", .{ i, try carmichaelLambda(allocator, i), try countIterationsToOne(allocator, i) });
+    try stdout.writeByte('\n');
+    try stdout.flush();
     //
-    try writer.writeAll("Iterations to 1     n     lambda(n)\n");
-    try writer.writeAll("-----------------------------------\n");
+    try stdout.writeAll("Iterations to 1     n     lambda(n)\n");
+    try stdout.writeAll("-----------------------------------\n");
     var n: u32 = 1;
     i = 0;
     while (i <= 15) : (i += 1) {
         while (try countIterationsToOne(allocator, n) != i)
             n += 1;
-        try writer.print("{d:2}{d:19}{d:13}\n", .{ i, n, try carmichaelLambda(allocator, n) });
+        try stdout.print("{d:2}{d:19}{d:13}\n", .{ i, n, try carmichaelLambda(allocator, n) });
+        try stdout.flush();
     }
-    std.log.info("processed in {}\n", .{std.fmt.fmtDuration(t0.read())});
+    try stdout.writeByte('\n');
+    try stdout.flush();
+
+    std.log.info("processed in {D}", .{t0.read()});
 }
 
 fn primePowers(allocator: std.mem.Allocator, number: u32) ![]PrimePower {
-    var powers = std.ArrayList(PrimePower).init(allocator);
+    var powers: std.ArrayList(PrimePower) = .empty;
     var n = number;
     var i: u32 = 2;
     while (i <= std.math.sqrt(n)) : (i += 1)
         if (n % i == 0) {
-            try powers.append(PrimePower{ .prime = i, .power = 0 });
+            try powers.append(allocator, PrimePower{ .prime = i, .power = 0 });
             const power = &powers.items[powers.items.len - 1].power;
             while (n % i == 0) {
                 power.* += 1;
@@ -49,8 +58,8 @@ fn primePowers(allocator: std.mem.Allocator, number: u32) ![]PrimePower {
             }
         };
     if (n > 1)
-        try powers.append(PrimePower{ .prime = n, .power = 1 });
-    return powers.toOwnedSlice();
+        try powers.append(allocator, PrimePower{ .prime = n, .power = 1 });
+    return powers.toOwnedSlice(allocator);
 }
 
 fn carmichaelLambda(allocator: std.mem.Allocator, number: u32) !u32 {

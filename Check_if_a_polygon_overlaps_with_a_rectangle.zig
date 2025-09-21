@@ -1,51 +1,56 @@
 // https://rosettacode.org/wiki/Check_if_a_polygon_overlaps_with_a_rectangle
-// Translation of Java
+// {{works with|Zig|0.15.1}}
+// {{trans|Java}}
 // There is no runtime heap allocation - everything happens on
 // the stack - hence variable declarations in the main() routine
 // where their array size is known at compile time.
 const std = @import("std");
 
-const print = std.debug.print;
-
-pub fn main() void {
+pub fn main() !void {
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+    // ----------------------------------------------------------
     // 1st shape. Polygon.
-    const points1 = [_]Point{
-        Point.init(0, 0), Point.init(0, 2), Point.init(1, 4),
-        Point.init(2, 2), Point.init(2, 0),
+    const points1: [5]Point = .{
+        .init(0, 0), .init(0, 2), .init(1, 4),
+        .init(2, 2), .init(2, 0),
     };
     var vertices1: [points1.len]Vector = undefined;
     var axes1: [points1.len]Vector = undefined;
-    const poly1 = Polygon.init(&points1, &vertices1, &axes1);
+    const poly1: Polygon = .init(&points1, &vertices1, &axes1);
     // ----------------------------------------------------------
     // 2nd shape. First rectangle.
-    const rect2 = Rectangle.init(4, 0, 2, 2);
+    const rect2: Rectangle = .init(4, 0, 2, 2);
     var points2: [4]Point = undefined;
     var vertices2: [points2.len]Vector = undefined;
     var axes2: [points2.len]Vector = undefined;
     const rect2_as_points = pointsFromRect(rect2, &points2);
-    const rect2_as_polygon = Polygon.init(rect2_as_points, &vertices2, &axes2);
+    const rect2_as_polygon: Polygon = .init(rect2_as_points, &vertices2, &axes2);
     // ----------------------------------------------------------
     // 3rd shape. Second rectangle.
-    const rect3 = Rectangle.init(1, 0, 8, 2);
+    const rect3: Rectangle = .init(1, 0, 8, 2);
     var points3: [4]Point = undefined;
     var vertices3: [points3.len]Vector = undefined;
     var axes3: [points3.len]Vector = undefined;
     const rect3_as_points = pointsFromRect(rect3, &points3);
-    const rect3_as_polygon = Polygon.init(rect3_as_points, &vertices3, &axes3);
+    const rect3_as_polygon: Polygon = .init(rect3_as_points, &vertices3, &axes3);
     // ----------------------------------------------------------
-    print("poly1  = {any}\n", .{poly1});
-    print("rect2 = {{{d}, {d}, {d}, {d}}} => {any}\n", .{ rect2.x, rect2.y, rect2.w, rect2.h, rect2_as_polygon });
-    print("rect3 = {{{d}, {d}, {d}, {d}}} => {any}\n", .{ rect3.x, rect3.y, rect3.w, rect3.h, rect3_as_polygon });
+    try stdout.print("poly1  = {f}\n", .{poly1});
+    try stdout.print("rect2 = {{{d}, {d}, {d}, {d}}} => {f}\n", .{ rect2.x, rect2.y, rect2.w, rect2.h, rect2_as_polygon });
+    try stdout.print("rect3 = {{{d}, {d}, {d}, {d}}} => {f}\n", .{ rect3.x, rect3.y, rect3.w, rect3.h, rect3_as_polygon });
 
-    print("poly1 and rect2 overlap? {}\n", .{poly1.overlaps(rect2_as_polygon)});
-    print("poly1 and rect3 overlap? {}\n", .{poly1.overlaps(rect3_as_polygon)});
+    try stdout.print("poly1 and rect2 overlap? {}\n", .{poly1.overlaps(rect2_as_polygon)});
+    try stdout.print("poly1 and rect3 overlap? {}\n", .{poly1.overlaps(rect3_as_polygon)});
+    // ----------------------------------------------------------
+    try stdout.flush();
 }
 
 fn pointsFromRect(r: Rectangle, points: []Point) []Point {
-    points[0] = Point.init(r.x, r.y);
-    points[1] = Point.init(r.x, r.y + r.h);
-    points[2] = Point.init(r.x + r.w, r.y + r.h);
-    points[3] = Point.init(r.x + r.w, r.y);
+    points[0] = .init(r.x, r.y);
+    points[1] = .init(r.x, r.y + r.h);
+    points[2] = .init(r.x + r.w, r.y + r.h);
+    points[3] = .init(r.x + r.w, r.y);
     return points[0..4];
 }
 const Rectangle = struct {
@@ -54,7 +59,7 @@ const Rectangle = struct {
     w: f64,
     h: f64,
     fn init(x: f64, y: f64, w: f64, h: f64) Rectangle {
-        return Rectangle{ .x = x, .y = y, .w = w, .h = h };
+        return .{ .x = x, .y = y, .w = w, .h = h };
     }
 };
 const Polygon = struct {
@@ -100,13 +105,11 @@ const Polygon = struct {
         }
         return axes;
     }
-    pub fn format(self: Polygon, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
-        _ = fmt;
-        _ = options;
-        try writer.writeAll("[ ");
+    pub fn format(self: Polygon, w: *std.Io.Writer) std.Io.Writer.Error!void {
+        try w.writeAll("[ ");
         for (self.vertices) |vertex|
-            try writer.print("{}", .{vertex});
-        try writer.writeByte(']');
+            try w.print("{f}", .{vertex});
+        try w.writeByte(']');
     }
 };
 const Vector = struct {
@@ -121,10 +124,8 @@ const Vector = struct {
     fn perpendicular(self: Vector) Vector {
         return Vector{ .x = -self.y, .y = self.x };
     }
-    pub fn format(self: Vector, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
-        _ = fmt;
-        _ = options;
-        try writer.print("({d}, {d}) ", .{ self.x, self.y });
+    pub fn format(self: Vector, w: *std.Io.Writer) std.Io.Writer.Error!void {
+        try w.print("({d}, {d}) ", .{ self.x, self.y });
     }
 };
 const Projection = struct {
@@ -140,6 +141,6 @@ const Point = struct {
     x: f64,
     y: f64,
     fn init(x: f64, y: f64) Point {
-        return Point{ .x = x, .y = y };
+        return .{ .x = x, .y = y };
     }
 };
