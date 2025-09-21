@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Zsigmondy_numbers
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 
 pub fn main() !void {
@@ -8,18 +9,22 @@ pub fn main() !void {
 
     const terms = 20;
 
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    for (a_list, b_list) |a, b|
-        try printZsigmondy(a, b, terms, writer);
+    for (a_list, b_list) |a, b| {
+        try printZsigmondy(a, b, terms, stdout);
+        try stdout.flush();
+    }
 }
 
-fn printZsigmondy(a: u64, b: u64, terms: u8, writer: anytype) !void {
-    try writer.print("Zsigmondy(n, {d}, {d}) - first {d} terms:\n", .{ a, b, terms });
+fn printZsigmondy(a: u64, b: u64, terms: u8, w: *std.Io.Writer) !void {
+    try w.print("Zsigmondy(n, {d}, {d}) - first {d} terms:\n", .{ a, b, terms });
     var n: u8 = 1;
     while (n <= terms) : (n += 1)
-        try writer.print("{d} ", .{try calcZsigmondy(n, a, b)});
-    try writer.writeByteNTimes('\n', 2);
+        try w.print("{d} ", .{try calcZsigmondy(n, a, b)});
+    _ = try w.splatByte('\n', 2);
 }
 
 fn calcZsigmondy(n: u8, a: u64, b: u64) !u64 {

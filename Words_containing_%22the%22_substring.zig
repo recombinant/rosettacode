@@ -1,15 +1,20 @@
 // https://rosettacode.org/wiki/Words_containing_%22the%22_substring
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
-const print = std.debug.print;
 
-pub fn main() void {
+pub fn main() !void {
     const text = @embedFile("data/unixdict.txt"); // no uppercase
 
-    var it = mem.splitScalar(u8, text, '\n');
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    var it = std.mem.splitScalar(u8, text, '\n');
 
     while (it.next()) |word|
         if (word.len > 11)
-            if (mem.indexOf(u8, word, "the")) |_|
-                print("{s}\n", .{word});
+            if (std.mem.indexOf(u8, word, "the")) |_|
+                try stdout.print("{s}\n", .{word});
+
+    try stdout.flush();
 }

@@ -1,16 +1,16 @@
 // https://rosettacode.org/wiki/Zumkeller_numbers
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const math = std.math;
-const mem = std.mem;
-const testing = std.testing;
 
 pub fn main() !void {
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
-
-    const stdout = std.io.getStdOut().writer();
-
+    // ----------------------------------------------------------
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+    // ----------------------------------------------------------
     {
         try stdout.print("The first 220 Zumkeller numbers are:\n", .{});
         var i: u32 = 2;
@@ -20,9 +20,10 @@ pub fn main() !void {
                 try stdout.print("{d:3} ", .{i});
                 count += 1;
                 if (count % 20 == 0)
-                    try stdout.print("\n", .{});
+                    try stdout.writeByte('\n');
             }
         }
+        try stdout.flush();
     }
     {
         try stdout.print("\nThe first 40 odd Zumkeller numbers are:\n", .{});
@@ -33,12 +34,14 @@ pub fn main() !void {
                 try stdout.print("{d:5} ", .{i});
                 count += 1;
                 if (count % 10 == 0)
-                    try stdout.print("\n", .{});
+                    try stdout.writeByte('\n');
             }
         }
+        try stdout.flush();
     }
     {
         try stdout.print("\nThe first 40 odd Zumkeller numbers which don't end in 5 are:\n", .{});
+        try stdout.flush();
         var i: u32 = 3;
         var count: u32 = 0;
         while (count < 40) : (i += 2) {
@@ -46,13 +49,14 @@ pub fn main() !void {
                 try stdout.print("{d:7} ", .{i});
                 count += 1;
                 if (count % 8 == 0)
-                    try stdout.print("\n", .{});
+                    try stdout.writeByte('\n');
+                try stdout.flush();
             }
         }
     }
 }
 
-fn isZumkeller(allocator: mem.Allocator, n: u32) !bool {
+fn isZumkeller(allocator: std.mem.Allocator, n: u32) !bool {
     const divs = try getDivisors(allocator, n);
     defer allocator.free(divs);
     const sum = sumSlice(divs);
@@ -73,21 +77,21 @@ fn isZumkeller(allocator: mem.Allocator, n: u32) !bool {
 }
 
 /// Caller owns returned memory.
-fn getDivisors(allocator: mem.Allocator, n: u32) ![]u32 {
-    var divs = std.ArrayList(u32).init(allocator);
-    try divs.append(1);
-    try divs.append(n);
-    for (2..math.sqrt(n) + 1) |i|
+fn getDivisors(allocator: std.mem.Allocator, n: u32) ![]u32 {
+    var divs: std.ArrayList(u32) = .empty;
+    try divs.append(allocator, 1);
+    try divs.append(allocator, n);
+    for (2..std.math.sqrt(n) + 1) |i|
         if (n % i == 0) {
-            try divs.append(@truncate(i));
+            try divs.append(allocator, @truncate(i));
             const j = n / i;
             if (i != j)
-                try divs.append(@truncate(j));
+                try divs.append(allocator, @truncate(j));
         };
-    return try divs.toOwnedSlice();
+    return try divs.toOwnedSlice(allocator);
 }
 
-fn isPartSum(allocator: mem.Allocator, d: []u32, sum: u32) !bool {
+fn isPartSum(allocator: std.mem.Allocator, d: []u32, sum: u32) !bool {
     if (sum == 0)
         return true;
     if (d.len == 0)
@@ -107,6 +111,8 @@ fn sumSlice(numbers: []u32) u32 {
     for (numbers) |n| total += n;
     return total;
 }
+
+const testing = std.testing;
 
 test "Zumkeller number test" {
     const allocator = testing.allocator;

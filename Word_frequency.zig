@@ -1,26 +1,22 @@
 // https://rosettacode.org/wiki/Word_frequency
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const ascii = std.ascii;
-const mem = std.mem;
-const sort = std.sort;
-const testing = std.testing;
-const print = std.debug.print;
 
 pub fn main() !void {
     const n_most_common = 10;
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const text_mixed = @embedFile("data/Les Misérables from Project Gutenberg.txt");
-    const text = try ascii.allocLowerString(allocator, text_mixed);
+    const text = try std.ascii.allocLowerString(allocator, text_mixed);
     defer allocator.free(text);
 
-    var map = std.StringArrayHashMap(u32).init(allocator);
+    var map: std.StringArrayHashMapUnmanaged(u32) = .init(allocator);
     defer map.deinit();
 
-    var word_it = WordIterator.init(text);
+    var word_it: WordIterator = .init(text);
     while (word_it.next()) |word| {
         const gop = try map.getOrPut(word);
         if (gop.found_existing)
@@ -32,7 +28,7 @@ pub fn main() !void {
     const counts = try allocator.alloc(u32, map.values().len);
     defer allocator.free(counts);
     @memcpy(counts, map.values());
-    sort.insertion(u32, counts, {}, sort.desc(u32));
+    std.mem.sortUnstable(u32, counts, {}, std.sort.desc(u32));
 
     const n = @min(n_most_common, counts.len);
     if (n == 0) return;
@@ -48,19 +44,26 @@ pub fn main() !void {
         }
     };
 
-    var most_common = std.ArrayList(KV).init(allocator);
-    defer most_common.deinit();
+    var most_common: std.ArrayList(KV) = .empty;
+    defer most_common.deinit(allocator);
 
     const limit = counts[n - 1];
     var kv_it = map.iterator();
     while (kv_it.next()) |entry| {
         if (entry.value_ptr.* >= limit)
-            try most_common.append(KV{ .key = entry.key_ptr.*, .value = entry.value_ptr.* });
+            try most_common.append(allocator, KV{ .key = entry.key_ptr.*, .value = entry.value_ptr.* });
     }
 
-    sort.insertion(KV, most_common.items, {}, KV.greaterThanFn);
+    std.mem.sortUnstable(KV, most_common.items, {}, KV.greaterThanFn);
+
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     for (most_common.items, 1..) |kv, i|
-        print("{d:2}) {s}: {d}\n", .{ i, kv.key, kv.value });
+        try stdout.print("{d:2}) {s}: {d}\n", .{ i, kv.key, kv.value });
+
+    try stdout.flush();
 }
 
 // As there is no regex in the Zig Standard Library (as of Zig 0.12)
@@ -78,29 +81,31 @@ const WordIterator = struct {
             return null;
 
         self.start = self.end;
-        while (self.start < self.text.len and !ascii.isLower(self.text[self.start]))
+        while (self.start < self.text.len and !std.ascii.isLower(self.text[self.start]))
             self.start += 1;
         self.end = self.start + 1;
         if (self.start >= self.text.len)
             return null;
 
-        while (self.end < self.text.len and ascii.isLower(self.text[self.end]))
+        while (self.end < self.text.len and std.ascii.isLower(self.text[self.end]))
             self.end += 1;
         return self.text[self.start..self.end];
     }
 };
 
+const testing = std.testing;
+
 test "WordIterator0" {
     const text = "";
 
-    var it = WordIterator.init(text);
+    var it: WordIterator = .init(text);
     try testing.expectEqual(null, it.next());
 }
 
 test "WordIterator1" {
     const text = "hello";
 
-    var it = WordIterator.init(text);
+    var it: WordIterator = .init(text);
     try testing.expectEqualStrings("hello", it.next().?);
     try testing.expectEqual(null, it.next());
 }
@@ -108,7 +113,7 @@ test "WordIterator1" {
 test "WordIterator2" {
     const text = "hello world ";
 
-    var it = WordIterator.init(text);
+    var it: WordIterator = .init(text);
     try testing.expectEqualStrings("hello", it.next().?);
     try testing.expectEqualStrings("world", it.next().?);
     try testing.expectEqual(null, it.next());
@@ -117,7 +122,7 @@ test "WordIterator2" {
 test "WordIterator3" {
     const text = " hello world ";
 
-    var it = WordIterator.init(text);
+    var it: WordIterator = .init(text);
     try testing.expectEqualStrings("hello", it.next().?);
     try testing.expectEqualStrings("world", it.next().?);
     try testing.expectEqual(null, it.next());
@@ -126,6 +131,6 @@ test "WordIterator3" {
 test "WordIterator4" {
     const text = "1234";
 
-    var it = WordIterator.init(text);
+    var it: WordIterator = .init(text);
     try testing.expectEqual(null, it.next());
 }

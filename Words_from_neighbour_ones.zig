@@ -1,45 +1,49 @@
 // https://rosettacode.org/wiki/Words_from_neighbour_ones
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
-const print = std.debug.print;
 
-const WordSet = std.StringArrayHashMap(void);
+const WordSet = std.StringArrayHashMapUnmanaged(void);
 
 pub fn main() !void {
     const LIMIT: usize = 9;
 
     const text = @embedFile("data/unixdict.txt");
-    // ---------------------------------------------------- Allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    // ---------------------------------------------------- allocator
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
+    // ------------------------------------------------------- stdout
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // --------------------------------------------------------------
     const max_capacity: usize = blk: {
         var word_count: usize = 0;
-        var it = mem.splitScalar(u8, text, '\n');
+        var it = std.mem.splitScalar(u8, text, '\n');
         while (it.next()) |word| {
             if (word.len >= LIMIT) word_count += 1;
         }
         break :blk word_count;
     };
-    var word_set = WordSet.init(allocator);
-    try word_set.ensureTotalCapacity(max_capacity);
-    defer word_set.deinit();
+    var word_set: WordSet = .empty;
+    try word_set.ensureTotalCapacity(allocator, max_capacity);
+    defer word_set.deinit(allocator);
 
     // Create set of words of task appropriate length from unixdict.txt
-    var it = mem.splitScalar(u8, text, '\n');
+    // Insertion order into the set is preserved.
+    var it = std.mem.splitScalar(u8, text, '\n');
     while (it.next()) |word| {
         if (word.len < LIMIT)
             continue;
-        try word_set.putNoClobber(word, {});
+        try word_set.putNoClobber(allocator, word, {});
     }
 
     // For a set of new words created by task.
-    var new_word_set = WordSet.init(allocator);
+    var new_word_set: WordSet = .empty;
     defer {
         for (new_word_set.keys()) |word|
             allocator.free(word);
-        new_word_set.deinit();
+        new_word_set.deinit(allocator);
     }
 
     var new_word: [LIMIT]u8 = undefined;
@@ -51,19 +55,21 @@ pub fn main() !void {
             new_word[j] = words[i + j][j];
 
         if (word_set.get(&new_word) != null and new_word_set.get(&new_word) == null)
-            try new_word_set.putNoClobber(try allocator.dupe(u8, &new_word), {});
+            try new_word_set.putNoClobber(allocator, try allocator.dupe(u8, &new_word), {});
     }
 
     // Pretty print.
     const wpr = 8; // words per row
     var n: u32 = 0;
     for (new_word_set.keys()) |word| {
-        if (n % wpr != 0) print(" ", .{});
+        if (n % wpr != 0) try stdout.print(" ", .{});
         n += 1;
 
-        print("{s:9}", .{word});
+        try stdout.print("{s:9}", .{word});
 
-        if (n % wpr == 0) print("\n", .{});
+        if (n % wpr == 0) try stdout.writeByte('\n');
     }
-    if (n % wpr != 0) print("\n", .{});
+    if (n % wpr != 0) try stdout.writeByte('\n');
+
+    try stdout.flush();
 }

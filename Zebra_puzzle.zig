@@ -1,40 +1,42 @@
 // https://rosettacode.org/wiki/Zebra_puzzle
-// Translation of Go
+// {{works with|Zig|0.15.1}}
+// {{trans|Go}}
 // This Zig version assumes Ascii text to reduce code clutter.
 const std = @import("std");
-const fmt = std.fmt;
-const mem = std.mem;
-const enums = std.enums;
-const assert = std.debug.assert;
-const print = std.debug.print;
 
 pub fn main() !void {
     // Using an arena means that free() is optional and possibly meaningless.
     // arena.deinit() cleans up all allocations.
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
-    //
-    const n, const solution = try simpleBruteForce(allocator);
-    print("{} solution found\n\n", .{n});
+    // ------------------------------------------------------- stdout
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+    // --------------------------------------------------------------
+    const n, const solution = try simpleBruteForce(allocator, stdout);
+    try stdout.print("{} solution found\n\n", .{n});
 
     for (solution.houses) |h|
         if (h.a == .zebra)
-            print("The {} owns the {}\n\n", .{ h.n, h.a });
+            try stdout.print("The {f} owns the {f}\n\n", .{ h.n, h.a });
 
-    print("{}\n", .{solution});
+    try stdout.print("{f}\n", .{solution});
+    // ------------------------------------------------------- stdout
+    try stdout.flush();
 }
 
 /// Simple brute force solution
-fn simpleBruteForce(allocator: mem.Allocator) !struct { usize, HouseSet } {
-    var array = std.ArrayList(House).init(allocator);
-    defer array.deinit();
+fn simpleBruteForce(allocator: std.mem.Allocator, w: *std.Io.Writer) !struct { usize, HouseSet } {
+    var array: std.ArrayList(House) = .empty;
+    defer array.deinit(allocator);
 
-    for (enums.values(Nationality)) |n|
-        for (enums.values(Colour)) |c|
-            for (enums.values(Animal)) |a|
-                for (enums.values(Drink)) |d|
-                    for (enums.values(Smoke)) |s| {
+    for (std.enums.values(Nationality)) |n|
+        for (std.enums.values(Colour)) |c|
+            for (std.enums.values(Animal)) |a|
+                for (std.enums.values(Drink)) |d|
+                    for (std.enums.values(Smoke)) |s| {
                         const h = House{
                             .n = n,
                             .c = c,
@@ -44,12 +46,12 @@ fn simpleBruteForce(allocator: mem.Allocator) !struct { usize, HouseSet } {
                         };
                         if (!h.isValid())
                             continue;
-                        try array.append(h);
+                        try array.append(allocator, h);
                     };
 
     const v = array.items;
     const n = v.len;
-    print("Generated {} valid houses\n", .{n});
+    try w.print("Generated {} valid houses\n", .{n});
 
     var combos: usize = 0;
     var first: usize = undefined;
@@ -92,9 +94,9 @@ fn simpleBruteForce(allocator: mem.Allocator) !struct { usize, HouseSet } {
                             continue;
 
                         combos += 1;
-                        const set = HouseSet.init(.{ &v[a], &v[b], &v[c], &v[d], &v[e] });
+                        const set: HouseSet = .init(.{ &v[a], &v[b], &v[c], &v[d], &v[e] });
                         if (set.isValid()) {
-                            assert(valid_set == null); // oops, expected only one solution
+                            std.debug.assert(valid_set == null); // oops, expected only one solution
                             valid_count += 1;
                             if (valid_count == 1)
                                 first = combos;
@@ -105,9 +107,9 @@ fn simpleBruteForce(allocator: mem.Allocator) !struct { usize, HouseSet } {
             }
         }
     }
-    assert(valid_set != null);
-    print("Tested {} different combinations of valid houses before finding solution\n", .{first});
-    print("Tested {} different combinations of valid houses in total\n", .{combos});
+    std.debug.assert(valid_set != null);
+    try w.print("Tested {} different combinations of valid houses before finding solution\n", .{first});
+    try w.print("Tested {} different combinations of valid houses in total\n", .{combos});
     return .{ valid_count, valid_set.? };
 }
 
@@ -121,7 +123,7 @@ const HouseSet = struct {
     houses: [5]House,
 
     fn init(houses: [5]*const House) HouseSet {
-        var result = HouseSet{ .houses = undefined };
+        var result: HouseSet = .{ .houses = undefined };
 
         for (&result.houses, houses) |*dest, source|
             dest.* = source.*;
@@ -129,9 +131,9 @@ const HouseSet = struct {
         return result;
     }
 
-    pub fn format(self: HouseSet, comptime _: []const u8, _: fmt.FormatOptions, writer: anytype) !void {
+    pub fn format(self: HouseSet, w: *std.Io.Writer) std.Io.Writer.Error!void {
         for (self.houses, 1..) |h, i|
-            try writer.print("{} {}\n", .{ i, h });
+            try w.print("{} {f}\n", .{ i, h });
     }
 
     fn isValid(self: *const HouseSet) bool {
@@ -186,8 +188,14 @@ const House = struct {
     d: Drink,
     s: Smoke,
 
-    pub fn format(self: *const House, comptime _: []const u8, _: fmt.FormatOptions, writer: anytype) !void {
-        try writer.print("{s:<9}  {s:<6}  {s:<5}  {s:<6}  {}", .{ self.n, self.c, self.a, self.d, self.s });
+    pub fn format(self: *const House, w: *std.Io.Writer) std.Io.Writer.Error!void {
+        try w.print("{s:<9}  {s:<6}  {s:<5}  {s:<6}  {s}", .{
+            @tagName(self.n),
+            @tagName(self.c),
+            @tagName(self.a),
+            @tagName(self.d),
+            @tagName(self.s),
+        });
     }
 
     fn isValid(self: *const House) bool {
@@ -266,11 +274,8 @@ const Nationality = enum {
     Norwegian,
     German,
 
-    pub fn format(self: Nationality, comptime fmt_: []const u8, options: fmt.FormatOptions, writer: anytype) !void {
-        if (fmt_.len != 0 and fmt_[0] != 's' or fmt_.len > 1)
-            @compileError("invalid format string '" ++ fmt_ ++ "' for type '" ++ @typeName(@TypeOf(self)) ++ "'");
-
-        try formatTagName(@tagName(self), options, writer);
+    pub fn format(self: @This(), w: *std.Io.Writer) std.Io.Writer.Error!void {
+        try w.print("{s}", .{@tagName(self)});
     }
 };
 const Colour = enum {
@@ -280,11 +285,8 @@ const Colour = enum {
     yellow,
     blue,
 
-    pub fn format(self: @This(), comptime fmt_: []const u8, options: fmt.FormatOptions, writer: anytype) !void {
-        if (fmt_.len != 0 and fmt_[0] != 's' or fmt_.len > 1)
-            @compileError("invalid format string '" ++ fmt_ ++ "' for type '" ++ @typeName(@TypeOf(self)) ++ "'");
-
-        try formatTagName(@tagName(self), options, writer);
+    pub fn format(self: @This(), w: *std.Io.Writer) std.Io.Writer.Error!void {
+        try w.print("{s}", .{@tagName(self)});
     }
 };
 const Animal = enum {
@@ -294,11 +296,8 @@ const Animal = enum {
     horse,
     zebra,
 
-    pub fn format(self: @This(), comptime fmt_: []const u8, options: fmt.FormatOptions, writer: anytype) !void {
-        if (fmt_.len != 0 and fmt_[0] != 's' or fmt_.len > 1)
-            @compileError("invalid format string '" ++ fmt_ ++ "' for type '" ++ @typeName(@TypeOf(self)) ++ "'");
-
-        try formatTagName(@tagName(self), options, writer);
+    pub fn format(self: @This(), w: *std.Io.Writer) std.Io.Writer.Error!void {
+        try w.print("{s}", .{@tagName(self)});
     }
 };
 const Drink = enum {
@@ -308,11 +307,8 @@ const Drink = enum {
     beer,
     water,
 
-    pub fn format(self: @This(), comptime fmt_: []const u8, options: fmt.FormatOptions, writer: anytype) !void {
-        if (fmt_.len != 0 and fmt_[0] != 's' or fmt_.len > 1)
-            @compileError("invalid format string '" ++ fmt_ ++ "' for type '" ++ @typeName(@TypeOf(self)) ++ "'");
-
-        try formatTagName(@tagName(self), options, writer);
+    pub fn format(self: @This(), w: *std.Io.Writer) std.Io.Writer.Error!void {
+        try w.print("{s}", .{@tagName(self)});
     }
 };
 const Smoke = enum {
@@ -322,36 +318,7 @@ const Smoke = enum {
     @"Blue Master",
     Prince,
 
-    pub fn format(self: @This(), comptime fmt_: []const u8, options: fmt.FormatOptions, writer: anytype) !void {
-        if (fmt_.len != 0 and fmt_[0] != 's' or fmt_.len > 1)
-            @compileError("invalid format string '" ++ fmt_ ++ "' for type '" ++ @typeName(@TypeOf(self)) ++ "'");
-
-        try formatTagName(@tagName(self), options, writer);
+    pub fn format(self: @This(), w: *std.Io.Writer) std.Io.Writer.Error!void {
+        try w.print("{s}", .{@tagName(self)});
     }
 };
-
-/// Write enum tag name to writer.
-fn formatTagName(value: []const u8, options: fmt.FormatOptions, writer: anytype) !void {
-    if (options.width) |min_width| {
-        const padding = if (value.len < min_width) min_width - value.len else 0;
-        switch (options.alignment) {
-            .left => {
-                try writer.writeAll(value);
-                try writer.writeByteNTimes(' ', padding);
-            },
-            .center => {
-                const left_padding = padding / 2;
-                const right_padding = (padding + 1) / 2;
-                try writer.writeByteNTimes(' ', left_padding);
-                try writer.writeAll(value);
-                try writer.writeByteNTimes(' ', right_padding);
-            },
-            .right => {
-                try writer.writeByteNTimes(' ', padding);
-                try writer.writeAll(value);
-            },
-        }
-    } else {
-        try writer.writeAll(value);
-    }
-}

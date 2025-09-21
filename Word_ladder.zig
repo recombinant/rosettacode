@@ -1,33 +1,36 @@
 // https://www.rosettacode.org/wiki/Word_ladder
-// from Go
+// {{works with|Zig|0.15.1}}
+// {{trans|Go}}
 const std = @import("std");
-const mem = std.mem;
-const testing = std.testing;
-
-const unixdict = @embedFile("data/unixdict.txt");
 
 const WordArray = std.ArrayList([]const u8);
 
+const unixdict = @embedFile("data/unixdict.txt");
+
 pub fn main() !void {
     //
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     //
     const word_count = blk: {
         var word_count: usize = 0;
-        var it = mem.tokenizeScalar(u8, unixdict, '\n');
+        var it = std.mem.tokenizeScalar(u8, unixdict, '\n');
         while (it.next()) |_|
             word_count += 1;
         break :blk word_count;
     };
-    var word_array = try WordArray.initCapacity(allocator, word_count);
+    var word_array: WordArray = try .initCapacity(allocator, word_count);
 
-    var it = mem.tokenizeScalar(u8, unixdict, '\n');
+    var it = std.mem.tokenizeScalar(u8, unixdict, '\n');
     while (it.next()) |word|
-        try word_array.append(word);
+        try word_array.append(allocator, word);
 
-    const words = try word_array.toOwnedSlice();
+    const words = try word_array.toOwnedSlice(allocator);
     defer allocator.free(words);
 
     const pairs = [_]struct { a: []const u8, b: []const u8 }{
@@ -38,45 +41,44 @@ pub fn main() !void {
         .{ .a = "child", .b = "adult" },
     };
     for (pairs) |pair|
-        try wordLadder(allocator, words, pair.a, pair.b);
+        try wordLadder(allocator, words, pair.a, pair.b, stdout);
+    try stdout.flush();
 }
 
-fn wordLadder(allocator: mem.Allocator, words: []const []const u8, a: []const u8, b: []const u8) !void {
-    const stdout = std.io.getStdOut().writer();
-
-    var possible = WordArray.init(allocator);
-    defer possible.deinit();
+fn wordLadder(allocator: std.mem.Allocator, words: []const []const u8, a: []const u8, b: []const u8, w: *std.Io.Writer) !void {
+    var possible: WordArray = .empty;
+    defer possible.deinit(allocator);
     for (words) |word|
         if (word.len == a.len)
-            try possible.append(word);
+            try possible.append(allocator, word);
 
-    var todo = std.ArrayList(WordArray).init(allocator);
+    var todo: std.ArrayList(WordArray) = .empty;
     defer {
-        for (todo.items) |array|
-            array.deinit();
-        todo.deinit();
+        for (todo.items) |*array|
+            array.deinit(allocator);
+        todo.deinit(allocator);
     }
     {
-        var temp = WordArray.init(allocator);
-        try temp.append(a);
-        try todo.append(temp);
+        var temp: WordArray = .empty;
+        try temp.append(allocator, a);
+        try todo.append(allocator, temp);
     }
 
     while (todo.items.len > 0) {
         var current: WordArray = todo.orderedRemove(0);
-        defer current.deinit();
+        defer current.deinit(allocator);
 
-        var next = WordArray.init(allocator);
-        defer next.deinit();
+        var next: WordArray = .empty;
+        defer next.deinit(allocator);
         for (possible.items) |word|
             if (oneAway(word, current.items[current.items.len - 1]))
-                try next.append(word);
+                try next.append(allocator, word);
 
         if (contains(next.items, b)) {
-            try current.append(b);
-            const result = try mem.join(allocator, " -> ", current.items);
+            try current.append(allocator, b);
+            const result = try std.mem.join(allocator, " → ", current.items);
             defer allocator.free(result);
-            try stdout.print("{s}\n", .{result});
+            try w.print("{s}\n\n", .{result});
             return;
         }
 
@@ -88,17 +90,17 @@ fn wordLadder(allocator: mem.Allocator, words: []const []const u8, a: []const u8
         }
 
         for (next.items) |word| {
-            var temp = try current.clone();
-            try temp.append(word);
-            try todo.append(temp);
+            var temp = try current.clone(allocator);
+            try temp.append(allocator, word);
+            try todo.append(allocator, temp);
         }
     }
-    try stdout.print("{s} into {s} cannot be done.\n", .{ a, b });
+    try w.print("{s} into {s} cannot be done.\n\n", .{ a, b });
 }
 
 fn contains(words: []const []const u8, string: []const u8) bool {
     for (words) |word|
-        if (mem.eql(u8, word, string))
+        if (std.mem.eql(u8, word, string))
             return true;
     return false;
 }
@@ -112,6 +114,8 @@ fn oneAway(a: []const u8, b: []const u8) bool {
             };
     return sum == 1;
 }
+
+const testing = std.testing;
 
 test "one away" {
     try testing.expect(oneAway("bat", "cat"));
