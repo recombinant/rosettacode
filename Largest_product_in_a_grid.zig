@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Largest_product_in_a_grid
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
@@ -40,9 +41,14 @@ pub fn main() !void {
             max_product = @max(max_product, a * b * c * d);
         };
     // ----------------------------------------------------------
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     // The task just asked for the value. Nothing else.
-    try writer.print("the greatest product of four adjacent numbers in the same direction is: {}\n", .{max_product});
+    try stdout.print("the greatest product of four adjacent numbers in the same direction is: {}\n", .{max_product});
+
+    try stdout.flush();
 }
 
 fn getGrid(text: []const u8) [20][20]u32 {

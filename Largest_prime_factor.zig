@@ -1,8 +1,9 @@
 // https://rosettacode.org/wiki/Largest_prime_factor
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
-    var t0 = try std.time.Timer.start();
+    var t0: std.time.Timer = try .start();
 
     // const n = comptime std.math.pow(u128, 2, 64) - 59;
     // const n = comptime std.math.pow(u64, 2, 32) - 5;
@@ -11,8 +12,18 @@ pub fn main() !void {
     const T = AutoNumberType(n);
 
     const factor = findLargestPrimeFactor(T, @intCast(n));
-    try std.io.getStdOut().writer().print("Largest prime factor of {d} is {d}\n", .{ n, factor });
-    try std.io.getStdErr().writer().print("\nprocessed in {}\n", .{std.fmt.fmtDuration(t0.read())});
+
+    const t1 = t0.read();
+
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    try stdout.print("Largest prime factor of {d} is {d}\n", .{ n, factor });
+
+    try stdout.flush();
+
+    std.log.info("processed in {D}", .{t1});
 }
 
 pub fn findLargestPrimeFactor(T: type, n_: T) T {

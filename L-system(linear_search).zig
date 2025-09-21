@@ -1,13 +1,13 @@
 // https://rosettacode.org/wiki/L-system
-// Translation of FreeBASIC
+// {{works with|Zig|0.15.1}}
+// {{trans|FreeBASIC}}
 const std = @import("std");
-const mem = std.mem;
 const print = std.debug.print;
 
 // This is a simple solution suitable for a rule count.
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -17,13 +17,13 @@ pub fn main() !void {
 
 const Rule = struct { u8, []const u8 };
 
-fn showLindenmayer(allocator: mem.Allocator, axiom: []const u8, rules: []const Rule, count: usize) !void {
-    var next = std.ArrayList(u8).init(allocator);
-    defer next.deinit();
+fn showLindenmayer(allocator: std.mem.Allocator, axiom: []const u8, rules: []const Rule, count: usize) !void {
+    var next: std.ArrayList(u8) = .empty;
+    defer next.deinit(allocator);
 
-    var s = std.ArrayList(u8).init(allocator);
-    defer s.deinit();
-    try s.appendSlice(axiom);
+    var s: std.ArrayList(u8) = .empty;
+    defer s.deinit(allocator);
+    try s.appendSlice(allocator, axiom);
 
     for (0..count + 1) |_| {
         next.clearRetainingCapacity();
@@ -33,12 +33,12 @@ fn showLindenmayer(allocator: mem.Allocator, axiom: []const u8, rules: []const R
         for (s.items) |c| {
             for (rules) |rule| {
                 if (c == rule[0]) {
-                    try next.appendSlice(rule[1]); // found
+                    try next.appendSlice(allocator, rule[1]); // found
                     break;
                 }
-            } else try next.append(c); // not found
+            } else try next.append(allocator, c); // not found
         }
         s.clearRetainingCapacity();
-        try s.appendSlice(next.items);
+        try s.appendSlice(allocator, next.items);
     }
 }

@@ -1,10 +1,13 @@
 // https://rosettacode.org/wiki/Lah_numbers
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 const testing = std.testing;
 
 pub fn main() anyerror!void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     try stdout.writeAll("unsigned Lah numbers: L(n, k):\n");
     try stdout.writeAll("n/k ");
@@ -30,6 +33,8 @@ pub fn main() anyerror!void {
         if (l > max) max = l;
     }
     try stdout.print("\nmaximum Lah number for n = 100: {d}\n", .{max});
+
+    try stdout.flush();
 }
 
 fn factorial(comptime T: type, n: T) T {

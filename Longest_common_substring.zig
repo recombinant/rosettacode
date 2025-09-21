@@ -1,39 +1,48 @@
 // https://rosettacode.org/wiki/Longest_common_substring
+// {{works with|Zig|0.15.1}}
+
 // from the Go and Java examples
 const std = @import("std");
-const mem = std.mem;
-const testing = std.testing;
 
 pub fn main() !void {
     // ------------------------------------------ allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // ----------------------------------------------------
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // --------------------------------------------- stdout
-    var t0 = try std.time.Timer.start();
+    var t0: std.time.Timer = try .start();
 
     const result1 = try longestCommonSubstringWithAlloc(
         allocator,
         "thisisatest",
         "testing123testing",
     );
-
     const t1 = t0.read();
-    try stdout.print("{s}\nProcessed in {}\n", .{ result1, std.fmt.fmtDuration(t1) });
-    var t2 = try std.time.Timer.start();
+
+    try stdout.writeAll(result1);
+    try stdout.writeByte('\n');
+    try stdout.flush();
+    std.log.info("longestCommonSubstringWithAlloc() processed in {D}", .{t1});
+
+    var t2: std.time.Timer = try .start();
 
     const result2 = longestCommonSubstring(
         "thisisatest",
         "testing123testing",
     );
-
     const t3 = t2.read();
-    try stdout.print("{s}\nProcessed in {}\n", .{ result2, std.fmt.fmtDuration(t3) });
+
+    try stdout.writeAll(result2);
+    try stdout.writeByte('\n');
+    try stdout.flush();
+    std.log.info("longestCommonSubstring() processed in {D}", .{t3});
 }
 
-fn longestCommonSubstringWithAlloc(allocator: mem.Allocator, a: []const u8, b: []const u8) ![]const u8 {
+fn longestCommonSubstringWithAlloc(allocator: std.mem.Allocator, a: []const u8, b: []const u8) ![]const u8 {
     var result: []const u8 = "";
     var lengths = try allocator.alloc(usize, a.len * b.len); // lengths matrix
     defer allocator.free(lengths);
@@ -63,7 +72,7 @@ fn longestCommonSubstring(a: []const u8, b: []const u8) []const u8 {
         for (i..a.len + 1) |j| {
             if (result.len >= j - i)
                 continue;
-            if (mem.indexOf(u8, b, a[i..j]) != null)
+            if (std.mem.indexOf(u8, b, a[i..j]) != null)
                 result = a[i..j];
         }
     }
@@ -87,6 +96,8 @@ const test_data = [_]struct { a: []const u8, b: []const u8, result: []const u8 }
         .result = " fox jumps over the ",
     },
 };
+
+const testing = std.testing;
 
 test longestCommonSubstring {
     for (test_data) |data| {

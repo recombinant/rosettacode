@@ -1,17 +1,25 @@
 // https://rosettacode.org/wiki/Lucas-Lehmer_test
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const print = std.debug.print;
 
-pub fn main() void {
+pub fn main() !void {
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     const T = u2056;
     const upb: T = std.math.log2(std.math.maxInt(T)) / 2;
 
     var p: u16 = 2;
-    print(" Mersenne primes:\n", .{});
+    try stdout.print(" Mersenne primes:\n", .{});
     while (p <= upb) : (p += 1)
-        if (isPrime(p) and isMersennePrime(T, p))
-            print(" M{}", .{p});
-    print("\n", .{});
+        if (isPrime(p) and isMersennePrime(T, p)) {
+            try stdout.print(" M{}", .{p});
+            try stdout.flush();
+        };
+    try stdout.writeByte('\n');
+
+    try stdout.flush();
 }
 
 fn isMersennePrime(T: type, p: u16) bool {

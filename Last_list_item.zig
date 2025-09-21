@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Last_list_item
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
@@ -9,25 +10,30 @@ pub fn main() !void {
         return;
     }
 
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var list = try std.ArrayList(u16).initCapacity(allocator, numbers.len);
-    defer list.deinit();
-    try list.appendSlice(&numbers);
+    var list: std.ArrayList(u16) = try .initCapacity(allocator, numbers.len);
+    defer list.deinit(allocator);
+    try list.appendSlice(allocator, &numbers);
 
     // process the items without any sorting
     while (list.items.len != 1) {
-        var pair = try std.BoundedArray(u16, 2).init(0);
+        var buffer: [2]u16 = undefined;
+        var pair: std.ArrayList(u16) = .initBuffer(&buffer);
         for (0..2) |_|
-            try pair.append(list.orderedRemove(findSmallest(u16, list.items).?));
-        try list.append(pair.get(0) + pair.get(1));
-        try writer.print("Intermediate result: {any}\n", .{list.items});
+            try pair.appendBounded(list.orderedRemove(findSmallest(u16, list.items).?));
+        try list.append(allocator, pair.items[0] + pair.items[1]);
+        try stdout.print("Intermediate result: {any}\n", .{list.items});
     }
-    try writer.print("{any} ==> {}\n", .{ numbers, list.items[0] });
+    try stdout.print("{any} ==> {}\n", .{ numbers, list.items[0] });
+
+    try stdout.flush();
 }
 
 /// Return the index of the smallest item in slice or null if slice empty.

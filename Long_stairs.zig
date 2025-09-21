@@ -1,16 +1,18 @@
 // https://www.rosettacode.org/wiki/Long_stairs
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
-const mem = std.mem;
 
 pub fn main() !void {
     const number_of_tests = 10_000;
     // --------------------------------------------- stdout
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // --------------------- pseudo random number generator
-    var prng = std.Random.DefaultPrng.init(blk: {
+    var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        try std.posix.getrandom(mem.asBytes(&seed));
+        try std.posix.getrandom(std.mem.asBytes(&seed));
         break :blk seed;
     });
     const rand = prng.random();
@@ -49,4 +51,5 @@ pub fn main() !void {
         "Average final length of staircase: {d}\n",
         .{@as(f64, @floatFromInt(steps_tot)) / number_of_tests},
     );
+    try stdout.flush();
 }

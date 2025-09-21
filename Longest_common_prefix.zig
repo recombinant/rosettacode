@@ -1,39 +1,38 @@
 // https://rosettacode.org/wiki/Longest_common_prefix
-// Translation of Wren (alternative version)
+// {{works with|Zig|0.15.1}}
+// {{trans|Wren (alternative version)}}
 const std = @import("std");
-const math = std.math;
-const mem = std.mem;
 const testing = std.testing;
 const print = std.debug.print;
 
-fn lcp(allocator: mem.Allocator, strings: []const []const u8) ![]u8 {
+fn lcp(allocator: std.mem.Allocator, strings: []const []const u8) ![]u8 {
     if (strings.len == 0)
         return try allocator.alloc(u8, 0);
     if (strings.len == 1)
         return try allocator.dupe(u8, strings[0]);
 
-    var max: usize = math.maxInt(usize);
+    var max: usize = std.math.maxInt(usize);
     for (strings) |s|
         max = @min(max, s.len);
 
     if (max == 0)
         return try allocator.alloc(u8, 0);
 
-    var result = std.ArrayList(u8).init(allocator);
+    var result: std.ArrayList(u8) = .empty;
 
     outer: for (0..max) |n| {
         const c = strings[0][n];
         for (strings[1..]) |s|
             if (s[n] != c)
                 break :outer;
-        try result.append(c);
+        try result.append(allocator, c);
     }
 
-    return try result.toOwnedSlice();
+    return try result.toOwnedSlice(allocator);
 }
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 

@@ -1,14 +1,13 @@
 // https://rosettacode.org/wiki/Longest_increasing_subsequence
+// {{works with|Zig|0.15.1}}
 // Based on O(n log n) method from wikipedia
 // https://en.wikipedia.org/wiki/Longest_increasing_subsequence#Efficient_algorithms
 const std = @import("std");
-const heap = std.heap;
-const mem = std.mem;
 
 const print = std.debug.print;
 
 pub fn main() !void {
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -25,7 +24,7 @@ pub fn main() !void {
 }
 
 /// Caller owns returned slice memory.
-fn getLongestIncreasingSubsequence(allocator: mem.Allocator, T: type, x: []const T) ![]const T {
+fn getLongestIncreasingSubsequence(allocator: std.mem.Allocator, T: type, x: []const T) ![]const T {
     const n = x.len;
     switch (n) {
         0, 1 => return try allocator.dupe(T, x),

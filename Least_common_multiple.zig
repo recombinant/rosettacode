@@ -1,12 +1,16 @@
 // https://rosettacode.org/wiki/Least_common_multiple
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const math = std.math;
 const assert = std.debug.assert;
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     try stdout.print("lcm(35, 21) = {}\n", .{lcm(21, 35)});
+
+    try stdout.flush();
 }
 
 fn lcm(a: anytype, b: anytype) @TypeOf(a, b) {
@@ -21,7 +25,7 @@ fn lcm(a: anytype, b: anytype) @TypeOf(a, b) {
     };
     assert(a != 0 or b != 0);
 
-    return a / math.gcd(a, b) * b;
+    return a / std.math.gcd(a, b) * b;
 }
 
 const testing = std.testing;

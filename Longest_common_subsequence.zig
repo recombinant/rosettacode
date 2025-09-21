@@ -1,13 +1,10 @@
 // https://rosettacode.org/wiki/Longest_common_subsequence
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const heap = std.heap;
-const mem = std.mem;
-const testing = std.testing;
-const assert = std.debug.assert;
 
 pub fn main() !void {
     // ------------------------------------------ allocator
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // ------------------------------------------------ lcs
@@ -17,12 +14,17 @@ pub fn main() !void {
     const result = try lcs(allocator, a, b);
     defer allocator.free(result);
     // ---------------------------------------------- print
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     try stdout.print("{s}\n", .{result});
+
+    try stdout.flush();
 }
 
 /// Caller owns returned slice memory.
-fn lcs(allocator: mem.Allocator, a: []const u8, b: []const u8) ![]const u8 {
+fn lcs(allocator: std.mem.Allocator, a: []const u8, b: []const u8) ![]const u8 {
     // generate matrix of length of longest common subsequence for substrings of both strings
     const ls = try allocator.alloc([]usize, a.len + 1);
     defer allocator.free(ls);
@@ -45,9 +47,9 @@ fn lcs(allocator: mem.Allocator, a: []const u8, b: []const u8) ![]const u8 {
                 ls[i + 1][j + 1] = @max(ls[i + 1][j], ls[i][j + 1]);
         };
 
-    var result = std.ArrayList(u8).init(allocator);
-    var tmp = std.ArrayList(u8).init(allocator);
-    defer tmp.deinit();
+    var result: std.ArrayList(u8) = .empty;
+    var tmp: std.ArrayList(u8) = .empty;
+    defer tmp.deinit(allocator);
 
     // read a substring from the matrix
     var x = a.len;
@@ -58,17 +60,19 @@ fn lcs(allocator: mem.Allocator, a: []const u8, b: []const u8) ![]const u8 {
         else if (ls[x][y] == ls[x][y - 1])
             y -= 1
         else {
-            assert(a[x - 1] == b[y - 1]);
-            tmp.clearAndFree();
-            try tmp.append(a[x - 1]);
-            try tmp.appendSlice(result.items);
-            mem.swap(std.ArrayList(u8), &result, &tmp);
+            std.debug.assert(a[x - 1] == b[y - 1]);
+            tmp.clearAndFree(allocator);
+            try tmp.append(allocator, a[x - 1]);
+            try tmp.appendSlice(allocator, result.items);
+            std.mem.swap(std.ArrayList(u8), &result, &tmp);
             x -= 1;
             y -= 1;
         }
     }
-    return try result.toOwnedSlice();
+    return try result.toOwnedSlice(allocator);
 }
+
+const testing = std.testing;
 
 test lcs {
     const data_array = [_]struct { a: []const u8, b: []const u8, expected: []const u8 }{
@@ -106,7 +110,7 @@ test lcs {
 //
 //     var i = a.len;
 //     var j = b.len;
-//     var reversed = try std.ArrayList(u8).initCapacity(allocator, lengths.at(i, j));
+//     var reversed:std.ArrayList(u8) = try .initCapacity(allocator, lengths.at(i, j));
 //     while (i != 0 and j != 0) {
 //         if (lengths.at(i, j) == lengths.at(i - 1, j))
 //             i -= 1

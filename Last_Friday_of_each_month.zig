@@ -1,10 +1,10 @@
 // https://rosettacode.org/wiki/Last_Friday_of_each_month
-// Translation of Fortran
+// {{works with|Zig|0.15.1}}
+// {{trans|Fortran}}
 
 // see also:
 // https://rosettacode.org/wiki/Find_the_last_Sunday_of_each_month
 const std = @import("std");
-const mem = std.mem;
 const print = std.debug.print;
 
 const YearError = error{
@@ -12,7 +12,7 @@ const YearError = error{
 };
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
 
     const allocator = gpa.allocator();
@@ -29,7 +29,7 @@ pub fn main() !void {
 }
 
 /// Caller owns contents of returned array.
-fn getLastFridays(allocator: mem.Allocator, year: u16) ![12][]const u8 {
+fn getLastFridays(allocator: std.mem.Allocator, year: u16) ![12][]const u8 {
     if (year < 1582) return YearError.OutOfRange; // Start of Gregorian Calender
 
     const febuary_days: u16 = 28 + @as(u16, @intFromBool(isLeapYear(year)));

@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Leonardo_numbers
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 
 // --------------------------------------- normal leonardo series
@@ -14,44 +15,57 @@ const std = @import("std");
 
 // --------------------------------------------------------------
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
-    const reader = std.io.getStdIn().reader();
+    var stdin_buffer: [1024]u8 = undefined;
+    var stdin_reader = std.fs.File.stdin().reader(&stdin_buffer);
+    const stdin = &stdin_reader.interface;
 
-    try writer.writeAll("Enter first two Leonardo numbers and increment step : ");
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var buffer: [1024]u8 = undefined;
-    const line = try reader.readUntilDelimiter(&buffer, '\n');
+    try stdout.writeAll("Enter first two Leonardo numbers and increment step : ");
+    try stdout.flush();
 
-    var ba = try std.BoundedArray(u64, 3).init(0);
+    var buffer1: [1024]u8 = undefined;
+    var w: std.Io.Writer = .fixed(&buffer1);
+
+    _ = try stdin.streamDelimiter(&w, '\n');
+    const line = w.buffered();
+
+    var buffer2: [3]u64 = undefined;
+    var array: std.ArrayList(u64) = .initBuffer(&buffer2);
+
     var it = std.mem.splitAny(u8, line, " \t\r\n");
     while (it.next()) |word| {
         if (word.len == 0)
             continue;
         const number = try std.fmt.parseInt(u64, word, 10);
-        ba.append(number) catch return error.TooManyNumbers;
+        array.appendBounded(number) catch return error.TooManyNumbers;
     }
-    if (ba.len != 3) return error.InsufficientNumbers;
+    if (array.items.len != 3) return error.InsufficientNumbers;
 
-    const a = ba.get(0);
-    const b = ba.get(1);
-    const step = ba.get(2);
+    const a = array.items[0];
+    const b = array.items[1];
+    const step = array.items[2];
 
-    try leonardo(a, b, step, 25, writer);
+    try leonardo(a, b, step, 25, stdout);
+
+    try stdout.flush();
 }
 
-fn leonardo(a_: u64, b_: u64, step: u64, num: u64, writer: anytype) !void {
+fn leonardo(a_: u64, b_: u64, step: u64, num: u64, w: *std.Io.Writer) !void {
     var a = a_;
     var b = b_;
 
-    try writer.writeAll("First 25 Leonardo numbers : \n");
+    try w.writeAll("First 25 Leonardo numbers : \n");
 
     var i: u64 = 1;
     while (i <= num) : (i += 1) {
         switch (i) {
-            1 => try writer.print(" {d}", .{a}),
-            2 => try writer.print(" {d}", .{b}),
+            1 => try w.print(" {d}", .{a}),
+            2 => try w.print(" {d}", .{b}),
             else => {
-                try writer.print(" {d}", .{a + b + step});
+                try w.print(" {d}", .{a + b + step});
                 std.mem.swap(u64, &a, &b);
                 b += a + step;
             },

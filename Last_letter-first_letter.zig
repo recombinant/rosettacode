@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Last_letter-first_letter
-// Translation of Wren
+// // {{works with|Zig|0.15.1}}
+// {{trans|Wren}}
 const std = @import("std");
 
 pub fn main() !void {
@@ -13,14 +14,14 @@ pub fn main() !void {
         \\ sealeo silcoon simisear snivy snorlax spoink starly tirtouga trapinch treecko
         \\ tyrogue vigoroth vulpix wailord wartortle whismur wingull yamask
     ;
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const names = try split(allocator, pokemon);
     defer allocator.free(names);
 
-    var llfl = LastLetterFirstLetter.init(allocator, names);
+    var llfl: LastLetterFirstLetter = .init(allocator, names);
     defer llfl.deinit();
 
     try llfl.search();
@@ -28,10 +29,17 @@ pub fn main() !void {
     // // sort example items lexicographically
     // std.mem.sort([]const u8, llfl.max_path_example.items, {}, lessThan);
 
-    const writer = std.io.getStdOut().writer();
-    try writer.print("Maximum path length         : {}\n", .{llfl.max_path_length});
-    try writer.print("Paths of that length        : {}\n", .{llfl.max_path_length_count});
-    try writer.print("Example path of that length : {s}\n", .{llfl.max_path_example.items});
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    try stdout.print("Maximum path length         : {}\n", .{llfl.max_path_length});
+    try stdout.print("Paths of that length        : {}\n", .{llfl.max_path_length_count});
+    try stdout.writeAll("Example path of that length :\n ");
+    for (llfl.max_path_example.items) |name|
+        try stdout.print(" {s}", .{name});
+
+    try stdout.flush();
 }
 
 const LastLetterFirstLetter = struct {
@@ -47,11 +55,11 @@ const LastLetterFirstLetter = struct {
             .names = names,
             .max_path_length = 0,
             .max_path_length_count = 0,
-            .max_path_example = std.ArrayList([]const u8).init(allocator),
+            .max_path_example = .empty,
         };
     }
     fn deinit(self: *LastLetterFirstLetter) void {
-        self.max_path_example.deinit();
+        self.max_path_example.deinit(self.allocator);
     }
     /// Wrapper around recursive search_()
     fn search(self: *LastLetterFirstLetter) !void {
@@ -67,7 +75,7 @@ const LastLetterFirstLetter = struct {
             self.max_path_length = offset;
             self.max_path_length_count = 1;
             self.max_path_example.clearRetainingCapacity();
-            try self.max_path_example.appendSlice(self.names[0..offset]);
+            try self.max_path_example.appendSlice(self.allocator, self.names[0..offset]);
         } else if (offset == self.max_path_length) {
             self.max_path_length_count += 1;
         }
@@ -84,12 +92,12 @@ const LastLetterFirstLetter = struct {
 /// Split string at whitepace and de-duplicate.
 /// Allocates memory for the result, which must be freed by the caller.
 fn split(allocator: std.mem.Allocator, string: []const u8) ![][]const u8 {
-    var name_set = std.StringArrayHashMap(void).init(allocator);
-    defer name_set.deinit();
+    var name_set: std.StringArrayHashMapUnmanaged(void) = .empty;
+    defer name_set.deinit(allocator);
     // dedupe using set
     var it = std.mem.tokenizeAny(u8, string, " \n");
     while (it.next()) |name|
-        try name_set.put(name, {});
+        try name_set.put(allocator, name, {});
     // deduped array of names
     return allocator.dupe([]const u8, name_set.keys());
 }
@@ -110,7 +118,7 @@ const testing = std.testing;
 test "LastLetterFirstLetter 0" {
     var names = [_][]const u8{};
 
-    var llfl = LastLetterFirstLetter.init(testing.allocator, names[0..]);
+    var llfl: LastLetterFirstLetter = .init(testing.allocator, names[0..]);
     defer llfl.deinit();
 
     try llfl.search();
@@ -122,7 +130,7 @@ test "LastLetterFirstLetter 0" {
 test "LastLetterFirstLetter 1" {
     var names = [_][]const u8{"aa"};
 
-    var llfl = LastLetterFirstLetter.init(testing.allocator, names[0..]);
+    var llfl: LastLetterFirstLetter = .init(testing.allocator, names[0..]);
     defer llfl.deinit();
 
     try llfl.search();
@@ -134,7 +142,7 @@ test "LastLetterFirstLetter 1" {
 test "LastLetterFirstLetter 2" {
     var names = [_][]const u8{ "aa", "ab" };
 
-    var llfl = LastLetterFirstLetter.init(testing.allocator, names[0..]);
+    var llfl: LastLetterFirstLetter = .init(testing.allocator, names[0..]);
     defer llfl.deinit();
 
     try llfl.search();
@@ -146,7 +154,7 @@ test "LastLetterFirstLetter 2" {
 test "LastLetterFirstLetter 3" {
     var names = [_][]const u8{ "zz", "aa", "bc", "ab" };
 
-    var llfl = LastLetterFirstLetter.init(testing.allocator, names[0..]);
+    var llfl: LastLetterFirstLetter = .init(testing.allocator, names[0..]);
     defer llfl.deinit();
 
     try llfl.search();

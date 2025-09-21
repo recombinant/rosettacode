@@ -1,8 +1,11 @@
 // https://www.rosettacode.org/wiki/Largest_proper_divisor_of_n
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var n: u8 = 1;
     while (n < 101) : (n += 1)
@@ -13,6 +16,8 @@ pub fn main() !void {
                 @as(u8, if (n % 10 == 0) '\n' else ' '),
             },
         );
+
+    try stdout.flush();
 }
 
 /// Counting up to sqrt(n) requires less looping than

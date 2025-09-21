@@ -1,12 +1,12 @@
 // https://rosettacode.org/wiki/Largest_number_divisible_by_its_digits
-// Translation of Kotlin
+// {{works with|Zig|0.15.1}}
+// {{trans|Kotlin}}
 const std = @import("std");
-const fmt = std.fmt;
-const math = std.math;
-const mem = std.mem;
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     if (base10()) |n|
         try stdout.print("Largest decimal number is {d}\n", .{n})
@@ -17,12 +17,14 @@ pub fn main() !void {
         try stdout.print("Largest hexadecimal number is 0x{x}\n", .{n})
     else
         try stdout.writeAll("Largest hexadecimal number not found\n");
+
+    try stdout.flush();
 }
 
 fn base10() ?u32 {
     const maximum: u32 = 9876432;
     // buffer length == 1 + log10(max)
-    var buffer: [1 + math.log10_int(maximum)]u8 = undefined;
+    var buffer: [1 + std.math.log10_int(maximum)]u8 = undefined;
 
     const step: u32 = 9 * 8 * 7;
     const start: u32 = maximum / step * step;
@@ -30,8 +32,8 @@ fn base10() ?u32 {
     while (n >= step) {
         n -= step;
         if (n % 10 == 0) continue; // can't end in '0'
-        const s = fmt.bufPrint(&buffer, "{}", .{n}) catch unreachable;
-        if (mem.indexOfAny(u8, s, "05") != null) continue; // can't contain '0' or '5'
+        const s = std.fmt.bufPrint(&buffer, "{}", .{n}) catch unreachable;
+        if (std.mem.indexOfAny(u8, s, "05") != null) continue; // can't contain '0' or '5'
         if (!distinct(s)) continue; // digits must be unique
         if (divByAllDecimal(n, s))
             return n;
@@ -42,7 +44,7 @@ fn base10() ?u32 {
 fn base16() ?u64 {
     const maximum = 0xfedcba987654321;
     // comptime buffer length == 1 + log16(max)
-    var buffer: [1 + math.log_int(usize, 16, maximum)]u8 = undefined;
+    var buffer: [1 + std.math.log_int(usize, 16, maximum)]u8 = undefined;
 
     const step: u64 = 15 * 14 * 13 * 12 * 11;
     const start: u64 = maximum / step * step;
@@ -51,8 +53,8 @@ fn base16() ?u64 {
         n -= step;
         if (n % 16 == 0) continue; // can't end in '0'
         // {x} generates lower case a-f
-        const s = fmt.bufPrint(&buffer, "{x}", .{n}) catch unreachable;
-        if (mem.indexOfScalar(u8, s, '0') != null) continue; // can't contain '0'
+        const s = std.fmt.bufPrint(&buffer, "{x}", .{n}) catch unreachable;
+        if (std.mem.indexOfScalar(u8, s, '0') != null) continue; // can't contain '0'
         if (!distinct(s)) continue; // digits must be unique
         if (divByAllHex(n, s))
             return n;
@@ -63,7 +65,7 @@ fn base16() ?u64 {
 /// Are all digits distinct? i.e. no digit is repeated within digits.
 fn distinct(digits: []const u8) bool {
     for (digits[0 .. digits.len - 1], 1..) |digit, i|
-        if (mem.indexOfScalar(u8, digits[i..], digit) != null)
+        if (std.mem.indexOfScalar(u8, digits[i..], digit) != null)
             return false;
     return true;
 }
