@@ -1,4 +1,6 @@
 // https://rosettacode.org/wiki/Resistance_calculator
+// {{works with|Zig|0.15.1}}
+
 // Shared Infix/Postfix Code
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -69,9 +71,9 @@ pub const Node = struct {
         }
     }
 
-    pub fn report(self: *Node, allocator: Allocator, writer: anytype, level: []const u8) !void {
+    pub fn report(self: *Node, allocator: Allocator, w: *std.Io.Writer, level: []const u8) !void {
         if (self.voltage) |voltage| {
-            try writer.print("{d:8.3} {d:8.3} {d:8.3} {d:8.3}  {s}{c}\n", .{
+            try w.print("{d:8.3} {d:8.3} {d:8.3} {d:8.3}  {s}{c}\n", .{
                 self.res(),    voltage, self.current(),
                 self.effect(), level,   self.node_type.repr(),
             });
@@ -81,9 +83,10 @@ pub const Node = struct {
             if (optional_node) |node| {
                 const next_level = try std.fmt.allocPrint(allocator, "{s}| ", .{level});
                 defer allocator.free(next_level);
-                try node.report(allocator, writer, next_level);
+                try node.report(allocator, w, next_level);
             }
         }
+        try w.flush();
     }
 
     /// Free memory allocated to Node descendants and Node itself.
@@ -102,8 +105,8 @@ pub const Node = struct {
 };
 
 fn build(allocator: Allocator, tokens: []PostfixToken) !*Node {
-    var stack = Stack(*Node).init(allocator);
-    defer stack.deinit();
+    var stack: Stack(*Node) = .empty;
+    defer stack.deinit(allocator);
 
     for (tokens) |token| {
         const node = try allocator.create(Node);
@@ -115,19 +118,20 @@ fn build(allocator: Allocator, tokens: []PostfixToken) !*Node {
             .parallel => Node{ .node_type = NodeType.parallel, .b = stack.pop(), .a = stack.pop() },
             .resistor => |r| Node{ .node_type = NodeType.resistor, .resistance = try std.fmt.parseFloat(f32, r) },
         };
-        try stack.push(node);
+        try stack.push(allocator, node);
     }
     std.debug.assert(stack.hasOne()); // stack length should be 1.
 
     return stack.pop();
 }
 
-pub fn calculate(allocator: Allocator, writer: anytype, voltage: f32, tokens: []PostfixToken) !*Node {
-    try writer.print("     Ohm     Volt   Ampere     Watt  Network tree\n", .{});
+pub fn calculate(allocator: Allocator, w: *std.Io.Writer, voltage: f32, tokens: []PostfixToken) !*Node {
+    try w.writeAll("     Ohm     Volt   Ampere     Watt  Network tree\n");
+    try w.flush();
 
     var node = try build(allocator, tokens);
     node.setVoltage(voltage);
-    try node.report(allocator, writer, "");
+    try node.report(allocator, w, "");
     return node;
 }
 
@@ -139,19 +143,17 @@ pub fn Stack(comptime T: type) type {
         const Self = @This();
         stack: std.ArrayList(T),
 
-        pub fn init(allocator: Allocator) Self {
-            return Self{
-                .stack = std.ArrayList(T).init(allocator),
-            };
+        pub const empty: Self = .{
+            .stack = .empty,
+        };
+        pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
+            self.stack.deinit(allocator);
         }
-        pub fn deinit(self: *Self) void {
-            self.stack.deinit();
-        }
-        pub fn push(self: *Self, node: T) !void {
-            return try self.stack.append(node);
+        pub fn push(self: *Self, allocator: std.mem.Allocator, node: T) !void {
+            return try self.stack.append(allocator, node);
         }
         pub fn pop(self: *Self) T {
-            return self.stack.pop();
+            return self.stack.pop().?;
         }
         pub fn peek(self: *const Self) T {
             return self.stack.items[self.stack.items.len - 1];

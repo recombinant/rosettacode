@@ -1,9 +1,12 @@
 // https://rosettacode.org/wiki/Perfect_totient_numbers
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const n = 20;
 
@@ -17,6 +20,8 @@ pub fn main() !void {
         sep = if (i % 10 == 0) "\n" else " ";
     }
     try stdout.writeByte('\n');
+
+    try stdout.flush();
 }
 
 fn calcTotient(n_: u32) u32 {

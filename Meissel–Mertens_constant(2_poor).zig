@@ -1,15 +1,17 @@
 // https://rosettacode.org/wiki/Meissel%E2%80%93Mertens_constant
 const std = @import("std");
-const math = std.math;
-const mem = std.mem;
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
 
 const Float = f64;
 const max_number = 100_000_000;
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
 
@@ -27,18 +29,20 @@ pub fn main() !void {
             try stdout.print("{d:>12}   {d}\n", .{ i, sum + euler });
     }
     try stdout.print("{d:>12}   {d}\n", .{ primes.len, sum + euler });
+
+    try stdout.flush();
 }
 
 /// Return at least n prime numbers.
-fn sieve(allocator: mem.Allocator, n: usize) ![]u64 {
+fn sieve(allocator: std.mem.Allocator, n: usize) ![]u64 {
     const limit: usize = @intFromFloat(blk: {
         const n_: f32 = @floatFromInt(n);
         // https://en.wikipedia.org/wiki/Prime_number_theorem#Approximations_for_the_nth_prime_number
         break :blk @log(n_) + @log(@log(n_));
     });
 
-    var primes = std.ArrayList(u64).init(allocator);
-    defer primes.deinit();
+    var primes: std.ArrayList(u64) = .empty;
+    defer primes.deinit(allocator);
 
     var sieved = try allocator.alloc(bool, limit);
     defer allocator.free(sieved); // redundant if ArenaAllocator used
@@ -47,7 +51,7 @@ fn sieve(allocator: mem.Allocator, n: usize) ![]u64 {
     for (sieved) |*b| b.* = true;
     // 0 & 1 are skipped later, so no need to set false here.
 
-    const root_n = math.sqrt(sieved.len);
+    const root_n = std.math.sqrt(sieved.len);
     for (2..root_n + 1) |p|
         if (sieved[p]) {
             var k = p * p;
@@ -55,13 +59,13 @@ fn sieve(allocator: mem.Allocator, n: usize) ![]u64 {
                 sieved[k] = false; // not prime
         };
 
-    try primes.ensureTotalCapacityPrecise(n + 1);
+    try primes.ensureTotalCapacityPrecise(allocator, n + 1);
 
     // skip 0 & 1, they are not prime
     for (sieved[2..], 2..) |b, i|
         if (b) {
-            try primes.append(@intCast(i));
+            try primes.append(allocator, @intCast(i));
         };
 
-    return primes.toOwnedSlice();
+    return primes.toOwnedSlice(allocator);
 }

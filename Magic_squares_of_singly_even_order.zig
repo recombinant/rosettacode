@@ -1,8 +1,9 @@
 // https://www.rosettacode.org/wiki/Magic_squares_of_singly_even_order
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
+
 // Usage : executable <integer specifying rows in magic square>
 const std = @import("std");
-const mem = std.mem;
 
 const MagicError = error{
     CountArgumentNotInteger,
@@ -15,15 +16,17 @@ const MagicError = error{
 
 pub fn main() !void {
     // ------------------------------------------------------- stdout
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // ---------------------------------------------------- allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // ---------------------------------------------------
     const n: u16 = try getN(allocator);
 
-    const magic = try SinglyEvenMagicSquare.init(allocator, n);
+    const magic: SinglyEvenMagicSquare = try .init(allocator, n);
     defer magic.deinit();
 
     for (magic.m) |row| {
@@ -31,14 +34,16 @@ pub fn main() !void {
         try stdout.writeByte('\n');
     }
     try stdout.print("\nMagic constant: {}\n", .{(n * n + 1) * n / 2});
+    // ------------------------------------------------------- stdout
+    try stdout.flush();
 }
 
 const SinglyEvenMagicSquare = struct {
     cells: []u16,
     m: [][]u16,
-    allocator: mem.Allocator,
+    allocator: std.mem.Allocator,
 
-    fn init(allocator: mem.Allocator, n: u16) !SinglyEvenMagicSquare {
+    fn init(allocator: std.mem.Allocator, n: u16) !SinglyEvenMagicSquare {
         if (n < 6)
             return MagicError.BaseLessThanSix;
         if ((n - 2) % 4 != 0)
@@ -48,7 +53,7 @@ const SinglyEvenMagicSquare = struct {
         const half_n = n / 2;
         const sub_grid_size = size / 4;
 
-        const sub_grid = try OddMagicSquare.init(allocator, half_n);
+        const sub_grid: OddMagicSquare = try .init(allocator, half_n);
         defer sub_grid.deinit();
 
         const grid_factors = [_]u16{ 0, 2, 3, 1 };
@@ -75,7 +80,7 @@ const SinglyEvenMagicSquare = struct {
                 if (c < nColsLeft or c >= n - nColsRight or (c == nColsLeft and r == nColsLeft)) {
                     if (c == 0 and r == nColsLeft)
                         continue;
-                    mem.swap(u16, &m[r][c], &m[r + half_n][c]);
+                    std.mem.swap(u16, &m[r][c], &m[r + half_n][c]);
                 }
             };
 
@@ -95,9 +100,9 @@ const SinglyEvenMagicSquare = struct {
 const OddMagicSquare = struct {
     cells: []u16,
     m: [][]u16,
-    allocator: mem.Allocator,
+    allocator: std.mem.Allocator,
 
-    fn init(allocator: mem.Allocator, n: u16) !OddMagicSquare {
+    fn init(allocator: std.mem.Allocator, n: u16) !OddMagicSquare {
         if (n < 3)
             return MagicError.OddBaseLessThanThree;
         if (n % 2 == 0)
@@ -150,7 +155,7 @@ const OddMagicSquare = struct {
 };
 
 /// Get the square dimension from the command line.
-fn getN(allocator: mem.Allocator) !u16 {
+fn getN(allocator: std.mem.Allocator) !u16 {
     var args = try std.process.argsWithAllocator(allocator);
     defer args.deinit();
     _ = args.skip(); // current program

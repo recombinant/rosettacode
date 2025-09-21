@@ -1,12 +1,17 @@
 // https://www.rosettacode.org/wiki/Semiprime
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var v: u32 = 1675;
-    while (v <= 1680) : (v += 1)
+    while (v <= 1680) : (v += 1) {
         try stdout.print("{d} {s} semiprime\n", .{ v, if (isSemiPrime(v)) "is" else "isn't" });
+        try stdout.flush();
+    }
 }
 
 fn isSemiPrime(n0: u32) bool {

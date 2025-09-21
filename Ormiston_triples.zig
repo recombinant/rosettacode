@@ -1,42 +1,49 @@
 // https://rosettacode.org/wiki/Ormiston_triples
-// Translation of C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
+
 const std = @import("std");
-const mem = std.mem;
+
 // Using cpp primesieve from https://github.com/kimwalisch/primesieve/
+// zig run Ormiston_triples.zig -I ../primesieve-12.9/zig-out/include/ ../primesieve-12.9/zig-out/lib/primesieve.lib -lstdc++
 const ps = @cImport({
     @cInclude("primesieve.h");
 });
 
 pub fn main() !void {
-    var t0 = try std.time.Timer.start();
+    var t0: std.time.Timer = try .start();
     // ----------------------------------------------------------
     const task1_limit = 25;
     const task2_limit = 1_000_000_000;
     const task3_limit = 10_000_000_000;
     // ----------------------------------------------------------
-    const writer = std.io.getStdOut().writer();
-    try writer.writeAll("Primesieve Ormiston triples\n\n");
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+    try stdout.writeAll("Primesieve Ormiston triples\n\n");
     // ----------------------------------------------------------
     var generator = try OrmistonTripleGenerator.init();
     defer generator.deinit();
     // --------------------------------------------------- task 1
-    try writer.writeAll("Smallest members of first 25 Ormiston triples:\n");
+    try stdout.writeAll("Smallest members of first 25 Ormiston triples:\n");
     var count: usize = 0;
     while (count < task1_limit) : (count += 1) {
         const primes = try generator.next();
-        try writer.print("{d}{c}", .{ primes[0], @as(u8, if ((count + 1) % 5 == 0) '\n' else ' ') });
+        try stdout.print("{d}{c}", .{ primes[0], @as(u8, if ((count + 1) % 5 == 0) '\n' else ' ') });
+        try stdout.flush();
     }
     // ---------------------------------------------- tasks 2 & 3
     var limit: u64 = task2_limit;
     while (limit <= task3_limit) : (count += 1) {
         const primes = try generator.next();
         if (primes[2] > limit) {
-            try writer.print("\nNumber of Ormiston triples < {d}: {d}\n", .{ limit, count });
+            try stdout.print("\nNumber of Ormiston triples < {d}: {d}\n", .{ limit, count });
+            try stdout.flush();
             limit *= 10;
         }
     }
     // ----------------------------------------------------------
-    try writer.print("Processed in {}\n", .{std.fmt.fmtDuration(t0.read())});
+    std.log.info("Processed in {D}\n", .{t0.read()});
 }
 
 const OrmistonTripleGeneratorError = error{

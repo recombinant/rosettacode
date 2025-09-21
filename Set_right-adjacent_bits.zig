@@ -1,14 +1,17 @@
 // https://rosettacode.org/wiki/Set_right-adjacent_bits
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
 
 pub fn main() !void {
     // ------------------------------------------ allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // --------------------------------------------- stdout
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     // ----------------------------------------------------
     const b: []const u8 = "010000000000100000000010000000010000000100000010000010000100010010";
     const sample_data = [_]struct { bits: []const u8, n: u4 }{
@@ -23,10 +26,11 @@ pub fn main() !void {
         try stdout.print("n = {}; Width e = {}\n\n", .{ s.n, s.bits.len });
         try stdout.print("     Input b: {s}\n", .{s.bits});
         try stdout.print("     Result:  {s}\n\n", .{result});
+        try stdout.flush();
     }
 }
 
-fn setRightBits(allocator: mem.Allocator, bits: []const u8, n: u4) ![]const u8 {
+fn setRightBits(allocator: std.mem.Allocator, bits: []const u8, n: u4) ![]const u8 {
     const result = try allocator.dupe(u8, bits);
     var remaining: usize = 0;
     for (result) |*bit| {
@@ -73,6 +77,6 @@ test "set right bits" {
         try testing.expectEqual(s.width, s.expected.len);
         try testing.expectEqual(s.width, result.len);
         // check the result has the expected bit twiddling
-        try testing.expect(mem.eql(u8, s.expected, result));
+        try testing.expect(std.mem.eql(u8, s.expected, result));
     }
 }

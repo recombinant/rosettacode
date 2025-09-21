@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Ramsey%27s_theorem
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 
 const Kind = enum(u8) {
@@ -25,7 +26,9 @@ pub fn main() !void {
             a[j][i] = Kind.one;
         };
 
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     for (0..17) |i| {
         for (0..17) |j|
@@ -35,24 +38,25 @@ pub fn main() !void {
 
     for (0..17) |i| {
         idx[0] = i;
-        if (try findGroup(.one, i + 1, 17, 1) or try findGroup(.zero, i + 1, 17, 1)) {
+        if (try findGroup(.one, i + 1, 17, 1, stdout) or try findGroup(.zero, i + 1, 17, 1, stdout)) {
             try stdout.writeAll("no good\n");
+            try stdout.flush();
             return;
         }
     }
 
     try stdout.writeAll("all good\n");
+    try stdout.flush();
 }
 
-fn findGroup(kind: Kind, min_n: usize, max_n: usize, depth: usize) !bool {
-    const stdout = std.io.getStdOut().writer();
-
+fn findGroup(kind: Kind, min_n: usize, max_n: usize, depth: usize, w: *std.Io.Writer) !bool {
     if (depth == 4) {
-        try stdout.print("totally {s}connected group:", .{if (kind != .zero) "" else "un"});
+        try w.print("totally {s}connected group:", .{if (kind != .zero) "" else "un"});
         for (idx) |value| {
-            try stdout.print(" {d}", .{value});
+            try w.print(" {d}", .{value});
         }
-        try stdout.writeByte('\n');
+        try w.writeByte('\n');
+        try w.flush();
         return true;
     }
 
@@ -65,10 +69,9 @@ fn findGroup(kind: Kind, min_n: usize, max_n: usize, depth: usize) !bool {
 
         if (n == depth) {
             idx[n] = i;
-            if (try findGroup(kind, 1, max_n, depth + 1))
+            if (try findGroup(kind, 1, max_n, depth + 1, w))
                 return true;
         }
     }
-
     return false;
 }

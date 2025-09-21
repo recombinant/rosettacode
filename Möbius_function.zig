@@ -1,15 +1,16 @@
 // https://rosettacode.org/wiki/M%C3%B6bius_function
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
-const math = std.math;
-const mem = std.mem;
 
 const MU_MAX = 1_000_000;
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    const moebius = Moebius(MU_MAX).init();
+    const moebius: Moebius(MU_MAX) = .init();
 
     try stdout.writeAll("First 199 terms of the möbius function are as follows:\n    ");
     for (1..200) |i| {
@@ -24,6 +25,8 @@ pub fn main() !void {
         }
         if ((i + 1) % 20 == 0) try stdout.writeByte('\n');
     }
+
+    try stdout.flush();
 }
 
 fn Moebius(comptime max: usize) type {
@@ -50,7 +53,7 @@ fn Moebius(comptime max: usize) type {
             }
             // Calculations for odd numbers.
             {
-                const sqroot = math.sqrt(mu_calc.len) + 1;
+                const sqroot = std.math.sqrt(mu_calc.len) + 1;
                 var i: usize = 3;
                 var j: usize = undefined;
                 while (i < sqroot) : (i += 2) {
@@ -70,8 +73,8 @@ fn Moebius(comptime max: usize) type {
             // Set the actual Möbius number in two bit signed integers
             // based on the results of the calculations above.
             var mu: [mu_calc.len]i2 = undefined;
-            mu[0] = @truncate(math.sign(mu_calc[0])); // mu[0] not relevant.
-            mu[1] = @truncate(math.sign(mu_calc[1]));
+            mu[0] = @truncate(std.math.sign(mu_calc[0])); // mu[0] not relevant.
+            mu[1] = @truncate(std.math.sign(mu_calc[1]));
 
             for (mu_calc[2..], mu[2..], 2..) |calc, *m, i| {
                 m.* = if (calc == i)

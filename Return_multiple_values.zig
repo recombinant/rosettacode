@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Return_multiple_values
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 /// Every functions returns one value (or error union).
@@ -15,7 +16,9 @@ fn addsub2(x: i32, y: i32) struct { i32, i32 } {
 }
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const result = addsub(33, 12);
     try stdout.print("33 + 12 = {d}\n", .{result.sum});
@@ -29,4 +32,6 @@ pub fn main() !void {
     const sum, const difference = addsub2(33, 12);
     try stdout.print("33 + 12 = {d}\n", .{sum});
     try stdout.print("33 - 12 = {d}\n", .{difference});
+
+    try stdout.flush();
 }

@@ -1,17 +1,21 @@
 // https://rosettacode.org/wiki/Prime_triplets
+// {{works with|Zig|0.15.1}}
 // Using cpp primesieve from https://github.com/kimwalisch/primesieve/
+// zig run Prime_triplets.zig -I ../primesieve-12.9/zig-out/include/ ../primesieve-12.9/zig-out/lib/primesieve.lib -lstdc++
 const std = @import("std");
 const ps = @cImport({
     @cInclude("primesieve.h");
 });
 
 pub fn main() !void {
-    var t0 = try std.time.Timer.start();
+    var t0: std.time.Timer = try .start();
 
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const limit = 5500;
-    var triplet_generator = try PrimeTripletGenerator.init(limit);
+    var triplet_generator: PrimeTripletGenerator = try .init(limit);
     defer triplet_generator.deinit();
 
     try stdout.writeAll("Primesieve prime triplets:\n");
@@ -21,8 +25,9 @@ pub fn main() !void {
         try stdout.print("{d:4}, {d:4}, {d:4}\n", .{ triplet[0], triplet[1], triplet[2] });
     }
     try stdout.print("\n{d} triplets less than {d}\n\n", .{ count, limit });
+    try stdout.flush();
 
-    try stdout.print("Processed in {}\n", .{std.fmt.fmtDuration(t0.read())});
+    std.log.info("Processed in {D}", .{t0.read()});
 }
 
 const PrimeTripletGeneratorError = error{PrimeSieveError};

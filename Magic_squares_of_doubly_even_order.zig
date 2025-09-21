@@ -1,19 +1,21 @@
 // https://www.rosettacode.org/wiki/Magic_squares_of_doubly_even_order
-// Translation of Java/Kotlin
+// {{works with|Zig|0.15.1}}
+// {{trans|Java}}
+// {{trans|Kotlin}}
 const std = @import("std");
-const math = std.math;
-const mem = std.mem;
 
 pub fn main() !void {
     // ------------------------------------------------------- stdout
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // ---------------------------------------------------- allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // --------------------------------------------------------------
     const n: u16 = 8;
-    const magic = try MagicSquareDoublyEven.init(allocator, n);
+    const magic: MagicSquareDoublyEven = try .init(allocator, n);
     defer magic.deinit();
 
     for (magic.m) |row| {
@@ -21,6 +23,8 @@ pub fn main() !void {
         try stdout.writeByte('\n');
     }
     try stdout.print("\nMagic constant: {}\n", .{(n * n + 1) * n / 2});
+    // ------------------------------------------------------- stdout
+    try stdout.flush();
 }
 
 const MagicSquareError = error{
@@ -30,9 +34,9 @@ const MagicSquareError = error{
 const MagicSquareDoublyEven = struct {
     cells: []u16,
     m: [][]u16,
-    allocator: mem.Allocator,
+    allocator: std.mem.Allocator,
 
-    fn init(allocator: mem.Allocator, n: u16) !MagicSquareDoublyEven {
+    fn init(allocator: std.mem.Allocator, n: u16) !MagicSquareDoublyEven {
         if (n < 4 or n % 4 != 0)
             return MagicSquareError.BaseNotMultipleOfFour;
 
@@ -53,7 +57,7 @@ const MagicSquareDoublyEven = struct {
         for (0..n) |row| {
             for (0..n) |col| {
                 const bit_pos = (col / mult) + (row / mult) * 4;
-                m[row][col] = if (bits & math.shl(usize, 1, bit_pos) != 0) i + 1 else grid_size - i;
+                m[row][col] = if (bits & std.math.shl(usize, 1, bit_pos) != 0) i + 1 else grid_size - i;
                 i += 1;
             }
         }
