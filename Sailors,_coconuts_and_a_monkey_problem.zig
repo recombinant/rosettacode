@@ -1,10 +1,11 @@
 // https://rosettacode.org/wiki/Sailors,_coconuts_and_a_monkey_problem
-// Translation of Kotlin
+// {{works with|Zig|0.15.1}}
+// {{trans|Kotlin}}
 const std = @import("std");
 const print = std.debug.print;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     //

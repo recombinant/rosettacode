@@ -1,11 +1,12 @@
 // https://rosettacode.org/wiki/Tau_number
-// Translation of C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
 const std = @import("std");
 
 pub fn main() !void {
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const limit = 100;
     try stdout.print("The first {d} tau numbers are:\n", .{limit});
@@ -19,7 +20,7 @@ pub fn main() !void {
             if (count % 10 == 0) try stdout.writeByte('\n');
         };
 
-    try bw.flush();
+    try stdout.flush();
 }
 
 // See https://en.wikipedia.org/wiki/Divisor_function

@@ -1,10 +1,11 @@
 // https://rosettacode.org/wiki/Show_ASCII_table
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     for (0..16) |i| {
         var separator: []const u8 = "";
@@ -28,5 +29,5 @@ pub fn main() !void {
         }
         try stdout.writeByte('\n');
     }
-    try bw.flush();
+    try stdout.flush();
 }

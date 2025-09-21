@@ -1,5 +1,7 @@
 // https://rosettacode.org/wiki/Numbers_with_equal_rises_and_falls
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
+
 // https://oeis.org/A296712
 // Pipe through fmt for columnar output.
 
@@ -31,9 +33,9 @@ const RiseAndFall = struct {
 };
 
 pub fn main() !void {
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     {
         // Generate first 200 numbers
@@ -41,6 +43,7 @@ pub fn main() !void {
         for (0..200) |_|
             try stdout.print("{d} ", .{rf.nextNum()});
     }
+    try stdout.flush();
     {
         // Generate 10,000,000th number
         var rf: RiseAndFall = .{};
@@ -49,8 +52,7 @@ pub fn main() !void {
         try stdout.writeAll("\n\nThe 10,000,000th number is: ");
         try stdout.print("{d}\n", .{rf.last_number});
     }
-
-    try bw.flush();
+    try stdout.flush();
 }
 
 const testing = std.testing;

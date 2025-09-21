@@ -1,10 +1,12 @@
 // https://rosettacode.org/wiki/Sierpinski_carpet
-// Translation of C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
+
 // BCT = Binary-Coded Ternary: pairs of bits form one digit [0,1,2] (0b11 is invalid digit)
 const std = @import("std");
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -19,13 +21,16 @@ pub fn main() !void {
 
     // check for valid N (0..9) - 16 requires 33 bits for BCT form 1<<(n*2) => hard limit
     if (n > 9) { // but N=9 already produces 370MB output
-        const stderr = std.io.getStdErr().writer();
+        var stderr_buffer: [0]u8 = undefined; // unbuffered
+        var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
+        const stderr = &stderr_writer.interface;
         try stderr.print("N out of range (use 0..9): {d}\n", .{n});
         return error.NOutOfRange;
     }
 
-    var bw = std.io.bufferedWriter(std.io.getStdOut().writer());
-    const stdout = bw.writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     // 3**n in BCT form (initial value for loops)
     const size_bct: u32 = std.math.shl(u32, 1, n * 2);
@@ -41,7 +46,7 @@ pub fn main() !void {
         }
         try stdout.writeByte('\n');
     }
-    try bw.flush(); // cannot defer because of try
+    try stdout.flush(); // cannot defer because of try
 }
 
 const bct_low_bits: u32 = 0x55555555;
