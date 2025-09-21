@@ -13,8 +13,7 @@ pub fn main() !void {
     const random = prng.random();
     // ----------------------------------------------------------
     // zero size buffer means unbuffered (to slow it down)
-    var buffer: [0]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&buffer);
+    var stdout_writer = std.fs.File.stdout().writer(&.{});
     const stdout = &stdout_writer.interface;
     // ----------------------------------------------------------
     try stdout.writeAll("\x1b[?25l"); // hide cursor

@@ -21,8 +21,7 @@ pub fn main() !void {
 
     // check for valid N (0..9) - 16 requires 33 bits for BCT form 1<<(n*2) => hard limit
     if (n > 9) { // but N=9 already produces 370MB output
-        var stderr_buffer: [0]u8 = undefined; // unbuffered
-        var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
+        var stderr_writer = std.fs.File.stderr().writer(&.{}); // unbuffered
         const stderr = &stderr_writer.interface;
         try stderr.print("N out of range (use 0..9): {d}\n", .{n});
         return error.NOutOfRange;

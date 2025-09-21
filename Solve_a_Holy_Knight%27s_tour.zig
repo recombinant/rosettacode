@@ -30,8 +30,7 @@ const board2 =
 
 pub fn main() anyerror!void {
     // unbuffered
-    var stderr_buffer: [0]u8 = undefined;
-    var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
+    var stderr_writer = std.fs.File.stderr().writer(&.{});
     const stderr = &stderr_writer.interface;
     // buffered
     var stdout_buffer: [1024]u8 = undefined;
