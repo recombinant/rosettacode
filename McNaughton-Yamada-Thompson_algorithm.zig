@@ -72,7 +72,7 @@ fn shunt(allocator: mem.Allocator, infix: []const u8) ![]const u8 {
         break :blk specials;
     };
     var postfix: std.ArrayList(u8) = .empty;
-    var stack: Stack(u8) = .empty;
+    var stack: StackUnmanaged(u8) = .empty;
 
     for (infix) |c| {
         if (c == '(')
@@ -120,7 +120,7 @@ const NFA = struct {
 /// Function to compute the epsilon closure of a state
 fn followes(allocator: mem.Allocator, state: *State) !StateSet {
     var states: StateSet = .empty;
-    var stack: Stack(*State) = .empty;
+    var stack: StackUnmanaged(*State) = .empty;
     try stack.push(allocator, state);
     while (!stack.isEmpty()) {
         const s = stack.pop();
@@ -137,7 +137,7 @@ fn followes(allocator: mem.Allocator, state: *State) !StateSet {
 
 // Function to compile postfix regex into an NFA
 fn compileRegex(allocator: mem.Allocator, state_pool: *StatePool, postfix: []const u8) !NFA {
-    var nfa_stack: Stack(NFA) = .empty;
+    var nfa_stack: StackUnmanaged(NFA) = .empty;
 
     for (postfix) |c| {
         switch (c) {
@@ -209,7 +209,7 @@ fn compileRegex(allocator: mem.Allocator, state_pool: *StatePool, postfix: []con
 }
 
 // An ad hoc generic stack implementation.
-fn Stack(comptime T: type) type {
+fn StackUnmanaged(comptime T: type) type {
     return struct {
         const Self = @This();
         stack: std.ArrayList(T),

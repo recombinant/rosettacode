@@ -105,7 +105,7 @@ pub const Node = struct {
 };
 
 fn build(allocator: Allocator, tokens: []PostfixToken) !*Node {
-    var stack: Stack(*Node) = .empty;
+    var stack: StackUnmanaged(*Node) = .empty;
     defer stack.deinit(allocator);
 
     for (tokens) |token| {
@@ -138,7 +138,7 @@ pub fn calculate(allocator: Allocator, w: *std.Io.Writer, voltage: f32, tokens: 
 // Zig "Generic Data Structure"
 // An ad hoc generic stack implementation.
 // 'pub' is the Zig way of giving visibility outside module scope.
-pub fn Stack(comptime T: type) type {
+pub fn StackUnmanaged(comptime T: type) type {
     return struct {
         const Self = @This();
         stack: std.ArrayList(T),

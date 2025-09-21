@@ -6,7 +6,7 @@ const std = @import("std");
 const _shared_ = @import("Resistance_calculator-shared_code.zig");
 
 const Allocator = std.mem.Allocator;
-const Stack = _shared_.Stack;
+const StackUnmanaged = _shared_.StackUnmanaged;
 const Node = _shared_.Node;
 const PostfixToken = _shared_.PostfixToken;
 const calculate = _shared_.calculate;
@@ -140,7 +140,7 @@ fn shuntPostfix(allocator: Allocator, infix_tokens: []InfixToken) ![]PostfixToke
     return result.toOwnedSlice(allocator);
 }
 
-const InfixTokenStack = Stack(InfixToken);
+const InfixTokenStack = StackUnmanaged(InfixToken);
 
 /// Façade to an ArrayList that translates from InfixToken tagged unions to
 /// PostfixToken tagged unions in its append() function.
