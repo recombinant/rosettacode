@@ -1,4 +1,6 @@
 // https://rosettacode.org/wiki/Gapful_numbers
+// {{works with|Zig|0.15.1}}
+const std = @import("std");
 
 pub fn main() !void {
     try printGaps(100, 30);
@@ -17,20 +19,23 @@ fn gapful(comptime T: type, n: T) bool {
 }
 
 fn printGaps(start: u64, count_limit: usize) !void {
-    const writer = @import("std").io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var i = start;
     var count: @TypeOf(count_limit) = 0;
 
-    try writer.print("\nFirst {d} Gapful numbers >= {d} :\n", .{ count_limit, start });
+    try stdout.print("\nFirst {d} Gapful numbers >= {d} :\n", .{ count_limit, start });
 
     while (count < count_limit) {
         if (gapful(@TypeOf(i), i)) {
             count += 1;
-            try writer.print("{d:>3} : {d}\n", .{ count, i });
+            try stdout.print("{d:>3} : {d}\n", .{ count, i });
         }
         i += 1;
     }
 
-    try writer.writeAll("\n");
+    try stdout.writeAll("\n");
+    try stdout.flush();
 }

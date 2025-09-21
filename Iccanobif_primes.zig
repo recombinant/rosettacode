@@ -1,12 +1,16 @@
 // https://rosettacode.org/wiki/Iccanobif_primes
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 const testing = std.testing;
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     try stdout.writeAll("The first 10 Iccanobif primes are:\n");
 
-    var fibonacci = Fibonacci{};
+    var fibonacci: Fibonacci = .{};
     var count: u8 = 0;
     var looped = true;
     while (count != 10) {
@@ -18,6 +22,8 @@ pub fn main() !void {
         }
     }
     try stdout.writeByte('\n');
+
+    try stdout.flush();
 }
 
 /// Return the "reversed" value of `n`
@@ -65,7 +71,7 @@ test reverse {
 }
 
 test Fibonacci {
-    var f = Fibonacci{};
+    var f: Fibonacci = .{};
 
     var sequence = [_]u64{
         0,      1,      1,      2,     3,     5,     8,     13,    21,

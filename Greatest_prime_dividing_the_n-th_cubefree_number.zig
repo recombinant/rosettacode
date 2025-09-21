@@ -1,10 +1,6 @@
 // https://rosettacode.org/wiki/Greatest_prime_dividing_the_n-th_cubefree_number
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const fmt = std.fmt;
-const heap = std.heap;
-const math = std.math;
-const mem = std.mem;
-const time = std.time;
 
 const assert = std.debug.assert;
 const print = std.debug.print;
@@ -17,13 +13,13 @@ const AutoSieveType = @import("Extensible_prime_generator_alternate.zig").AutoSi
 const findLargestPrimeFactor = @import("Largest_prime_factor.zig").findLargestPrimeFactor;
 
 pub fn main() !void {
-    var t0 = try time.Timer.start();
+    var t0: std.time.Timer = try .start();
 
     const task1_limit: u32 = 100;
     var task2_count: u32 = 1000;
     const task_stretch_limit: u32 = 10_000_000;
 
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -31,8 +27,9 @@ pub fn main() !void {
     const cube_free = try getSieve3(allocator, task_stretch_limit);
     defer allocator.free(cube_free);
 
-    var first_hundred = try std.BoundedArray(u32, task1_limit).init(1);
-    first_hundred.set(0, 1);
+    var buffer: [task1_limit]u32 = undefined;
+    var first_hundred: std.ArrayList(u32) = .initBuffer(&buffer);
+    try first_hundred.appendBounded(1);
 
     var count: u32 = 1;
     var n: u32 = 2;
@@ -40,12 +37,12 @@ pub fn main() !void {
         if (cube_free[n]) {
             if (count < task1_limit) {
                 const largest = findLargestPrimeFactor(u32, n);
-                try first_hundred.append(largest);
+                try first_hundred.appendBounded(largest);
             }
             count += 1;
             if (count == task1_limit) {
                 print("The first {} terms of a370833 are:\n", .{task1_limit});
-                for (first_hundred.slice(), 1..) |num, i| {
+                for (first_hundred.items, 1..) |num, i| {
                     const sep: u8 = if (i % 10 == 0) '\n' else ' ';
                     print("{d:3}{c}", .{ num, sep });
                 }
@@ -58,7 +55,7 @@ pub fn main() !void {
             }
         }
     }
-    print("\nprocessed in {}\n", .{fmt.fmtDuration(t0.read())});
+    std.log.info("processed in {D}", .{t0.read()});
 }
 
 /// Sieve for cubefree numbers. Cubefree are true in the returned slice,
@@ -69,7 +66,7 @@ pub fn main() !void {
 /// isSet() operation with > 10_000_000 bits.
 ///
 /// Caller owns returned slice memory.
-fn getSieve3(allocator: mem.Allocator, comptime maximum: u32) ![]const bool {
+fn getSieve3(allocator: std.mem.Allocator, comptime maximum: u32) ![]const bool {
     // ----------------------------------- estimate maximum prime
     // (estimate primes in range here rather than cubefree in range)
     // PrimePages
@@ -81,12 +78,12 @@ fn getSieve3(allocator: mem.Allocator, comptime maximum: u32) ![]const bool {
     @memset(sieve3, true);
 
     const T = AutoSieveType(limit);
-    var primegen = PrimeGen(T).init(allocator);
+    var primegen: PrimeGen(T) = .init(allocator);
     defer primegen.deinit();
 
     while (true) {
         const prime = (try primegen.next()).?;
-        const cubed = try math.powi(u32, prime, 3);
+        const cubed = try std.math.powi(u32, prime, 3);
         if (cubed >= limit)
             return sieve3;
         sieve3[cubed] = false;

@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Isograms_and_heterograms
+// {{works with|Zig|0.15.1}}
 
 //! This task has been designed to limit the number of dynamic (heap)
 //! allocations by performing lowercase string conversions just
@@ -9,12 +10,12 @@ const std = @import("std");
 pub fn main() !void {
     const data = @embedFile("data/unixdict.txt");
     // ---------------------------------------------------- allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // --------------------------------------------------------------
-    var isogram_pairs_list = std.ArrayList(IsogramPair).init(allocator);
-    defer isogram_pairs_list.deinit();
+    var isogram_pairs_list: std.ArrayList(IsogramPair) = .empty;
+    defer isogram_pairs_list.deinit(allocator);
 
     var it = std.mem.tokenizeScalar(u8, data, '\n');
     outer: while (it.next()) |word| {
@@ -23,9 +24,9 @@ pub fn main() !void {
             if (!std.ascii.isAlphabetic(c))
                 continue :outer;
         if (IsogramPair.init(word)) |isogram_pair|
-            try isogram_pairs_list.append(isogram_pair);
+            try isogram_pairs_list.append(allocator, isogram_pair);
     }
-    const isogram_pairs = try isogram_pairs_list.toOwnedSlice();
+    const isogram_pairs = try isogram_pairs_list.toOwnedSlice(allocator);
     defer allocator.free(isogram_pairs);
     // The pairs are already in lexicographical order as they
     // came out of the dictionary. So use a stable sort to sort
@@ -37,34 +38,37 @@ pub fn main() !void {
     // for lowercase word, known max length is 22 in unixdict.txt
     var buffer: [22]u8 = undefined;
 
-    const writer = std.io.getStdOut().writer();
-    try writer.writeAll("n-isograms with n > 1:\n");
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+    try stdout.writeAll("n-isograms with n > 1:\n");
 
     var index: usize = 0;
     for (isogram_pairs) |isogram_pair| {
         if (isogram_pair.n > 1) {
             const text = lowerString(&buffer, isogram_pair.word);
-            try writer.writeByte(' ');
-            try writer.writeAll(text);
-            try writer.writeByte('\n');
+            try stdout.writeByte(' ');
+            try stdout.writeAll(text);
+            try stdout.writeByte('\n');
             index += 1;
         } else {
             break; // 1-isograms start at index
         }
     }
     const @"1-isograms" = isogram_pairs[index..];
-    try writer.writeByte('\n');
-    try writer.writeAll("Heterograms with more than 10 letters:\n");
+    try stdout.writeByte('\n');
+    try stdout.writeAll("Heterograms with more than 10 letters:\n");
 
     for (@"1-isograms") |isogram_pair| {
         std.debug.assert(isogram_pair.n == 1);
         if (isogram_pair.word.len > 10) {
-            try writer.writeByte(' ');
+            try stdout.writeByte(' ');
             const text = lowerString(&buffer, isogram_pair.word);
-            try writer.writeAll(text);
-            try writer.writeByte('\n');
+            try stdout.writeAll(text);
+            try stdout.writeByte('\n');
         }
     }
+    try stdout.flush();
 }
 
 /// Adapted from std.ascii.lowerString knowing that all

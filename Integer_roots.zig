@@ -1,7 +1,8 @@
 // https://rosettacode.org/wiki/Integer_roots
-// Translation of C++
-// Translation of Python
-// Translation of Go
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
+// {{trans|Python}}
+// {{trans|Go}}
 const std = @import("std");
 const math = std.math;
 const mem = std.mem;
@@ -28,7 +29,7 @@ pub fn main() !void {
         // .{ 2, "2" ++ "00" ** 2000 },
     };
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 

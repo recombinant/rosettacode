@@ -1,31 +1,32 @@
 // https://rosettacode.org/wiki/Generate_random_chess_position
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
-const print = std.debug.print;
 
 pub fn main() !void {
+    // ------------------------------------------------------- stdout
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // ------------------------------------------------ random number
-    var prng = std.Random.DefaultPrng.init(blk: {
+    var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        std.posix.getrandom(mem.asBytes(&seed)) catch unreachable;
+        std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
         break :blk seed;
     });
     const rand = prng.random();
-    // ---------------------------------------------------- allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
     // --------------------------------------------------------------
-    var board = Board.init(rand);
+    var board: Board = .init(rand);
     _ = board.placeKings()
         .placePieces("PPPPPPPP", true)
         .placePieces("pppppppp", true)
         .placePieces("RNBQBNR", false)
         .placePieces("rnbqbnr", false);
 
-    board.printBoard();
-    // board.prettyPrintBoard();
-    try board.printFen(allocator);
+    try board.printBoard(stdout);
+    // try board.prettyPrintBoard(stdout);
+    try board.printFen(stdout);
+
+    try stdout.flush();
 }
 
 const Board = struct {
@@ -34,20 +35,20 @@ const Board = struct {
 
     fn init(rand: std.Random) Board {
         return Board{
-            .grid = [1][8]u8{[1]u8{'.'} ** 8} ** 8,
+            .grid = @splat(@splat('.')),
             .rand = rand,
         };
     }
 
-    fn printBoard(self: Board) void {
+    fn printBoard(self: Board, w: *std.Io.Writer) !void {
         for (self.grid) |row| {
             for (row) |square|
-                print("{c} ", .{square});
-            print("\n", .{});
+                try w.print("{c} ", .{square});
+            try w.writeByte('\n');
         }
     }
 
-    fn prettyPrintBoard(self: Board) void {
+    fn prettyPrintBoard(self: Board, w: *std.Io.Writer) !void {
         for (self.grid) |row| {
             for (row) |piece| {
                 const pretty = switch (piece) {
@@ -66,9 +67,9 @@ const Board = struct {
                     'r' => "♜",
                     else => unreachable,
                 };
-                print("{s} ", .{pretty});
+                try w.print("{s} ", .{pretty});
             }
-            print("\n", .{});
+            try w.writeByte('\n');
         }
     }
 
@@ -103,11 +104,7 @@ const Board = struct {
         return self;
     }
 
-    fn printFen(self: Board, allocator: mem.Allocator) !void {
-        var fen = std.ArrayList(u8).init(allocator);
-        defer fen.deinit();
-        var writer = fen.writer();
-
+    fn printFen(self: Board, w: *std.Io.Writer) !void {
         var empty_count: u6 = 0;
         for (self.grid) |row| {
             for (row) |square| {
@@ -115,20 +112,18 @@ const Board = struct {
                     empty_count += 1
                 else {
                     if (empty_count > 0) {
-                        try writer.print("{d}", .{empty_count});
+                        try w.print("{d}", .{empty_count});
                         empty_count = 0;
                     }
-                    try writer.writeByte(square);
+                    try w.writeByte(square);
                 }
             }
             if (empty_count > 0) {
-                try writer.print("{d}", .{empty_count});
+                try w.print("{d}", .{empty_count});
                 empty_count = 0;
             }
-            try writer.writeByte('/');
+            try w.writeByte('/');
         }
-        try writer.writeAll(" w - - 0 1");
-
-        print("{s}\n", .{fen.items});
+        try w.writeAll(" w - - 0 1\n");
     }
 };

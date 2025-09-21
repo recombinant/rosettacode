@@ -1,9 +1,9 @@
 // https://rosettacode.org/wiki/Increasing_gaps_between_consecutive_Niven_numbers
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const print = std.debug.print;
 
-pub fn main() void {
-    var t0 = try std.time.Timer.start();
+pub fn main() !void {
+    var t0: std.time.Timer = try .start();
 
     var previous: u64 = 1;
     var gap: u64 = 0;
@@ -11,21 +11,27 @@ pub fn main() void {
     var niven_index: usize = 0;
     var gap_index: usize = 1;
 
-    print("Gap index  Gap    Niven index    Niven number\n", .{});
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    try stdout.writeAll("Gap index  Gap    Niven index    Niven number\n");
     var niven: u64 = 1;
     while (gap_index <= 32) : (niven += 1) {
         sum = digitSum(niven, sum);
         if (divisible(niven, sum)) {
             if (niven > previous + gap) {
                 gap = niven - previous;
-                print("{d:9}{d:5}{d:15}{d:16}\n", .{ gap_index, gap, niven_index, previous });
+                try stdout.print("{d:9}{d:5}{d:15}{d:16}\n", .{ gap_index, gap, niven_index, previous });
+                try stdout.flush();
                 gap_index += 1;
             }
             previous = niven;
             niven_index += 1;
         }
     }
-    print("\nprocessed in {}\n", .{std.fmt.fmtDuration(t0.read())});
+
+    std.log.info("processed in {D}", .{t0.read()});
 }
 
 // Returns the sum of the digits of n given the

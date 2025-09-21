@@ -1,4 +1,6 @@
 // https://rosettacode.org/wiki/Intersecting_number_wheels
+// {{works with|Zig|0.15.1}}
+
 // This is a simple solution without tagged unions, allocators or hashmaps.
 // It written purely to solve the rosettacode tasks. No error checking.
 const std = @import("std");
@@ -24,20 +26,20 @@ const Wheel = struct {
 
 pub fn main() void {
     var wheel1 = [_]Wheel{
-        Wheel.init('A', &[_]u8{ 1, 2, 3 }),
+        .init('A', &[_]u8{ 1, 2, 3 }),
     };
     var wheel2 = [_]Wheel{
-        Wheel.init('A', &[_]u8{ 1, 'B', 2 }),
-        Wheel.init('B', &[_]u8{ 3, 4 }),
+        .init('A', &[_]u8{ 1, 'B', 2 }),
+        .init('B', &[_]u8{ 3, 4 }),
     };
     var wheel3 = [_]Wheel{
-        Wheel.init('A', &[_]u8{ 1, 'D', 'D' }),
-        Wheel.init('D', &[_]u8{ 6, 7, 8 }),
+        .init('A', &[_]u8{ 1, 'D', 'D' }),
+        .init('D', &[_]u8{ 6, 7, 8 }),
     };
     var wheel4 = [_]Wheel{
-        Wheel.init('A', &[_]u8{ 1, 'B', 'C' }),
-        Wheel.init('B', &[_]u8{ 3, 4 }),
-        Wheel.init('C', &[_]u8{ 5, 'B' }),
+        .init('A', &[_]u8{ 1, 'B', 'C' }),
+        .init('B', &[_]u8{ 3, 4 }),
+        .init('C', &[_]u8{ 5, 'B' }),
     };
 
     var wheel_groups = [_][]Wheel{

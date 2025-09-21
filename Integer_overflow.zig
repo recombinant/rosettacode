@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Integer_overflow
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 const assert = std.debug.assert;
 // To quote the Zig documentation:
@@ -11,66 +12,67 @@ const assert = std.debug.assert;
 // It should also be noted that Zig has wraparound and saturation arithmetic too.
 
 pub fn main() !void {
-    var bw = std.io.bufferedWriter(std.io.getStdOut().writer());
-    const writer = bw.writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // ---------------------------------------------------------- i32
-    try writer.writeAll("For 32-bit signed integers:\n");
+    try stdout.writeAll("For 32-bit signed integers:\n");
     // const c: i32 = -(-2147483647 - 1); // will not compile
     var a, var s = minusOne(i32, -2147483647);
-    try writer.print("{d}{s}\n", .{ a, s });
+    try stdout.print("{d}{s}\n", .{ a, s });
     // const c: i32 = 2000000000 + 2000000000; // will not compile
     a, s = twice(i32, 2000000000);
-    try writer.print("{d}{s}\n", .{ a, s });
+    try stdout.print("{d}{s}\n", .{ a, s });
     // const c: i32 = -2147483647 - 2147483647; // will not compile
     a, s = sub(i32, -2147483647, 2147483647);
-    try writer.print("{d}{s}\n", .{ a, s });
+    try stdout.print("{d}{s}\n", .{ a, s });
     // const c: i32 = 46341 * 46341; // will not compile
     a, s = square(i32, 46341);
-    try writer.print("{d}{s}\n", .{ a, s });
+    try stdout.print("{d}{s}\n", .{ a, s });
     // const c: i32 = (-2147483647 - 1) / -1; // will not compile
-    try writer.writeAll("runtime panic on division by -1\n");
+    try stdout.writeAll("runtime panic on division by -1\n");
     // ---------------------------------------------------------- i64
-    try writer.writeAll("\nFor 64-bit signed integers:\n");
+    try stdout.writeAll("\nFor 64-bit signed integers:\n");
     // const c: i64 = -(-9223372036854775807 - 1); // will not compile
     var b, s = minusOne(i64, -9223372036854775807);
-    try writer.print("{d}{s}\n", .{ b, s });
+    try stdout.print("{d}{s}\n", .{ b, s });
     // const c: i64 = 5000000000000000000 + 5000000000000000000; // will not compile
     b, s = twice(i64, 5000000000000000000);
-    try writer.print("{d}{s}\n", .{ b, s });
+    try stdout.print("{d}{s}\n", .{ b, s });
     // const c: i64 = -9223372036854775807 - 9223372036854775807; // will not compile
     b, s = sub(i64, -9223372036854775807, 9223372036854775807);
-    try writer.print("{d}{s}\n", .{ b, s });
+    try stdout.print("{d}{s}\n", .{ b, s });
     // const c: i64 = 3037000500 * 3037000500; // will not compile
     b, s = square(i64, 3037000500);
-    try writer.print("{d}{s}\n", .{ b, s });
+    try stdout.print("{d}{s}\n", .{ b, s });
     // const c: i64 = (-9223372036854775807 - 1) / -1; // will not compile
-    try writer.writeAll("runtime panic on division by -1\n");
+    try stdout.writeAll("runtime panic on division by -1\n");
     // ---------------------------------------------------------- u32
-    try writer.writeAll("\nFor 32-bit unsigned integers:\n");
-    try writer.writeAll("compiler error on negative number for unsigned\n");
+    try stdout.writeAll("\nFor 32-bit unsigned integers:\n");
+    try stdout.writeAll("compiler error on negative number for unsigned\n");
     // const c: u32 = 3000000000 + 3000000000; // will not compile
     var c, s = twice(u32, 3000000000);
-    try writer.print("{d}{s}\n", .{ c, s });
+    try stdout.print("{d}{s}\n", .{ c, s });
     // const c: u32 = 2147483647 - 4294967295; // will not compile
     c, s = sub(u32, 2147483647, 4294967295);
-    try writer.print("{d}{s}\n", .{ c, s });
+    try stdout.print("{d}{s}\n", .{ c, s });
     // const c: u32 = 65537 * 65537; // will not compile
     c, s = square(u32, 65537);
-    try writer.print("{d}{s}\n", .{ c, s });
+    try stdout.print("{d}{s}\n", .{ c, s });
     // ---------------------------------------------------------- u64
-    try writer.writeAll("\nFor 64-bit unsigned integers:\n");
-    try writer.writeAll("compiler error on negative number for unsigned\n");
+    try stdout.writeAll("\nFor 64-bit unsigned integers:\n");
+    try stdout.writeAll("compiler error on negative number for unsigned\n");
     // const c: u64 = 10000000000000000000 + 10000000000000000000; // will not compile
     var d, s = twice(u64, 10000000000000000000);
-    try writer.print("{d}{s}\n", .{ d, s });
+    try stdout.print("{d}{s}\n", .{ d, s });
     // const c: u64 = 9223372036854775807 - 18446744073709551615; // will not compile
     d, s = sub(u64, 9223372036854775807, 18446744073709551615);
-    try writer.print("{d}{s}\n", .{ d, s });
+    try stdout.print("{d}{s}\n", .{ d, s });
     // const c: u64 = 4294967296 * 4294967296; // will not compile
     d, s = square(u64, 4294967296);
-    try writer.print("{d}{s}\n", .{ d, s });
+    try stdout.print("{d}{s}\n", .{ d, s });
     // ----------------------------------------------------------
-    try bw.flush();
+    try stdout.flush();
 }
 /// To give the result and a string.
 fn Result(comptime T: type) type {
