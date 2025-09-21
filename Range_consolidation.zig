@@ -1,21 +1,23 @@
 // https://rosettacode.org/wiki/Range_consolidation
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
-const sort = std.sort;
 const testing = std.testing;
-const print = std.debug.print;
 
-pub fn main() void {
+pub fn main() !void {
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     var test1 = [_]Range{.{ .lo = 1.1, .hi = 2.2 }};
     var test2 = [_]Range{ .{ .lo = 6.1, .hi = 7.2 }, .{ .lo = 7.2, .hi = 8.3 } };
     var test3 = [_]Range{ .{ .lo = 4, .hi = 3 }, .{ .lo = 2, .hi = 1 } };
     var test4 = [_]Range{ .{ .lo = 4, .hi = 3 }, .{ .lo = 2, .hi = 1 }, .{ .lo = -1, .hi = -2 }, .{ .lo = 3.9, .hi = 10 } };
     var test5 = [_]Range{ .{ .lo = 1, .hi = 3 }, .{ .lo = -6, .hi = -1 }, .{ .lo = -4, .hi = -5 }, .{ .lo = 8, .hi = 2 }, .{ .lo = -6, .hi = -6 } };
-    testConsolidateRanges(&test1);
-    testConsolidateRanges(&test2);
-    testConsolidateRanges(&test3);
-    testConsolidateRanges(&test4);
-    testConsolidateRanges(&test5);
+    try testConsolidateRanges(&test1, stdout);
+    try testConsolidateRanges(&test2, stdout);
+    try testConsolidateRanges(&test3, stdout);
+    try testConsolidateRanges(&test4, stdout);
+    try testConsolidateRanges(&test5, stdout);
 }
 
 const Range = struct {
@@ -25,18 +27,14 @@ const Range = struct {
 
     fn normalize(self: *Self) void {
         if (self.hi < self.lo)
-            mem.swap(f64, &self.lo, &self.hi);
+            std.mem.swap(f64, &self.lo, &self.hi);
     }
 
     pub fn format(
         self: Self,
-        comptime fmt: []const u8,
-        options: std.fmt.FormatOptions,
-        writer: anytype,
+        w: *std.Io.Writer,
     ) !void {
-        _ = fmt; // autofix
-        _ = options; // autofix
-        try writer.print("[{d}, {d}]", .{ self.lo, self.hi });
+        try w.print("[{d}, {d}]", .{ self.lo, self.hi });
     }
 };
 
@@ -51,7 +49,7 @@ fn ascRanges(_: void, r1: Range, r2: Range) bool {
 fn normalizeRanges(ranges: []Range) void {
     for (ranges) |*r|
         r.normalize();
-    sort.insertion(Range, ranges, {}, ascRanges);
+    std.mem.sortUnstable(Range, ranges, {}, ascRanges);
 }
 
 // Consolidates an array of ranges in-place.
@@ -72,20 +70,20 @@ fn consolidateRanges(ranges: []Range) []Range {
     return ranges[0..out_index];
 }
 
-fn printRanges(ranges: []Range) void {
+fn printRanges(ranges: []Range, w: *std.Io.Writer) !void {
     if (ranges.len == 0)
         return;
-    print("{}", .{ranges[0]});
+    try w.print("{f}", .{ranges[0]});
     for (ranges[1..]) |r|
-        print(", {}", .{r});
+        try w.print(", {f}", .{r});
 }
 
-fn testConsolidateRanges(ranges: []Range) void {
-    printRanges(ranges);
-    print(" -> ", .{});
+fn testConsolidateRanges(ranges: []Range, w: *std.Io.Writer) !void {
+    try printRanges(ranges, w);
+    try w.writeAll(" -> ");
     const consolidated = consolidateRanges(ranges);
-    printRanges(consolidated);
-    print("\n", .{});
+    try printRanges(consolidated, w);
+    try w.writeByte('\n');
 }
 
 test "range normalization" {

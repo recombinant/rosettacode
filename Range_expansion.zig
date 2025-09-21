@@ -1,19 +1,23 @@
 // https://rosettacode.org/wiki/Range_expansion
-// Translation of Go
+// {{works with|Zig|0.15.1}}
+// {{trans|Go}}
 const std = @import("std");
 
 pub fn main() !void {
     const input = "-6,-3--1,3-5,7-11,14,15,17-20";
 
-    const writer = std.io.getStdOut().writer();
-    try writer.print("range:{s}\n", .{input});
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    try stdout.print("range:{s}\n", .{input});
+
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var r = std.ArrayList(i8).init(allocator);
-    defer r.deinit();
+    var r: std.ArrayList(i8) = .empty;
+    defer r.deinit(allocator);
 
     var last: i8 = undefined;
     var it = std.mem.tokenizeScalar(u8, input, ',');
@@ -36,7 +40,7 @@ pub fn main() !void {
             }
             var n = n1;
             while (n <= n2) : (n += 1)
-                try r.append(n);
+                try r.append(allocator, n);
             last = n2;
         } else {
             const n = try std.fmt.parseInt(i8, part, 10);
@@ -49,9 +53,11 @@ pub fn main() !void {
                     return error.OutOfOrder;
                 }
             }
-            try r.append(n);
+            try r.append(allocator, n);
             last = n;
         }
     }
-    try writer.print("expanded:{any}\n", .{r.items});
+    try stdout.print("expanded:{any}\n", .{r.items});
+
+    try stdout.flush();
 }

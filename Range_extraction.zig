@@ -1,13 +1,17 @@
 // https://rosettacode.org/wiki/Range_extraction
-// Translation of Go
+// {{works with|Zig|0.15.1}}
+// {{trans|Go}}
+
 const std = @import("std");
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const rf = try getRangeFormat(allocator, u8, &[_]u8{
         0,  1,  2,  4,  6,  7,  8,  11, 12, 14,
@@ -17,7 +21,9 @@ pub fn main() !void {
     });
     defer allocator.free(rf);
 
-    try writer.print("range format: {s}\n", .{rf});
+    try stdout.print("range format: {s}\n", .{rf});
+
+    try stdout.flush();
 }
 
 /// Allocates memory for the result, which must be freed by the caller.
@@ -32,26 +38,25 @@ fn getRangeFormat(allocator: std.mem.Allocator, T: type, slice: []const T) ![]co
     const U = std.meta.Int(.unsigned, @typeInfo(T).int.bits);
     var buffer: [@as(u16, std.math.log10_int(@as(U, std.math.maxInt(U))) * 2) + 5]u8 = undefined;
 
-    var s = std.io.fixedBufferStream(&buffer);
-    const sw = s.writer();
+    var w: std.Io.Writer = .fixed(&buffer);
 
-    var parts = std.ArrayList([]const u8).init(allocator);
+    var parts: std.ArrayList([]const u8) = .empty;
     defer {
         for (parts.items) |text| allocator.free(text);
-        parts.deinit();
+        parts.deinit(allocator);
     }
     var n1: usize = 0;
     while (true) {
         var n2 = n1 + 1;
         while (n2 < slice.len and slice[n2] == slice[n2 - 1] + 1)
             n2 += 1;
-        s.reset();
-        try sw.print("{}", .{slice[n1]});
+        _ = w.consumeAll(); // reset writer
+        try w.print("{}", .{slice[n1]});
         if (n2 == n1 + 2)
-            try sw.print(",{}", .{slice[n2 - 1]})
+            try w.print(",{}", .{slice[n2 - 1]})
         else if (n2 > n1 + 2)
-            try sw.print("-{}", .{slice[n2 - 1]});
-        try parts.append(try allocator.dupe(u8, s.getWritten()));
+            try w.print("-{}", .{slice[n2 - 1]});
+        try parts.append(allocator, try allocator.dupe(u8, w.buffered()));
         if (n2 == slice.len)
             break;
         if (slice[n2] == slice[n2 - 1]) return error.RepeatedValue;

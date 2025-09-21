@@ -1,15 +1,11 @@
 // https://rosettacode.org/wiki/Maximum_triangle_path_sum
-// Translation of Nim
-
-// Originally seven lines of Nim code (ignoring data)
-
+// {{works with|Zig|0.15.1}}
+// {{trans|Nim}}
 const std = @import("std");
-const fmt = std.fmt;
-const heap = std.heap;
-const mem = std.mem;
 
 const print = std.debug.print;
 
+// Originally seven lines of Nim code (ignoring data)
 pub fn main() !void {
     // Triangle as text to look pretty.
     const text =
@@ -32,7 +28,7 @@ pub fn main() !void {
         \\   06 71 28 75 94 48 37 10 23 51 06 48 53 18 74 98 15
         \\ 27 02 92 23 08 71 76 84 15 52 92 63 81 10 44 10 69 93
     ;
-    var arena = heap.ArenaAllocator.init(heap.page_allocator);
+    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
 
@@ -41,36 +37,36 @@ pub fn main() !void {
     print("{}\n", .{solution});
 }
 
-fn solve(allocator: mem.Allocator, text: []const u8) !u64 {
+fn solve(allocator: std.mem.Allocator, text: []const u8) !u64 {
     var tri = try convertToNumbers(allocator, text);
     while (tri.items.len > 1) {
-        const t0 = tri.pop();
+        const t0 = tri.pop().?;
         //    t
         //   / \
         // t1   t2
         for (tri.items[tri.items.len - 1], t0[0 .. t0.len - 1], t0[1..]) |*t, t1, t2|
             t.* = @max(t1, t2) + t.*;
     }
-    const t0 = tri.pop();
+    const t0 = tri.pop().?;
 
     return t0[0];
 }
 
 /// Rows of text to rows of numbers.
-fn convertToNumbers(allocator: mem.Allocator, text: []const u8) !std.ArrayList([]u64) {
-    var tri = std.ArrayList([]u64).init(allocator);
+fn convertToNumbers(allocator: std.mem.Allocator, text: []const u8) !std.ArrayList([]u64) {
+    var tri: std.ArrayList([]u64) = .empty;
 
     // split lines
-    var row_it = mem.tokenizeScalar(u8, text, '\n');
+    var row_it = std.mem.tokenizeScalar(u8, text, '\n');
     while (row_it.next()) |row| {
-        var numbers = std.ArrayList(u64).init(allocator);
+        var numbers: std.ArrayList(u64) = .empty;
 
         // split space
-        var it = mem.tokenizeScalar(u8, row, ' ');
+        var it = std.mem.tokenizeScalar(u8, row, ' ');
         while (it.next()) |number_text|
-            try numbers.append(try fmt.parseInt(u64, number_text, 10));
+            try numbers.append(allocator, try std.fmt.parseInt(u64, number_text, 10));
 
-        try tri.append(try numbers.toOwnedSlice());
+        try tri.append(allocator, try numbers.toOwnedSlice(allocator));
     }
     return tri;
 }

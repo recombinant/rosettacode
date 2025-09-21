@@ -1,11 +1,14 @@
 // https://rosettacode.org/wiki/Ranking_methods
-// Translation of Nim
+// {{works with|Zig|0.15.1}}
+// {{trans|Nim}}
 const std = @import("std");
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -28,19 +31,21 @@ pub fn main() !void {
     };
 
     inline for (table, 1..) |entry, i| {
-        try writer.print("{s}:\n", .{entry.title});
+        try stdout.print("{s}:\n", .{entry.title});
         switch (try entry.rankingFn(allocator, &data)) {
             inline else => |ranks| {
                 for (ranks) |rank| {
-                    try writer.print(entry.fmt, .{rank.rank});
-                    try writer.print(": {s} {}\n", .{ rank.name, rank.score });
+                    try stdout.print(entry.fmt, .{rank.rank});
+                    try stdout.print(": {s} {}\n", .{ rank.name, rank.score });
                 }
                 allocator.free(ranks);
             },
         }
         if (i != table.len)
-            try writer.writeByte('\n');
+            try stdout.writeByte('\n');
     }
+
+    try stdout.flush();
 }
 
 const Record = struct {
@@ -79,7 +84,7 @@ const RankingResultsType = union(RankingResultsTag) {
 
 fn standardRanks(allocator: std.mem.Allocator, records: []Record) !RankingResultsType {
     std.mem.sort(Record, records, {}, greaterThan);
-    var result = std.ArrayList(RankInt).init(allocator);
+    var result: std.ArrayList(RankInt) = .empty;
 
     var rank: usize = 1;
     var current_score = records[0].score;
@@ -88,15 +93,15 @@ fn standardRanks(allocator: std.mem.Allocator, records: []Record) !RankingResult
             rank = idx;
             current_score = record.score;
         }
-        try result.append(RankInt.init(rank, record.name, record.score));
+        try result.append(allocator, RankInt.init(rank, record.name, record.score));
     }
-    return RankingResultsType{ .rankings_integer = try result.toOwnedSlice() };
+    return RankingResultsType{ .rankings_integer = try result.toOwnedSlice(allocator) };
 }
 
 fn modifiedRanks(allocator: std.mem.Allocator, records: []Record) !RankingResultsType {
     std.mem.sort(Record, records, {}, greaterThan);
     std.mem.reverse(Record, records);
-    var result = std.ArrayList(RankInt).init(allocator);
+    var result: std.ArrayList(RankInt) = .empty;
 
     var rank: usize = records.len;
     var current_score = records[0].score;
@@ -105,15 +110,15 @@ fn modifiedRanks(allocator: std.mem.Allocator, records: []Record) !RankingResult
             rank = records.len - idx;
             current_score = record.score;
         }
-        try result.append(RankInt.init(rank, record.name, record.score));
+        try result.append(allocator, RankInt.init(rank, record.name, record.score));
     }
     std.mem.reverse(RankInt, result.items);
-    return RankingResultsType{ .rankings_integer = try result.toOwnedSlice() };
+    return RankingResultsType{ .rankings_integer = try result.toOwnedSlice(allocator) };
 }
 
 fn denseRanks(allocator: std.mem.Allocator, records: []Record) !RankingResultsType {
     std.mem.sort(Record, records, {}, greaterThan);
-    var result = std.ArrayList(RankInt).init(allocator);
+    var result: std.ArrayList(RankInt) = .empty;
 
     var rank: usize = 1;
     var current_score = records[0].score;
@@ -122,30 +127,30 @@ fn denseRanks(allocator: std.mem.Allocator, records: []Record) !RankingResultsTy
             rank += 1;
             current_score = record.score;
         }
-        try result.append(RankInt.init(rank, record.name, record.score));
+        try result.append(allocator, RankInt.init(rank, record.name, record.score));
     }
-    return RankingResultsType{ .rankings_integer = try result.toOwnedSlice() };
+    return RankingResultsType{ .rankings_integer = try result.toOwnedSlice(allocator) };
 }
 
 fn ordinalRanks(allocator: std.mem.Allocator, records: []Record) !RankingResultsType {
     std.mem.sort(Record, records, {}, greaterThan);
-    var result = std.ArrayList(RankInt).init(allocator);
+    var result: std.ArrayList(RankInt) = .empty;
 
     var rank: usize = 0;
     for (records) |record| {
         rank += 1;
-        try result.append(RankInt.init(rank, record.name, record.score));
+        try result.append(allocator, RankInt.init(rank, record.name, record.score));
     }
-    return RankingResultsType{ .rankings_integer = try result.toOwnedSlice() };
+    return RankingResultsType{ .rankings_integer = try result.toOwnedSlice(allocator) };
 }
 
 fn fractionalRanks(allocator: std.mem.Allocator, records: []Record) !RankingResultsType {
     std.mem.sort(Record, records, {}, greaterThan);
-    var result = std.ArrayList(RankFract).init(allocator);
+    var result: std.ArrayList(RankFract) = .empty;
 
     // Build a list of ranks.
-    var ranks = std.ArrayList(f32).init(allocator);
-    defer ranks.deinit();
+    var ranks: std.ArrayList(f32) = .empty;
+    defer ranks.deinit(allocator);
     var current_score = records[0].score;
     var sum: f32 = 0;
     var count: f32 = 0;
@@ -154,13 +159,13 @@ fn fractionalRanks(allocator: std.mem.Allocator, records: []Record) !RankingResu
             count += 1;
             sum += @floatFromInt(idx);
         } else {
-            try ranks.append(sum / count);
+            try ranks.append(allocator, sum / count);
             count = 1;
             current_score = record.score;
             sum = @floatFromInt(idx);
         }
     }
-    try ranks.append(sum / count);
+    try ranks.append(allocator, sum / count);
 
     // Give a rank to each record.
     current_score = records[0].score;
@@ -170,13 +175,16 @@ fn fractionalRanks(allocator: std.mem.Allocator, records: []Record) !RankingResu
             rankIndex += 1;
             current_score = record.score;
         }
-        try result.append(RankFract{
-            .rank = ranks.items[rankIndex],
-            .name = record.name,
-            .score = record.score,
-        });
+        try result.append(
+            allocator,
+            RankFract{
+                .rank = ranks.items[rankIndex],
+                .name = record.name,
+                .score = record.score,
+            },
+        );
     }
-    return RankingResultsType{ .rankings_fractional = try result.toOwnedSlice() };
+    return RankingResultsType{ .rankings_fractional = try result.toOwnedSlice(allocator) };
 }
 
 /// Helper function for std.mem.sort of Record arrays.

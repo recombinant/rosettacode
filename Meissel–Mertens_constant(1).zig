@@ -1,10 +1,8 @@
 // https://rosettacode.org/wiki/Meissel%E2%80%93Mertens_constant
 const std = @import("std");
-const mem = std.mem;
-const print = std.debug.print;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -17,10 +15,17 @@ pub fn main() !void {
         sum += reciprocal + @log(1.0 - reciprocal);
 
     const meissel_mertens = euler + sum;
-    print("The Meissel-Mertens constant = {d:.8}\n", .{meissel_mertens});
+
+    var stdout_buffer: [256]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    try stdout.print("The Meissel-Mertens constant = {d:.8}\n", .{meissel_mertens});
+
+    try stdout.flush();
 }
 
-fn listPrimeReciprocals(allocator: mem.Allocator, limit: usize) ![]f64 {
+fn listPrimeReciprocals(allocator: std.mem.Allocator, limit: usize) ![]f64 {
     const half_limit = if (limit % 2 == 0) limit / 2 else 1 + limit / 2;
 
     var composite = try allocator.alloc(bool, half_limit);
@@ -40,15 +45,15 @@ fn listPrimeReciprocals(allocator: mem.Allocator, limit: usize) ![]f64 {
         }
     }
 
-    var result = std.ArrayList(f64).init(allocator);
+    var result: std.ArrayList(f64) = .empty;
     {
         var p: f64 = 3;
-        try result.append(0.5);
+        try result.append(allocator, 0.5);
         for (1..half_limit) |i| {
             if (!composite[i])
-                try result.append(1.0 / p);
+                try result.append(allocator, 1.0 / p);
             p += 2;
         }
     }
-    return try result.toOwnedSlice();
+    return try result.toOwnedSlice(allocator);
 }
