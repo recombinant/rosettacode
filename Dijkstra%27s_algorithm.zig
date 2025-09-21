@@ -34,11 +34,11 @@ pub fn main() !void {
 }
 
 /// Print a path.
-fn printPath(writer: anytype, path: []const []const u8) !void {
-    try writer.print("Shortest path from '{s}' to '{s}': {s}", .{ path[0], path[path.len - 1], path[0] });
+fn printPath(w: *std.Io.Writer, path: []const []const u8) !void {
+    try w.print("Shortest path from '{s}' to '{s}': {s}", .{ path[0], path[path.len - 1], path[0] });
     for (path[1..]) |s|
-        try writer.print(" → {s}", .{s});
-    try writer.writeByte('\n');
+        try w.print(" → {s}", .{s});
+    try w.writeByte('\n');
 }
 // --------------------------------------------------------------
 const Edge = struct {

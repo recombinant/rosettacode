@@ -57,9 +57,9 @@ pub fn main() !void {
     }
 }
 
-fn decPrint(writer: anytype, num: u64, den: u64, prec: usize) !void {
+fn decPrint(w: *std.Io.Writer, num: u64, den: u64, prec: usize) !void {
     // print out integer part.
-    try writer.print("{}.", .{num / den});
+    try w.print("{}.", .{num / den});
 
     // arithmetic with the remainders is done with u128, as the
     // multiply by 10 overflows with u64.
@@ -71,6 +71,6 @@ fn decPrint(writer: anytype, num: u64, den: u64, prec: usize) !void {
         r = n % m;
         dec += 1;
         const ch = @as(u8, @intCast(n / m)) + '0';
-        try writer.writeByte(ch);
+        try w.writeByte(ch);
     }
 }
