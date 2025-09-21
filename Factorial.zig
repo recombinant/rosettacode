@@ -15,7 +15,7 @@ pub fn main() !void {
     var stdout_buffer: [1024]u8 = undefined;
     var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
     const stdout = &stdout_writer.interface;
-    stdout.flush() catch @panic("failed stdout. flush()");
+
     for (0..41) |i| {
         var f1 = try factorial.recursive(@intCast(i));
         defer f1.deinit();
@@ -30,6 +30,7 @@ pub fn main() !void {
             Factorial.iterativePrimitive(u64, @intCast(i)),
         });
     }
+    try stdout.flush();
 }
 
 const FactorialError = error{

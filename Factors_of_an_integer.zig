@@ -1,40 +1,42 @@
 // https://rosettacode.org/wiki/Factors_of_an_integer
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const math = std.math;
-const mem = std.mem;
-const sort = std.sort;
 const testing = std.testing;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var t0 = try std.time.Timer.start();
+    var t0: std.time.Timer = try .start();
 
     const result = try factors(allocator, 15120);
     defer allocator.free(result);
     try stdout.print("{d} => {any}\n", .{ 15120, result });
 
-    try stdout.print("Processed in {}\n", .{std.fmt.fmtDuration(t0.read())});
+    try stdout.flush();
+
+    std.log.info("Processed in {D}", .{t0.read()});
 }
 
 /// Caller owns returned slice.
-fn factors(allocator: mem.Allocator, number: u64) ![]u64 {
-    var number_list = std.ArrayList(u64).init(allocator);
+fn factors(allocator: std.mem.Allocator, number: u64) ![]u64 {
+    var number_list: std.ArrayList(u64) = .empty;
 
     var n: u64 = 1;
-    while (n <= math.sqrt(number)) : (n += 1)
+    while (n <= std.math.sqrt(number)) : (n += 1)
         if (number % n == 0) {
-            try number_list.append(n);
+            try number_list.append(allocator, n);
             const n2 = number / n;
             if (n2 != n)
-                try number_list.append(n2);
+                try number_list.append(allocator, n2);
         };
-    const result = try number_list.toOwnedSlice();
-    mem.sort(u64, result, {}, sort.asc(u64));
+    const result = try number_list.toOwnedSlice(allocator);
+    std.mem.sortUnstable(u64, result, {}, std.sort.asc(u64));
     return result;
 }
 
@@ -60,7 +62,7 @@ test "factors 4 & 9" {
         defer testing.allocator.free(result);
         try testing.expectEqual(3, result.len);
         try testing.expectEqual(1, result[0]);
-        try testing.expectEqual(math.sqrt(n), result[1]);
+        try testing.expectEqual(std.math.sqrt(n), result[1]);
         try testing.expectEqual(n, result[2]);
     }
 }

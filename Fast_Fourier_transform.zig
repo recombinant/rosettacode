@@ -1,24 +1,23 @@
 // https://rosettacode.org/wiki/Fast_Fourier_transform
 const std = @import("std");
-const math = std.math;
-const mem = std.mem;
-const assert = std.debug.assert;
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const sequence = [_]f64{ 1, 1, 1, 1, 0, 0, 0, 0 };
     // Ensure array size is power of 2, padding with zeroes if necessary.
-    const n = math.shl(usize, 1, math.log2_int_ceil(u8, sequence.len));
+    const n = std.math.shl(usize, 1, std.math.log2_int_ceil(u8, sequence.len));
     var buf = try allocator.alloc(Complex64, n);
     defer allocator.free(buf);
     if (n != sequence.len)
         for (buf) |*c| {
-            c.* = comptime Complex64.init(0, 0);
+            c.* = comptime .init(0, 0);
         };
 
     for (sequence, buf[0..sequence.len]) |r, *c| {
@@ -35,29 +34,31 @@ pub fn main() !void {
     try show(stdout, "Data: ", buf);
     try fft(allocator, buf);
     try show(stdout, "FFT : ", buf);
+
+    try stdout.flush();
 }
 
-const Complex64 = math.Complex(f64);
+const Complex64 = std.math.Complex(f64);
 
 fn fft_(buf: []Complex64, out: []Complex64, n: usize, step: usize) void {
     if (step < n) {
         fft_(out, buf, n, step * 2);
         fft_(out[step..], buf[step..], n, step * 2);
 
-        const theta_n = Complex64.init(0, -math.pi / @as(f64, @floatFromInt(n)));
+        const theta_n: Complex64 = .init(0, -std.math.pi / @as(f64, @floatFromInt(n)));
 
         var i: usize = 0;
         while (i < n) : (i += 2 * step) {
             // cplx t = cexp(-I * PI * i / n) * out[i + step];
-            const theta = theta_n.mul(Complex64.init(@as(f64, @floatFromInt(i)), 0));
-            const t: Complex64 = math.complex.exp(theta).mul(out[i + step]);
+            const theta = theta_n.mul(.init(@floatFromInt(i), 0));
+            const t: Complex64 = std.math.complex.exp(theta).mul(out[i + step]);
             buf[i / 2] = out[i].add(t);
             buf[(i + n) / 2] = out[i].sub(t);
         }
     }
 }
 
-fn fft(allocator: mem.Allocator, buf: []Complex64) !void {
+fn fft(allocator: std.mem.Allocator, buf: []Complex64) !void {
     const n = buf.len;
     const out = try allocator.dupe(Complex64, buf);
     defer allocator.free(out);
@@ -66,17 +67,17 @@ fn fft(allocator: mem.Allocator, buf: []Complex64) !void {
 
 // More allocation. Would be better if Zig could dynamically allocate on the stack.
 // https://www.geeksforgeeks.org/fast-fourier-transformation-poynomial-multiplication/
-fn fftV2(allocator: mem.Allocator, a: []Complex64) ![]Complex64 {
+fn fftV2(allocator: std.mem.Allocator, a: []Complex64) ![]Complex64 {
     const n = a.len;
 
     if (n == 1) return allocator.dupe(Complex64, a[0..1]);
 
-    const theta_n: f64 = -2 * math.pi / @as(f64, @floatFromInt(n));
+    const theta_n: f64 = -2 * std.math.pi / @as(f64, @floatFromInt(n));
 
     var w = try allocator.alloc(Complex64, n);
     for (w, 0..) |*c, i| {
         const theta = theta_n * @as(f64, @floatFromInt(i));
-        c.* = math.complex.exp(Complex64.init(0, theta));
+        c.* = std.math.complex.exp(Complex64.init(0, theta));
     }
     defer allocator.free(w);
 
@@ -108,12 +109,12 @@ fn fftV2(allocator: mem.Allocator, a: []Complex64) ![]Complex64 {
 }
 
 fn show(writer: anytype, s: []const u8, a: []Complex64) !void {
-    try writer.print("{s}", .{s});
+    try writer.writeAll(s);
     for (a) |c| {
         if (c.im == 0)
             try writer.print("{d:.3} ", .{c.re})
         else
             try writer.print("({d:.3}, {d:.3}) ", .{ c.re, c.im });
     }
-    try writer.print("\n", .{});
+    try writer.writeByte('\n');
 }

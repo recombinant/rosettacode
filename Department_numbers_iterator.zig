@@ -1,20 +1,24 @@
 // https://rosettacode.org/wiki/Department_numbers#Zig_using_an_iterator
+// {{works with|Zig|0.15.1}}
 // Using a Zig struct to create an iterator is a common pattern in Zig.
 const std = @import("std");
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     try stdout.writeAll("Police  Sanitation  Fire\n");
     try stdout.writeAll("------  ----------  ----\n");
 
-    var it = SolutionIterator.init();
+    var it: SolutionIterator = .init();
     while (it.next()) |solution| {
         try stdout.print(
             "  {d}         {d}         {d}\n",
             .{ solution.police, solution.sanitation, solution.fire },
         );
     }
+    try stdout.flush();
 }
 
 /// 3 bit unsigned (u3) limits 0 <= department <= 7
@@ -32,7 +36,11 @@ const DepartmentsUnion = packed union {
 const SolutionIterator = struct {
     // police is initialized to one as adding one is the first operation in next()
     // with the result .police == 2 (an even number) on the first pass.
-    u: DepartmentsUnion = .{ .departments = .{ .police = 1, .sanitation = 1, .fire = 1 } },
+    u: DepartmentsUnion = .{ .departments = .{
+        .police = 1,
+        .sanitation = 1,
+        .fire = 1,
+    } },
 
     /// init() returns an initialised structure.
     /// Using init() is a common Zig pattern.

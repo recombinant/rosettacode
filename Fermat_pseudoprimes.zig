@@ -1,11 +1,12 @@
 // https://rosettacode.org/wiki/Fermat_pseudoprimes
-// Translation of C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
 const std = @import("std");
 
 pub fn main() !void {
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    var buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &stdout_writer.interface;
     {
         // ----------------------------------------------------------- task
         try stdout.print("First 20 Fermat pseudoprimes:\n", .{});
@@ -19,7 +20,7 @@ pub fn main() !void {
                     count += 1;
                     try stdout.print("{d:5} ", .{x});
                 };
-            try stdout.print("\n", .{});
+            try stdout.writeByte('\n');
         }
     }
     {
@@ -42,10 +43,10 @@ pub fn main() !void {
                     };
                 try stdout.print("{d:6} ", .{count});
             }
-            try stdout.print("\n", .{});
+            try stdout.writeByte('\n');
         }
     }
-    try bw.flush();
+    try stdout.flush();
 }
 
 fn modpow(base_: u64, exp_: u64, mod: u64) u64 {

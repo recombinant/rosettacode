@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/De_Polignac_numbers
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
@@ -28,7 +29,10 @@ pub fn main() !void {
             dp10000 = n;
     }
 
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     try stdout.writeAll("First 50 De Polignac numbers:\n");
     for (dp_array, 1..) |dp, i| {
         try stdout.print("{d:5} ", .{dp});
@@ -38,6 +42,7 @@ pub fn main() !void {
     try stdout.writeByte('\n');
     try stdout.print("One thousandth: {d:6}\n", .{dp1000});
     try stdout.print("Ten thousandth: {d:6}\n", .{dp10000});
+    try stdout.flush();
 }
 
 fn isPrime(n: u64) bool {

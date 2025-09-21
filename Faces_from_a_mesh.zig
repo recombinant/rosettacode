@@ -1,32 +1,35 @@
 // https://rosettacode.org/wiki/Faces_from_a_mesh
-// Translation of Go
+// {{works with|Zig|0.15.1}}
+// {{trans|Go}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    try writer.print("Perimeter format equality checks:\n", .{});
+    try stdout.print("Perimeter format equality checks:\n", .{});
     {
         const equal = try perimEqual(allocator, &[_]u32{ 8, 1, 3 }, &[_]u32{ 1, 3, 8 });
-        try writer.print("  Q == R is {}\n", .{equal});
+        try stdout.print("  Q == R is {}\n", .{equal});
     }
     {
         const equal = try perimEqual(allocator, &[_]u32{ 18, 8, 14, 10, 12, 17, 19 }, &[_]u32{ 8, 14, 10, 12, 17, 19, 18 });
-        try writer.print("  U == V is {}\n", .{equal});
+        try stdout.print("  U == V is {}\n", .{equal});
     }
     const e: []const Edge = &[_]Edge{ .{ 7, 11 }, .{ 1, 11 }, .{ 1, 7 } };
     const f: []const Edge = &[_]Edge{ .{ 11, 23 }, .{ 1, 17 }, .{ 17, 23 }, .{ 1, 11 } };
     const g: []const Edge = &[_]Edge{ .{ 8, 14 }, .{ 17, 19 }, .{ 10, 12 }, .{ 10, 14 }, .{ 12, 17 }, .{ 8, 18 }, .{ 18, 19 } };
     const h: []const Edge = &[_]Edge{ .{ 1, 3 }, .{ 9, 11 }, .{ 3, 11 }, .{ 1, 11 } };
-    try writer.print("\nEdge to perimeter format translations:\n", .{});
+    try stdout.print("\nEdge to perimeter format translations:\n", .{});
     for ([_][]const Edge{ e, f, g, h }, 0..) |face, i| {
         if (faceToPerim(allocator, face)) |perim| {
-            try writer.print("  {c} => {any}\n", .{ @as(u8, @truncate(i)) + 'E', perim });
+            try stdout.print("  {c} => {any}\n", .{ @as(u8, @truncate(i)) + 'E', perim });
             allocator.free(perim);
         } else |err| {
             const msg: []const u8 = switch (err) {
@@ -36,9 +39,10 @@ pub fn main() !void {
                 EdgeError.ExtraneousEdges => "extra points not incorporated in perimeter",
                 error.OutOfMemory => "out of memory",
             };
-            try writer.print("  {c} => Invalid edge format ({s})\n", .{ @as(u8, @truncate(i)) + 'E', msg });
+            try stdout.print("  {c} => Invalid edge format ({s})\n", .{ @as(u8, @truncate(i)) + 'E', msg });
         }
     }
+    try stdout.flush();
 }
 
 /// Check two perimeters are equal.
@@ -88,24 +92,24 @@ fn faceToPerim(allocator: Allocator, face: []const Edge) (EdgeError || Allocator
 
     // use copy to avoid mutating 'face'
     // edges are considered unordered
-    var edges = try std.ArrayList(Edge).initCapacity(allocator, face.len);
-    defer edges.deinit();
+    var edges: std.ArrayList(Edge) = try .initCapacity(allocator, face.len);
+    defer edges.deinit(allocator);
     for (face) |point| {
         // check edge pairs are in correct order
         if (point[1] <= point[0]) return EdgeError.EdgePairOrder;
-        try edges.append(point);
+        try edges.append(allocator, point);
     }
     // sort to start at lowest numbered edge combo
     std.sort.insertion(Edge, edges.items, {}, lessThanFn);
 
-    var perim = try std.ArrayList(u32).initCapacity(allocator, edges.items.len);
-    errdefer perim.deinit();
+    var perim: std.ArrayList(u32) = try .initCapacity(allocator, edges.items.len);
+    errdefer perim.deinit(allocator);
     // remove first edge
     const first_edge = edges.orderedRemove(0);
     const first_point = first_edge[0];
     var next_point = first_edge[1];
-    try perim.append(first_point);
-    try perim.append(next_point);
+    try perim.append(allocator, first_point);
+    try perim.append(allocator, next_point);
 
     outer: while (edges.items.len != 0) {
         for (edges.items, 0..) |e, i| {
@@ -118,11 +122,11 @@ fn faceToPerim(allocator: Allocator, face: []const Edge) (EdgeError || Allocator
                         break :outer
                     else
                         return EdgeError.ExtraneousEdges;
-                try perim.append(next_point);
+                try perim.append(allocator, next_point);
                 continue :outer;
             }
         }
         return EdgeError.PerimeterBroken;
     }
-    return try perim.toOwnedSlice();
+    return try perim.toOwnedSlice(allocator);
 }

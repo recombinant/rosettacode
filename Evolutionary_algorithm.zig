@@ -1,7 +1,7 @@
 // https://rosettacode.org/wiki/Evolutionary_algorithm
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
-const mem = std.mem;
 
 // ASCII characters
 const table = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
@@ -13,14 +13,16 @@ pub fn main() !void {
     const target = "METHINKS IT IS LIKE A WEASEL";
 
     // -------------------------------------------- random number
-    var prng = std.Random.DefaultPrng.init(blk: {
+    var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        std.posix.getrandom(mem.asBytes(&seed)) catch unreachable;
+        std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
         break :blk seed;
     });
     const random = prng.random();
     // ----------------------------------------------------------
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // ----------------------------------------------------------
     var specimens: [COPIES][target.len]u8 = undefined;
     // initial random string (specimens[0])
@@ -45,11 +47,12 @@ pub fn main() !void {
         if (best_i != 0)
             @memcpy(&specimens[0], &specimens[best_i]);
         iteration_count += 1;
-        try writer.print("iter {}, score {}: {s}\n", .{ iteration_count, best, specimens[0] });
+        try stdout.print("iter {}, score {}: {s}\n", .{ iteration_count, best, specimens[0] });
 
         if (best == 0)
             break;
     }
+    try stdout.flush();
 }
 
 /// number of different chars between 'a' and 'b'
