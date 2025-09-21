@@ -1,24 +1,21 @@
 // https://rosettacode.org/wiki/K-d_tree
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 // also https://en.wikipedia.org/wiki/Quickselect
 const std = @import("std");
-const heap = std.heap;
-const mem = std.mem;
-const meta = std.meta;
-const posix = std.posix;
 
 const assert = std.debug.assert;
 const print = std.debug.print;
 
 pub fn main() !void {
-    var prng = std.Random.DefaultPrng.init(blk: {
+    var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        try posix.getrandom(mem.asBytes(&seed));
+        try std.posix.getrandom(std.mem.asBytes(&seed));
         break :blk seed;
     });
     const rand = prng.random();
 
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -81,7 +78,7 @@ fn NodesContext(comptime dim: u16) type {
             return ctx.items[a].pt[ctx.split] < ctx.items[b].pt[ctx.split];
         }
         fn swap(ctx: @This(), a: usize, b: usize) void {
-            return mem.swap(KDNode(dim), &ctx.items[a], &ctx.items[b]);
+            return std.mem.swap(KDNode(dim), &ctx.items[a], &ctx.items[b]);
         }
     };
 }
@@ -118,7 +115,7 @@ fn selectContext(left: usize, right: usize, k: usize, context: anytype) usize {
 }
 
 /// Create an array of KDNode from an array Point.
-fn createKDNodesFromPoints(allocator: mem.Allocator, comptime dim: u16, pts: []const Point(dim)) ![]KDNode(dim) {
+fn createKDNodesFromPoints(allocator: std.mem.Allocator, comptime dim: u16, pts: []const Point(dim)) ![]KDNode(dim) {
     const nodes = try allocator.alloc(KDNode(dim), pts.len);
     for (pts, nodes) |pt, *node| node.* = KDNode(dim){ .pt = pt };
     return nodes;
@@ -146,5 +143,5 @@ fn BitsType(comptime dim: u16) type {
     inline while (s != 0) : (s >>= 1) {
         bits += 1;
     }
-    return meta.Int(.unsigned, bits); // enough bits to hold 'dim'
+    return std.meta.Int(.unsigned, bits); // enough bits to hold 'dim'
 }

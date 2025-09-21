@@ -1,29 +1,34 @@
 // https://rosettacode.org/wiki/Conway%27s_Game_of_Life
-// Translation of Go
+// {{works with|Zig|0.15.1}}
+// {{trans|Go}}
 const std = @import("std");
-const mem = std.mem;
 
 pub fn main() !void {
     // ---------------------------- pseudo random number generator
-    var prng = std.Random.DefaultPrng.init(blk: {
+    var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        std.posix.getrandom(mem.asBytes(&seed)) catch unreachable;
+        std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
         break :blk seed;
     });
     const random = prng.random();
     // ----------------------------------------------------------
-    const stdout = std.io.getStdOut();
-    var bw = std.io.bufferedWriter(stdout.writer());
-    const writer = bw.writer();
+    // zero size buffer means unbuffered (to slow it down)
+    var buffer: [0]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &stdout_writer.interface;
     // ----------------------------------------------------------
+    try stdout.writeAll("\x1b[?25l"); // hide cursor
     var life = Life(80, 15).init(random);
     for (0..300) |_| {
         life.step();
-        try writer.writeByte('\x0c');
-        try writer.print("{}", .{life});
-        try bw.flush();
-        std.time.sleep(comptime (1_000_000_000 / 30)); // 1/30th second
+        try stdout.writeAll("\x1b[1;1H"); // move cursor to 1,1
+        try stdout.print("{f}", .{life});
+        try stdout.flush();
+        // FIXME: not Ok with Zig 0.15.1 on Windows
+        // sleep if using buffered stdout
+        // std.posix.nanosleep(1_000_000_000 / 30, 0); // 1/30th second
     }
+    try stdout.writeAll("\x1b[?25h"); // show cursor
 }
 fn Life(comptime w: usize, comptime h: usize) type {
     return struct {
@@ -32,7 +37,7 @@ fn Life(comptime w: usize, comptime h: usize) type {
         b: Field(w, h),
 
         fn init(random: std.Random) Self {
-            var life = Self{
+            var life: Self = .{
                 .a = Field(w, h).init(),
                 .b = Field(w, h).init(),
             };
@@ -47,9 +52,9 @@ fn Life(comptime w: usize, comptime h: usize) type {
             for (0..h) |y|
                 for (0..w) |x|
                     self.b.set(x, y, self.a.next(x, y));
-            mem.swap(Field(w, h), &self.a, &self.b);
+            std.mem.swap(Field(w, h), &self.a, &self.b);
         }
-        pub fn format(self: *const Self, comptime _: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
+        pub fn format(self: *const Self, writer: *std.Io.Writer) std.Io.Writer.Error!void {
             for (0..h) |y| {
                 for (0..w) |x|
                     try writer.writeByte(if (self.a.state(x, y)) '*' else ' ');

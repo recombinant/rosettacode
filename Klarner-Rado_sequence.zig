@@ -1,15 +1,18 @@
 // https://rosettacode.org/wiki/Klarner-Rado_sequence
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
-const fmt = std.fmt;
-const io = std.io;
-const time = std.time;
 
 pub fn main() !void {
-    const stdout = io.getStdOut().writer();
-    const stderr = io.getStdErr().writer();
+    var stderr_buffer: [1024]u8 = undefined;
+    var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
+    const stderr = &stderr_writer.interface;
 
-    var t0 = try time.Timer.start();
+    var stdout_buffer: [128]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    var t0: std.time.Timer = try .start();
 
     const kr = klarnerRado(1_000_000);
 
@@ -25,12 +28,14 @@ pub fn main() !void {
     const limits = [_]usize{ 1_000, 10_000, 100_000, 1_000_000 };
     for (limits) |limit|
         try stdout.print("The {}{s} element: {d}\n", .{ limit, if (limit == 1) "st" else "th", kr[limit - 1] });
+    try stdout.flush();
 
-    try stderr.print("\nprocessed in {}\n", .{fmt.fmtDuration(t0.read())});
+    try stderr.print("\nprocessed in {D}\n", .{t0.read()});
+    try stderr.flush();
 }
 
 fn klarnerRado(comptime n: usize) [n]u32 {
-    var dst = [1]u32{0} ** n;
+    var dst: [n]u32 = @splat(0);
     var i_2: usize = 0;
     var i_3: usize = 0;
     var m2: u32 = 1;
