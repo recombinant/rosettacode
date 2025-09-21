@@ -1,10 +1,6 @@
 // https://rosettacode.org/wiki/Hex_words
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const heap = std.heap;
-const math = std.math;
-const mem = std.mem;
-const sort = std.sort;
-const testing = std.testing;
 
 const Result = struct { word: []const u8, value: u64, root: u64 };
 
@@ -18,20 +14,23 @@ fn greaterThanValue(_: void, r1: Result, r2: Result) bool {
 
 pub fn main() !void {
     // ------------------------------------------ allocator
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // ------------------------------------------ read text
     const f = try std.fs.cwd().openFile("data/unixdict.txt", .{});
-    const text = try f.readToEndAlloc(allocator, math.maxInt(usize));
+    var buffer: [4096]u8 = undefined;
+    var file_reader = f.reader(&buffer);
+    const r = &file_reader.interface;
+    const text = try r.allocRemaining(allocator, .unlimited);
     defer allocator.free(text);
     // ----------------------------------------------------
-    var results = std.ArrayList(Result).init(allocator);
-    var results_distinct = std.ArrayList(Result).init(allocator);
-    defer results.deinit();
-    defer results_distinct.deinit();
+    var results: std.ArrayList(Result) = .empty;
+    var results_distinct: std.ArrayList(Result) = .empty;
+    defer results.deinit(allocator);
+    defer results_distinct.deinit(allocator);
 
-    var it = mem.splitScalar(u8, text, '\n');
+    var it = std.mem.splitScalar(u8, text, '\n');
     outer: while (it.next()) |word| {
         if (word.len < 4) continue;
 
@@ -50,16 +49,19 @@ pub fn main() !void {
         const root = digitalRoot(value);
 
         const result = Result{ .word = word, .value = value, .root = root };
-        try results.append(result);
+        try results.append(allocator, result);
 
         if (letter_bits.count() >= 4)
-            try results_distinct.append(result);
+            try results_distinct.append(allocator, result);
     }
 
-    sort.heap(Result, results.items, {}, lessThanRoot);
-    sort.heap(Result, results_distinct.items, {}, greaterThanValue);
+    std.mem.sortUnstable(Result, results.items, {}, lessThanRoot);
+    std.mem.sortUnstable(Result, results_distinct.items, {}, greaterThanValue);
 
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     try stdout.print("{d} hex words in unixdict.txt with 4 or more letters:\n\n", .{results.items.len});
     for (results.items) |result|
         try stdout.print("{s: <6} -> {d: >8} -> {d}\n", .{ result.word, result.value, result.root });
@@ -68,6 +70,8 @@ pub fn main() !void {
     try stdout.print("{d} hex words in unixdict.txt with 4 or more distinct letters:\n\n", .{results_distinct.items.len});
     for (results_distinct.items) |result|
         try stdout.print("{s: <6} -> {d: >8} -> {d}\n", .{ result.word, result.value, result.root });
+
+    try stdout.flush();
 }
 
 // https://rosettacode.org/wiki/Digital_root
@@ -86,6 +90,8 @@ fn digitalRoot(value: u64) u64 {
     }
     return d;
 }
+
+const testing = std.testing;
 
 test "digital root" {
     try testing.expectEqual(1, digitalRoot(1));

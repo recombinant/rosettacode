@@ -1,23 +1,22 @@
 // https://rosettacode.org/wiki/Honaker_primes
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const fmt = std.fmt;
-const heap = std.heap;
-const mem = std.mem;
-const time = std.time;
-
-const print = std.debug.print;
 
 // https://rosettacode.org/wiki/Extensible_prime_generator
 const PrimeGen = @import("sieve.zig").PrimeGen;
 
 pub fn main() !void {
-    var t0 = try time.Timer.start();
+    var t0: std.time.Timer = try .start();
 
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var it = HonakerPrimeIterator.init(allocator);
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    var it: HonakerPrimeIterator = .init(allocator);
     defer it.deinit();
 
     const task1 = 50;
@@ -29,19 +28,22 @@ pub fn main() !void {
         count += 1;
 
         if (count == 1)
-            print("The first {} Honaker primes:\n", .{task1});
+            try stdout.print("The first {} Honaker primes:\n", .{task1});
         if (count <= task1) {
             const sep: u8 = if (count % 5 == 0) '\n' else ' ';
-            print("({d:3}, {d:4}){c}", .{ hp.index, hp.prime, sep });
+            try stdout.print("({d:3}, {d:4}){c}", .{ hp.index, hp.prime, sep });
         } else if (count == task2) {
-            print(
+            try stdout.print(
                 "\n\nThe {d}th Honaker prime: ({}, {})\n",
                 .{ task2, hp.index, hp.prime },
             );
             break;
         }
     }
-    print("\nprocessed in {}\n", .{fmt.fmtDuration(t0.read())});
+    try stdout.writeByte('\n');
+    try stdout.flush();
+
+    std.log.info("processed in {D}", .{t0.read()});
 }
 
 fn sumDigits(n_: u64) u64 {
@@ -59,9 +61,9 @@ const HonakerPrimeIterator = struct {
     primegen: PrimeGen(u64),
     index: u64 = 1,
 
-    fn init(allocator: mem.Allocator) HonakerPrimeIterator {
+    fn init(allocator: std.mem.Allocator) HonakerPrimeIterator {
         return HonakerPrimeIterator{
-            .primegen = PrimeGen(u64).init(allocator),
+            .primegen = .init(allocator),
         };
     }
     fn deinit(self: *HonakerPrimeIterator) void {

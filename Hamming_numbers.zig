@@ -1,34 +1,44 @@
 // https://rosettacode.org/wiki/Hamming_numbers
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
 const Int = std.math.big.int.Managed;
-const print = std.debug.print;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
+    // ----------------------------------------------------------
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+    // ----------------------------------------------------------
 
     for (1..21) |i| {
         var h = try hamming(allocator, i);
-        print("{} ", .{h});
+        _ = try h.format(stdout);
+        try stdout.writeByte(' ');
         h.deinit();
     }
-    print("\n", .{});
+    try stdout.writeByte('\n');
+    try stdout.flush();
 
     var h2 = try hamming(allocator, 1691);
-    print("{}\n", .{h2});
+    _ = try h2.format(stdout);
+    try stdout.writeByte('\n');
     h2.deinit();
+    try stdout.flush();
 
     var h3 = try hamming(allocator, 1_000_000);
-    print("{}\n", .{h3});
+    _ = try h3.format(stdout);
+    try stdout.writeByte('\n');
     h3.deinit();
+    try stdout.flush();
 }
 
-fn hamming(allocator: mem.Allocator, limit: usize) !Int {
-    var _2 = try Int.initSet(allocator, 2);
-    var _3 = try Int.initSet(allocator, 3);
-    var _5 = try Int.initSet(allocator, 5);
+fn hamming(allocator: std.mem.Allocator, limit: usize) !Int {
+    var _2: Int = try .initSet(allocator, 2);
+    var _3: Int = try .initSet(allocator, 3);
+    var _5: Int = try .initSet(allocator, 5);
     defer _2.deinit();
     defer _3.deinit();
     defer _5.deinit();
@@ -43,15 +53,15 @@ fn hamming(allocator: mem.Allocator, limit: usize) !Int {
         h = undefined;
     }
     for (h) |*h_|
-        h_.* = try Int.initSet(allocator, 1);
-    var x2 = try Int.initSet(allocator, 2);
-    var x3 = try Int.initSet(allocator, 3);
-    var x5 = try Int.initSet(allocator, 5);
+        h_.* = try .initSet(allocator, 1);
+    var x2: Int = try .initSet(allocator, 2);
+    var x3: Int = try .initSet(allocator, 3);
+    var x5: Int = try .initSet(allocator, 5);
     defer x2.deinit();
     defer x3.deinit();
     defer x5.deinit();
 
-    var rma = try Int.init(allocator);
+    var rma: Int = try .init(allocator);
     defer rma.deinit();
 
     var i: usize = 0;
@@ -77,7 +87,7 @@ fn hamming(allocator: mem.Allocator, limit: usize) !Int {
         }
     }
 
-    var result = try Int.initSet(allocator, 0);
+    var result: Int = try .initSet(allocator, 0);
     // quicker than clone
     result.swap(&h[h.len - 1]);
 
@@ -88,14 +98,14 @@ fn hamming(allocator: mem.Allocator, limit: usize) !Int {
 fn min3(a: Int, b: Int, c: Int) !Int {
     var min: Int =
         switch (a.order(b)) {
-        .lt, .eq => switch (a.order(c)) {
-            .lt, .eq => a,
-            .gt => c,
-        },
-        .gt => switch (b.order(c)) {
-            .lt, .eq => b,
-            .gt => c,
-        },
-    };
+            .lt, .eq => switch (a.order(c)) {
+                .lt, .eq => a,
+                .gt => c,
+            },
+            .gt => switch (b.order(c)) {
+                .lt, .eq => b,
+                .gt => c,
+            },
+        };
     return try min.clone();
 }

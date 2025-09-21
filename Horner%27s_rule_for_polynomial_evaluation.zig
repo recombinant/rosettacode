@@ -1,15 +1,21 @@
 // https://rosettacode.org/wiki/Horner%27s_rule_for_polynomial_evaluation
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     // Example coefficients for polynomial -19 + 7x - 4x^2 + 6x^3
     const coefficients = [_]f64{ -19, 7, -4, 6 };
     const x = 3;
-    try writer.print(
+    try stdout.print(
         "The result of the polynomial evaluation is: {d:.1}\n",
         .{horner(&coefficients, x)},
     );
+
+    try stdout.flush();
 }
 
 fn horner(coefficients: []const f64, x: f64) f64 {

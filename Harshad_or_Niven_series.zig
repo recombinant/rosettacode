@@ -1,10 +1,13 @@
 // https://rosettacode.org/wiki/Harshad_or_Niven_series
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 const limit = 1000;
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     try stdout.writeAll("Harshad or Niven series\n\n");
 
@@ -22,6 +25,7 @@ pub fn main() !void {
             }
         }
     }
+    try stdout.flush();
 }
 
 fn digsum(n_: u16) u16 {

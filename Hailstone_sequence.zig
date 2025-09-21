@@ -1,14 +1,15 @@
 // https://rosettacode.org/wiki/Hailstone_sequence
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
-const mem = std.mem;
+
 const print = std.debug.print;
 
 const N: u32 = 100_000;
 
 pub fn main() !void {
     // -------------------------------- allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // ------------------------------------------
