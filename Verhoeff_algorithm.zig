@@ -1,56 +1,52 @@
 // https://rosettacode.org/wiki/Verhoeff_algorithm
-// Translation of Wren
+// {{works with|Zig|0.15.1}}
+// {{trans|Wren}}
 const std = @import("std");
 const assert = std.debug.assert;
 
 pub fn main() !void {
-    // allocator ------------------------------------------
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    // ------------------------------------------------ allocator
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
-
-    // buffer stdout --------------------------------------
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
-
-    // dynamic string for digits --------------------------
-    var digits = std.ArrayList(u8).init(allocator);
-    defer digits.deinit();
-
-    // data for task --------------------------------------
+    // ------------------------------------------ buffered stdout
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+    // -------------------------------- dynamic string for digits
+    var digits: std.ArrayList(u8) = .empty;
+    defer digits.deinit(allocator);
+    // -------------------------------------------- data for task
     const ss: []const []const u8 = &.{ "236", "12345", "123456789012" };
     const vs = [_]bool{ true, true, false };
-
-    // perform task ---------------------------------------
+    // --------------------------------------------- perform task
     for (ss, vs) |s, verbose| {
         digits.clearRetainingCapacity();
-        try digits.appendSlice(s);
+        try digits.appendSlice(allocator, s);
 
-        const c: u8 = try verhoeff(&digits, false, verbose, stdout);
+        const c: u8 = try verhoeff(allocator, &digits, false, verbose, stdout);
         try stdout.print("\nThe check digit for '{s}' is '{d}'.\n\n", .{ s, c });
 
         for ([2]u8{ c + '0', '9' }) |ch| {
             digits.shrinkRetainingCapacity(s.len); // keep s in buffer
-            try digits.append(@truncate(ch));
+            try digits.append(allocator, ch);
 
-            const v = try verhoeff(&digits, true, verbose, stdout);
+            const v = try verhoeff(allocator, &digits, true, verbose, stdout);
             try stdout.print("\nThe validation for '{s}' is {s}.\n\n", .{ digits.items, if (v != 0) "correct" else "incorrect" });
         }
     }
-
-    // flush buffered stdout ------------------------------
-    try bw.flush();
+    // ----------------------------------------------------------
+    try stdout.flush();
 }
 
-fn verhoeff(digits: *std.ArrayList(u8), validate: bool, verbose: bool, writer: anytype) !u8 {
+fn verhoeff(allocator: std.mem.Allocator, digits: *std.ArrayList(u8), validate: bool, verbose: bool, w: *std.Io.Writer) !u8 {
     if (verbose) {
         const what: []const u8 = if (validate) "Validation" else "Check digit";
-        try writer.print("{s} calculations for '{s}':\n\n", .{ what, digits.items });
-        try writer.writeAll(" i  nᵢ  p[i,nᵢ]  c\n");
-        try writer.writeAll("------------------\n");
+        try w.print("{s} calculations for '{s}':\n\n", .{ what, digits.items });
+        try w.writeAll(" i  nᵢ  p[i,nᵢ]  c\n");
+        try w.writeAll("------------------\n");
     }
-    if (!validate) try digits.append('0');
+    if (!validate) try digits.append(allocator, '0');
     const len = digits.items.len;
     var c: u8 = 0;
     var i = len;
@@ -61,10 +57,10 @@ fn verhoeff(digits: *std.ArrayList(u8), validate: bool, verbose: bool, writer: a
         const pi: u8 = p[(len - i - 1) % 8][ni];
         c = d[c][pi];
         if (verbose)
-            try writer.print("{d:2}  {d}      {d}     {d}\n", .{ len - i - 1, ni, pi, c });
+            try w.print("{d:2}  {d}      {d}     {d}\n", .{ len - i - 1, ni, pi, c });
     }
     if (verbose and !validate)
-        try writer.print("\ninv[{d}] = {d}\n", .{ c, inv[c] });
+        try w.print("\ninv[{d}] = {d}\n", .{ c, inv[c] });
 
     return if (validate) if (c == 0) 1 else 0 else inv[c];
 }

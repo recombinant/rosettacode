@@ -1,6 +1,9 @@
 // https://rosettacode.org/wiki/Periodic_table
-// Translation of Python
+// {{works with|Zig|0.15.1}}
+// {{trans|Python}}
+// zig test Periodic_table.zig
 const std = @import("std");
+const testing = std.testing;
 
 fn perta(atomic: u8) struct { u8, u8 } {
     const NOBLES = [_]u8{ 2, 10, 18, 36, 54, 86, 118 };
@@ -35,7 +38,6 @@ fn perta(atomic: u8) struct { u8, u8 } {
     return .{ row + 1, col };
 }
 
-const testing = std.testing;
 test perta {
     const tests = [_]struct { u8, struct { u8, u8 } }{
         .{ 1, .{ 1, 1 } },

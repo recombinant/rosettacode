@@ -1,7 +1,6 @@
 // https://rosettacode.org/wiki/Validate_International_Securities_Identification_Number
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const testing = std.testing;
-const print = std.debug.print;
 
 pub fn main() !void {
     const tests = [_][]const u8{
@@ -18,10 +17,10 @@ pub fn main() !void {
                 ValidationError.InvalidCodeCharacter => "invalid character in code",
                 ValidationError.ChecksumError => "checksum error",
             };
-            print("{s} is not valid - {s}\n", .{ isin, msg });
+            std.debug.print("{s} is not valid - {s}\n", .{ isin, msg });
             continue;
         };
-        print("{s} is valid\n", .{isin});
+        std.debug.print("{s} is valid\n", .{isin});
     }
 }
 
@@ -57,20 +56,22 @@ fn validateISIN(s: []const u8) ValidationError!void {
         return ValidationError.InvalidChecksumCharacter;
 
     // enough space to hold two characters per `s` character
-    var array = std.BoundedArray(u8, 12 * 2).init(0) catch unreachable;
-    var writer = array.writer();
+    var buffer = [_]u8{0} ** (12 * 2);
+    var array: std.ArrayList(u8) = .initBuffer(&buffer);
 
     for (s) |ch| {
         switch (ch) {
-            '0'...'9' => array.append(ch) catch unreachable,
-            'A'...'Z' => writer.print("{d}", .{ch - 'A' + 10}) catch unreachable,
+            '0'...'9' => array.appendBounded(ch) catch unreachable,
+            'A'...'Z' => array.printBounded("{d}", .{ch - 'A' + 10}) catch unreachable,
             else => return ValidationError.InvalidCodeCharacter,
         }
     }
 
-    if (!luhn(array.constSlice()))
+    if (!luhn(array.items))
         return ValidationError.ChecksumError;
 }
+
+const testing = std.testing;
 
 test "validate ISIN" {
     try validateISIN("US0378331005");

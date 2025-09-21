@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Vector_products
+// {{works with|Zig|0.15.1}}
 // Uses Zig vectors https://ziglang.org/documentation/master/#Vectors
 const std = @import("std");
 
@@ -32,25 +33,27 @@ const Vector = struct {
     fn vectorTripleProduct(a: Vector, b: Vector, c: Vector) Vector {
         return a.crossProduct(b.crossProduct(c));
     }
-    pub fn format(u: Vector, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
-        _ = fmt;
-        _ = options;
-        try writer.print("({d}, {d}, {d})", .{ u.data[0], u.data[1], u.data[2] });
+    pub fn format(u: Vector, w: *std.Io.Writer) std.Io.Writer.Error!void {
+        try w.print("({d}, {d}, {d})", .{ u.data[0], u.data[1], u.data[2] });
     }
 };
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const a: Vector = .init(3, 4, 5);
     const b: Vector = .init(4, 3, 5);
     const c: Vector = .init(-5, -12, -13);
 
-    try writer.print("a = {}\n", .{a});
-    try writer.print("b = {}\n", .{b});
-    try writer.print("c = {}\n", .{c});
-    try writer.print("a · b = {d}\n", .{a.dotProduct(b)});
-    try writer.print("a ⨯ b = {}\n", .{a.crossProduct(b)});
-    try writer.print("a · (b ⨯ c) = {d}\n", .{a.scalarTripleProduct(b, c)});
-    try writer.print("a ⨯ (b ⨯ c) = {}\n", .{a.vectorTripleProduct(b, c)});
+    try stdout.print("a = {f}\n", .{a});
+    try stdout.print("b = {f}\n", .{b});
+    try stdout.print("c = {f}\n", .{c});
+    try stdout.print("a · b = {d}\n", .{a.dotProduct(b)});
+    try stdout.print("a ⨯ b = {f}\n", .{a.crossProduct(b)});
+    try stdout.print("a · (b ⨯ c) = {d}\n", .{a.scalarTripleProduct(b, c)});
+    try stdout.print("a ⨯ (b ⨯ c) = {f}\n", .{a.vectorTripleProduct(b, c)});
+
+    try stdout.flush();
 }

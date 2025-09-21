@@ -1,27 +1,30 @@
-// https://rosettacode.org/wiki/Upside-down_numbers.zig
+// https://rosettacode.org/wiki/Upside-down_numbers
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const math = std.math;
-const mem = std.mem;
-const testing = std.testing;
-const assert = std.debug.assert;
-const print = std.debug.print;
 
-pub fn main() void {
+pub fn main() !void {
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     var count: usize = 1;
 
-    var it = BruteForceUpsideDownIterator.init();
+    var it: BruteForceUpsideDownIterator = .init();
     while (count <= 50) : (count += 1) {
         const sep: []const u8 = if (count % 10 != 0) " " else if (count != 0) "\n" else "";
-        print("{d:>4}{s}", .{ it.next(), sep });
+        try stdout.print("{d:>4}{s}", .{ it.next(), sep });
     }
+    try stdout.flush();
 
     while (count < 500) : (count += 1) _ = it.next();
-    print("The 500th upside-down number is: {}\n", .{it.next()});
+    try stdout.print("The 500th upside-down number is: {}\n", .{it.next()});
     count += 1;
+    try stdout.flush();
 
     while (count < 5_000) : (count += 1) _ = it.next();
-    print("The 5,000th upside-down number is: {}\n", .{it.next()});
+    try stdout.print("The 5,000th upside-down number is: {}\n", .{it.next()});
     count += 1;
+    try stdout.flush();
 }
 
 const BruteForceUpsideDownIterator = struct {
@@ -43,9 +46,9 @@ const BruteForceUpsideDownIterator = struct {
 /// Return a slice holding all the decimal digits representing `number`.
 /// Least significant digit first.
 fn getDigits(output: []u4, number: u64) []u4 {
-    const n_digits: usize = if (number == 0) 1 else math.log10(number) + 1;
+    const n_digits: usize = if (number == 0) 1 else std.math.log10(number) + 1;
 
-    assert(output.len >= n_digits);
+    std.debug.assert(output.len >= n_digits);
     const result = output[0..n_digits];
 
     var n = number;
@@ -57,7 +60,7 @@ fn getDigits(output: []u4, number: u64) []u4 {
 }
 
 test getDigits {
-    var buffer: [math.log10(math.maxInt(u64)) + 1]u4 = undefined;
+    var buffer: [std.math.log10_int(@as(u64, std.math.maxInt(u64))) + 1]u4 = undefined;
 
     const expected0 = &[_]u4{0};
     const actual0 = getDigits(&buffer, 0);
@@ -78,8 +81,8 @@ test getDigits {
         1, 8, 4, 4, 6, 7, 4, 4, 0, 7,
         3, 7, 0, 9, 5, 5, 1, 6, 1, 5,
     };
-    mem.reverse(u4, &expected3);
-    const actual3 = getDigits(&buffer, math.maxInt(u64));
+    std.mem.reverse(u4, &expected3);
+    const actual3 = getDigits(&buffer, std.math.maxInt(u64));
 
     try testing.expectEqualSlices(u4, &expected3, actual3);
 }
@@ -103,7 +106,7 @@ test "overflow of u4" {
 }
 
 fn isUpsideDown(number: u64) bool {
-    var buffer: [math.log10(math.maxInt(u64)) + 1]u4 = undefined;
+    var buffer: [std.math.log10_int(@as(u64, std.math.maxInt(u64))) + 1]u4 = undefined;
 
     const digits = getDigits(&buffer, number);
 
@@ -118,6 +121,8 @@ fn isUpsideDown(number: u64) bool {
     }
     return true;
 }
+
+const testing = std.testing;
 
 test isUpsideDown {
     try testing.expect(isUpsideDown(5));

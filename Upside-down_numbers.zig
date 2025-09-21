@@ -1,38 +1,39 @@
 // https://rosettacode.org/wiki/Upside-down_numbers
-// Translation of Wren
+// {{works with|Zig|0.15.1}}
+// {{trans|Wren}}
 const std = @import("std");
-const math = std.math;
-const mem = std.mem;
-const testing = std.testing;
-
-const assert = std.debug.assert;
-const print = std.debug.print;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
+
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var it = try UpsideDownIterator.init(allocator);
     defer it.deinit();
 
-    print("First fifty upside-downs:\n", .{});
+    try stdout.writeAll("First fifty upside-downs:\n");
     while (true) {
         const count, const number = try it.next();
-        if (count <= 50)
-            print("{d:5}{s}", .{ number, if (count % 10 == 0) "\n" else "" })
-        else if (count == 500)
-            print("\nFive hundredth: {}\n", .{number})
+        if (count <= 50) {
+            try stdout.print("{d:5}{s}", .{ number, if (count % 10 == 0) "\n" else "" });
+            continue;
+        } else if (count == 500)
+            try stdout.print("\nFive hundredth: {}\n", .{number})
         else if (count == 5_000)
-            print("\nFive thousandth: {}\n", .{number})
+            try stdout.print("\nFive thousandth: {}\n", .{number})
         else if (count == 50_000)
-            print("\nFifty thousandth: {}\n", .{number})
+            try stdout.print("\nFifty thousandth: {}\n", .{number})
         else if (count == 500_000)
-            print("\nFive hundred thousandth: {}\n", .{number})
+            try stdout.print("\nFive hundred thousandth: {}\n", .{number})
         else if (count == 5_000_000)
-            print("\nFive millionth: {}\n", .{number})
+            try stdout.print("\nFive millionth: {}\n", .{number})
         else if (count > 5_000_000)
             break;
+        try stdout.flush();
     }
 }
 
@@ -43,7 +44,7 @@ const UpsideDownIterator = struct {
         .{ 6, 4 }, .{ 7, 3 }, .{ 8, 2 }, .{ 9, 1 },
     };
 
-    allocator: mem.Allocator,
+    allocator: std.mem.Allocator,
     evens: std.ArrayList(u64),
     odds: std.ArrayList(u64),
     tmp: std.ArrayList(u64),
@@ -56,23 +57,23 @@ const UpsideDownIterator = struct {
 
     count: usize = 0,
 
-    fn init(allocator: mem.Allocator) !UpsideDownIterator {
-        var odds = std.ArrayList(u64).init(allocator);
-        try odds.append(5);
-        var evens = std.ArrayList(u64).init(allocator);
-        try evens.appendSlice(&[_]u64{ 19, 28, 37, 46, 55, 64, 73, 82, 91 });
+    fn init(allocator: std.mem.Allocator) !UpsideDownIterator {
+        var odds: std.ArrayList(u64) = .empty;
+        try odds.append(allocator, 5);
+        var evens: std.ArrayList(u64) = .empty;
+        try evens.appendSlice(allocator, &[_]u64{ 19, 28, 37, 46, 55, 64, 73, 82, 91 });
 
         return .{
             .allocator = allocator,
             .evens = evens,
             .odds = odds,
-            .tmp = std.ArrayList(u64).init(allocator),
+            .tmp = .empty,
         };
     }
     fn deinit(self: *UpsideDownIterator) void {
-        self.evens.deinit();
-        self.odds.deinit();
-        self.tmp.deinit();
+        self.evens.deinit(self.allocator);
+        self.odds.deinit(self.allocator);
+        self.tmp.deinit(self.allocator);
     }
 
     fn next(self: *UpsideDownIterator) !struct { usize, u64 } {
@@ -89,9 +90,9 @@ const UpsideDownIterator = struct {
                     for (wrappings) |w| {
                         const hi, const lo = w;
                         for (self.odds.items) |i|
-                            try self.tmp.append(hi * self.pow + i * 10 + lo);
+                            try self.tmp.append(self.allocator, hi * self.pow + i * 10 + lo);
                     }
-                    mem.swap(std.ArrayList(u64), &self.odds, &self.tmp);
+                    std.mem.swap(std.ArrayList(u64), &self.odds, &self.tmp);
 
                     self.ndigits += 1;
                     self.pow *= 10;
@@ -109,9 +110,9 @@ const UpsideDownIterator = struct {
                     for (wrappings) |w| {
                         const hi, const lo = w;
                         for (self.evens.items) |i|
-                            try self.tmp.append(hi * self.pow + 10 * i + lo);
+                            try self.tmp.append(self.allocator, hi * self.pow + 10 * i + lo);
                     }
-                    mem.swap(std.ArrayList(u64), &self.evens, &self.tmp);
+                    std.mem.swap(std.ArrayList(u64), &self.evens, &self.tmp);
 
                     self.ndigits += 1;
                     self.pow *= 10;

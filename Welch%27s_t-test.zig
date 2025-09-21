@@ -1,9 +1,14 @@
 // https://rosettacode.org/wiki/Welch%27s_t-test
-// Translation of C refer to C code for comments and license
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
+
+// Refer to C code for comments and license
 const std = @import("std");
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const d1 = [15]f64{ 27.5, 21.0, 19.0, 23.6, 17.0, 17.9, 16.9, 20.1, 21.9, 22.6, 23.1, 19.6, 19.0, 21.7, 21.4 };
     const d2 = [15]f64{ 27.1, 22.0, 20.8, 23.4, 23.4, 23.5, 25.8, 22.0, 24.8, 20.2, 21.9, 22.1, 22.9, 20.5, 24.4 };
@@ -28,37 +33,39 @@ pub fn main() !void {
     };
     var pvalue: f64 = try calcPValue(&d1, &d2);
     var err: f64 = @abs(pvalue - CORRECT_ANSWERS[0]);
-    try writer.print("Test sets 1 p-value = {d:.5}\n", .{pvalue});
+    try stdout.print("Test sets 1 p-value = {d:.5}\n", .{pvalue});
 
     pvalue = try calcPValue(&d3, &d4);
     err += @abs(pvalue - CORRECT_ANSWERS[1]);
-    try writer.print("Test sets 2 p-value = {d:.5}\n", .{pvalue});
+    try stdout.print("Test sets 2 p-value = {d:.5}\n", .{pvalue});
 
     pvalue = try calcPValue(&d5, &d6);
     err += @abs(pvalue - CORRECT_ANSWERS[2]);
-    try writer.print("Test sets 3 p-value = {d:.5}\n", .{pvalue});
+    try stdout.print("Test sets 3 p-value = {d:.5}\n", .{pvalue});
 
     pvalue = try calcPValue(&d7, &d8);
-    try writer.print("Test sets 4 p-value = {d:.5}\n", .{pvalue});
+    try stdout.print("Test sets 4 p-value = {d:.5}\n", .{pvalue});
     err += @abs(pvalue - CORRECT_ANSWERS[3]);
 
     pvalue = try calcPValue(&x, &y);
     err += @abs(pvalue - CORRECT_ANSWERS[4]);
-    try writer.print("Test sets 5 p-value = {d:.5}\n", .{pvalue});
+    try stdout.print("Test sets 5 p-value = {d:.5}\n", .{pvalue});
 
     pvalue = try calcPValue(&v1, &v2);
     err += @abs(pvalue - CORRECT_ANSWERS[5]);
-    try writer.print("Test sets 6 p-value = {d:.5}\n", .{pvalue});
+    try stdout.print("Test sets 6 p-value = {d:.5}\n", .{pvalue});
 
     pvalue = try calcPValue(&s1, &s2);
     err += @abs(pvalue - CORRECT_ANSWERS[6]);
-    try writer.print("Test sets 7 p-value = {d:.5}\n", .{pvalue});
+    try stdout.print("Test sets 7 p-value = {d:.5}\n", .{pvalue});
 
     pvalue = try calcPValue(&z1, &z2);
     err += @abs(pvalue - CORRECT_ANSWERS[7]);
-    try writer.print("Test sets z p-value = {d:.5}\n", .{pvalue});
+    try stdout.print("Test sets z p-value = {d:.5}\n", .{pvalue});
 
-    try writer.print("the cumulative error is {}\n", .{err});
+    try stdout.print("the cumulative error is {}\n", .{err});
+
+    try stdout.flush();
 }
 
 fn calcPValue(noalias array1: []const f64, noalias array2: []const f64) !f64 {
@@ -79,12 +86,12 @@ fn calcPValue(noalias array1: []const f64, noalias array2: []const f64) !f64 {
     const WELCH_T_STATISTIC: f64 = (fmean1 - fmean2) / @sqrt((unbiased_sample_variance1 / array1_len) + (unbiased_sample_variance2 / array2_len));
     const DEGREES_OF_FREEDOM: f64 = std.math.pow(f64, (unbiased_sample_variance1 / array1_len) + (unbiased_sample_variance2 / array2_len), 2.0) /
         (((unbiased_sample_variance1 * unbiased_sample_variance1) / ((array1_len * array1_len) * (array1_len - 1))) +
-        ((unbiased_sample_variance2 * unbiased_sample_variance2) / ((array2_len * array2_len) * (array2_len - 1))));
+            ((unbiased_sample_variance2 * unbiased_sample_variance2) / ((array2_len * array2_len) * (array2_len - 1))));
     const a: f64 = DEGREES_OF_FREEDOM / 2;
     var value: f64 = DEGREES_OF_FREEDOM / ((WELCH_T_STATISTIC * WELCH_T_STATISTIC) + DEGREES_OF_FREEDOM);
     if (std.math.isInf(value) or std.math.isNan(value))
         return 1.0;
-    // TODO: lgamma for f128 ?
+    // NOTE: lgamma for f128 ?
     const beta: f64 = std.math.lgamma(f64, a) + 0.57236494292470009 - std.math.lgamma(f64, a + 0.5);
     const acu: f64 = 0.1e-14;
     var indx: usize = undefined;

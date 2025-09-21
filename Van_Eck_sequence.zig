@@ -1,13 +1,13 @@
 // https://rosettacode.org/wiki/Van_Eck_sequence
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
 
 const max = 1_000;
 
 // evaluated at compile time
 const a: [max]u16 = calc: {
     @setEvalBranchQuota(max * max);
-    var tmp: [max]u16 = mem.zeroes([max]u16);
+    var tmp: [max]u16 = std.mem.zeroes([max]u16);
 
     for (0..max - 1) |n| {
         var m = n;
@@ -23,7 +23,9 @@ const a: [max]u16 = calc: {
 };
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     try stdout.writeAll("The first ten terms of the Van Eck sequence are:\n");
     for (a[0..9]) |n|
@@ -32,4 +34,6 @@ pub fn main() !void {
     for (a[990..]) |n|
         try stdout.print("{} ", .{n});
     try stdout.writeByte('\n');
+
+    try stdout.flush();
 }

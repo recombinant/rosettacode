@@ -1,13 +1,15 @@
 // https://rosettacode.org/wiki/Water_collected_between_towers
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const math = std.math;
-const mem = std.mem;
-const print = std.debug.print;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
+
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const blocks = [_][]const u7{
         &[_]u7{ 1, 5, 3, 7, 2 },
@@ -23,10 +25,11 @@ pub fn main() !void {
         defer table.deinit();
 
         const water = table.fill();
-        // table.printTable();
+        try table.printTable(stdout);
 
-        print("{} water units.\n", .{water});
+        try stdout.print("{} water units.\n\n", .{water});
     }
+    try stdout.flush();
 }
 
 const Status = enum { empty, wall, water };
@@ -44,15 +47,15 @@ const Status = enum { empty, wall, water };
 // ↑ rows
 // → columns
 const Table = struct {
-    allocator: mem.Allocator,
+    allocator: std.mem.Allocator,
     array: []Status,
     width: usize,
     height: usize,
 
-    fn init(allocator: mem.Allocator, block: []const u7) !Table {
+    fn init(allocator: std.mem.Allocator, block: []const u7) !Table {
         const width = block.len;
         const height = blk: {
-            var max_height: u7 = math.minInt(u7);
+            var max_height: u7 = std.math.minInt(u7);
             for (block) |height|
                 if (height > max_height) {
                     max_height = height;
@@ -83,9 +86,9 @@ const Table = struct {
         for (0..self.height) |row| {
             var slice = self.getRowSlice(row);
             // first wall from the left
-            if (mem.indexOfScalar(Status, slice, .wall)) |left| {
+            if (std.mem.indexOfScalar(Status, slice, .wall)) |left| {
                 // first wall from the right
-                const right = mem.lastIndexOfScalar(Status, slice, .wall).?;
+                const right = std.mem.lastIndexOfScalar(Status, slice, .wall).?;
                 if (right - left < 2)
                     break;
 
@@ -105,10 +108,10 @@ const Table = struct {
         const offset = row * self.width;
         return self.array[offset .. offset + self.width];
     }
-    fn printTable(self: Table) void {
+    fn printTable(self: Table, w: *std.Io.Writer) !void {
         var row = self.height;
         while (row != 0) {
-            print("{d:2} ", .{row});
+            try w.print("{d:2} ", .{row});
             row -= 1;
             const slice = self.getRowSlice(row);
             for (slice) |status| {
@@ -117,9 +120,9 @@ const Table = struct {
                     .wall => "██",
                     .water => "≈≈",
                 };
-                print("{s}", .{s});
+                try w.print("{s}", .{s});
             }
-            print("\n", .{});
+            try w.writeByte('\n');
         }
     }
 };
