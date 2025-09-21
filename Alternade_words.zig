@@ -15,14 +15,14 @@ pub fn main() !void {
     var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
     const stdout = &stdout_writer.interface;
     // --------------------------------------- set of words
-    var words: std.StringArrayHashMap(void) = .init(allocator);
-    defer words.deinit();
+    var words: std.StringArrayHashMapUnmanaged(void) = .empty;
+    defer words.deinit(allocator);
     {
-        try words.ensureTotalCapacity(std.mem.count(u8, text, "\n") + 1);
+        try words.ensureTotalCapacity(allocator, std.mem.count(u8, text, "\n") + 1);
 
         var it = std.mem.splitSequence(u8, text, "\n");
         while (it.next()) |word|
-            try words.put(word, {});
+            try words.put(allocator, word, {});
     }
     // ----------------------------------------------------
     var count: u32 = 0;

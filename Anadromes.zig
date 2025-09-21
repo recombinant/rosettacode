@@ -16,13 +16,13 @@ pub fn main() !void {
     const stdout = &stdout_writer.interface;
 
     // Insertion order is preserved.
-    var word_set: std.StringArrayHashMap(void) = .init(allocator);
-    defer word_set.deinit();
+    var word_set: std.StringArrayHashMapUnmanaged(void) = .empty;
+    defer word_set.deinit(allocator);
 
     var it = std.mem.splitScalar(u8, text, '\n');
     while (it.next()) |word| {
         if (word.len > word_cutoff and !isPalindrome(word))
-            try word_set.put(word, {});
+            try word_set.put(allocator, word, {});
     }
 
     var buffer: std.ArrayList(u8) = .empty;

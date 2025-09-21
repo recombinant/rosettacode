@@ -51,22 +51,22 @@ const DestCost = struct { []const u8, u64 }; // dst, cost
 const DestCostList = std.ArrayList(DestCost);
 
 const Graph = struct {
-    vertices: std.StringArrayHashMap(void),
-    neighbours: std.StringArrayHashMap(DestCostList),
+    vertices: std.StringArrayHashMapUnmanaged(void),
+    neighbours: std.StringArrayHashMapUnmanaged(DestCostList),
 
     /// Initialize a graph from an edge list.
     /// Use floats for costs in order to compare to Inf value.
     fn init(allocator: std.mem.Allocator, edges: []const Edge) !Graph {
         var g: Graph = .{
-            .vertices = .init(allocator),
-            .neighbours = .init(allocator),
+            .vertices = .empty,
+            .neighbours = .empty,
         };
         for (edges) |edge| {
             const src, const dst, const cost = edge;
-            try g.vertices.put(src, {});
-            try g.vertices.put(dst, {});
+            try g.vertices.put(allocator, src, {});
+            try g.vertices.put(allocator, dst, {});
 
-            const gop = try g.neighbours.getOrPut(src);
+            const gop = try g.neighbours.getOrPut(allocator, src);
             if (!gop.found_existing)
                 gop.value_ptr.* = .empty;
             try gop.value_ptr.append(allocator, .{ dst, cost });
@@ -74,23 +74,23 @@ const Graph = struct {
         return g;
     }
     fn deinit(self: *Graph, allocator: std.mem.Allocator) void {
-        self.vertices.deinit();
+        self.vertices.deinit(allocator);
         for (self.neighbours.values()) |*list|
             list.deinit(allocator);
-        self.neighbours.deinit();
+        self.neighbours.deinit(allocator);
     }
     /// Find the path from "first" to "last" which minimizes the cost.
     /// Allocates memory for the result, which must be freed by the caller.
     fn dijkstraPath(graph: *Graph, allocator: std.mem.Allocator, first: []const u8, last: []const u8) ![][]const u8 {
-        var dist: std.StringArrayHashMap(u64) = .init(allocator);
-        defer dist.deinit();
-        var previous: std.StringArrayHashMap([]const u8) = .init(allocator);
-        defer previous.deinit();
-        var not_seen = try graph.vertices.clone();
-        defer not_seen.deinit();
+        var dist: std.StringArrayHashMapUnmanaged(u64) = .empty;
+        defer dist.deinit(allocator);
+        var previous: std.StringArrayHashMapUnmanaged([]const u8) = .empty;
+        defer previous.deinit(allocator);
+        var not_seen = try graph.vertices.clone(allocator);
+        defer not_seen.deinit(allocator);
         for (graph.vertices.keys()) |vertex|
-            try dist.put(vertex, std.math.maxInt(u64));
-        try dist.put(first, 0);
+            try dist.put(allocator, vertex, std.math.maxInt(u64));
+        try dist.put(allocator, first, 0);
 
         while (not_seen.count() != 0) {
             // Search vertex with minimal distance.
@@ -113,9 +113,9 @@ const Graph = struct {
                         const altdist = dist.get(vertex1).? + cost;
                         if (altdist < dist.get(vertex2).?) {
                             // Found a shorter path to go to vertex2.
-                            try dist.put(vertex2, altdist);
+                            try dist.put(allocator, vertex2, altdist);
                             // To go to vertex2, go through vertex1.
-                            try previous.put(vertex2, vertex1);
+                            try previous.put(allocator, vertex2, vertex1);
                         }
                     }
                 };

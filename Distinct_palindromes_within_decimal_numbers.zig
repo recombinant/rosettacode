@@ -55,10 +55,10 @@ fn allPalindromes(allocator: std.mem.Allocator, number: []const u8) ![][]const u
         for (1..number.len - i + 1) |j|
             try substrings.append(allocator, number[i .. i + j]);
 
-    var palindrome_set: std.StringArrayHashMap(void) = .init(allocator);
+    var palindrome_set: std.StringArrayHashMapUnmanaged(void) = .empty;
     for (substrings.items) |string|
         if (isPalindrome(string))
-            try palindrome_set.put(string, {});
+            try palindrome_set.put(allocator, string, {});
     return palindrome_set.keys();
 }
 fn isPalindrome(s: []const u8) bool {
