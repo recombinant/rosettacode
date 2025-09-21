@@ -1,32 +1,37 @@
 // https://rosettacode.org/wiki/Permutations
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 
 const N = 4;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var x: [N]usize = undefined;
     for (&x, 1..) |*value, i|
         value.* = i;
 
-    const args = ShowArgs{ .writer = writer };
+    const args = ShowArgs{ .writer = stdout };
 
     try perm1(&x, args, &show);
-    try writer.writeByte('\n');
+    try stdout.writeByte('\n');
 
     try perm2(&x, args, &show);
-    try writer.writeByte('\n');
+    try stdout.writeByte('\n');
 
     try perm3(allocator, &x, args, &show);
+
+    try stdout.flush();
 }
 
-const ShowArgs = struct { writer: std.fs.File.Writer };
+const ShowArgs = struct { writer: *std.Io.Writer };
 
 // print a list of ints
 fn show(x: []usize, args: ShowArgs) !void {

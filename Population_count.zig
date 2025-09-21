@@ -1,12 +1,15 @@
 // https://rosettacode.org/wiki/Population_count
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const limit = 30;
+    var buffer1: [limit]u16 = undefined;
+    var buffer2: [limit]u16 = undefined;
 
     {
         try stdout.writeAll("       : ");
@@ -18,30 +21,30 @@ pub fn main() !void {
         try stdout.writeByte('\n');
     }
     {
-        var od = try std.BoundedArray(u16, limit).init(0);
-        var ev = try std.BoundedArray(u16, limit).init(0);
+        var od: std.ArrayList(u16) = .initBuffer(&buffer1);
+        var ev: std.ArrayList(u16) = .initBuffer(&buffer2);
 
         {
             var n: u16 = 0;
-            while (ev.len < limit or od.len < limit) : (n += 1) {
+            while (ev.items.len < limit or od.items.len < limit) : (n += 1) {
                 if (@popCount(n) & 1 == 0) {
-                    if (ev.len < limit)
-                        try ev.append(n);
+                    if (ev.items.len < limit)
+                        try ev.appendBounded(n);
                 } else {
-                    if (od.len < limit)
-                        try od.append(n);
+                    if (od.items.len < limit)
+                        try od.appendBounded(n);
                 }
             }
         }
 
         try stdout.writeAll("evil   :");
-        for (ev.constSlice()) |n| try stdout.print(" {d:2}", .{n});
+        for (ev.items) |n| try stdout.print(" {d:2}", .{n});
         try stdout.writeByte('\n');
 
         try stdout.writeAll("odious :");
-        for (od.constSlice()) |n| try stdout.print(" {d:2}", .{n});
+        for (od.items) |n| try stdout.print(" {d:2}", .{n});
         try stdout.writeByte('\n');
     }
 
-    try bw.flush();
+    try stdout.flush();
 }

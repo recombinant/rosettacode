@@ -1,36 +1,37 @@
 // https://rosettacode.org/wiki/Playfair_cipher
-// Translation of Nim
+// {{works with|Zig|0.15.1}}
+// {{trans|Nim}}
 const std = @import("std");
-const ascii = std.ascii;
-const heap = std.heap;
-const mem = std.mem;
-const testing = std.testing;
-const assert = std.debug.assert;
-const print = std.debug.print;
 
 pub fn main() !void {
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
+
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const key = "playfair example";
     const text = "Hide the gold...in the TREESTUMP!!!";
 
-    var pf = try Playfair.init(allocator, key, .use_ji_merge);
+    var pf: Playfair = try .init(allocator, key, .use_ji_merge);
 
     const pairs = try pf.encode(text);
     defer allocator.free(pairs);
 
     // print encoded pairs here as they will be mutated in pf.decode()
-    print("Encoded message:", .{});
-    printPairs(pairs);
-    print("\n", .{});
+    try stdout.print("Encoded message:", .{});
+    try printPairs(pairs, stdout);
+    try stdout.writeByte('\n');
 
     pf.decode(pairs);
 
-    print("Decoded message:", .{});
-    printPairs(pairs);
-    print("\n", .{});
+    try stdout.print("Decoded message:", .{});
+    try printPairs(pairs, stdout);
+    try stdout.writeByte('\n');
+
+    try stdout.flush();
 }
 
 const PlayfairJIQ = enum {
@@ -41,8 +42,8 @@ const PlayfairJIQ = enum {
 const Point = struct { x: u4, y: u4 };
 const Pair = struct { u8, u8 };
 
-fn makePairsFromText(allocator: mem.Allocator, text: []const u8) ![]Pair {
-    assert(text.len % 2 == 0);
+fn makePairsFromText(allocator: std.mem.Allocator, text: []const u8) ![]Pair {
+    std.debug.assert(text.len % 2 == 0);
     const pairs = try allocator.alloc(Pair, text.len / 2);
     for (pairs, 0..) |*pair, i| {
         pair[0] = text[i * 2];
@@ -51,13 +52,13 @@ fn makePairsFromText(allocator: mem.Allocator, text: []const u8) ![]Pair {
     return pairs;
 }
 
-fn printPairs(pairs: []const Pair) void {
+fn printPairs(pairs: []const Pair, w: *std.Io.Writer) !void {
     for (pairs) |pair|
-        print(" {c}{c}", .{ pair[0], pair[1] });
+        try w.print(" {c}{c}", .{ pair[0], pair[1] });
 }
 
 const Playfair = struct {
-    allocator: mem.Allocator,
+    allocator: std.mem.Allocator,
     jiq: PlayfairJIQ,
     table: [5][5]u8,
     positions: [26]Point,
@@ -66,8 +67,8 @@ const Playfair = struct {
     const repl1: u8 = 'X';
     const repl2: u8 = 'Z';
 
-    fn init(allocator: mem.Allocator, key: []const u8, jiq: PlayfairJIQ) !Playfair {
-        var playfair = Playfair{
+    fn init(allocator: std.mem.Allocator, key: []const u8, jiq: PlayfairJIQ) !Playfair {
+        var playfair: Playfair = .{
             .allocator = allocator,
             .jiq = jiq,
             .table = undefined,
@@ -75,7 +76,7 @@ const Playfair = struct {
         };
 
         const table_chars = try playfair.getTableChars(key);
-        assert(table_chars.len == 25);
+        std.debug.assert(table_chars.len == 25);
 
         // Create the table and positions lookup.
         for (0..5) |row|
@@ -92,10 +93,10 @@ const Playfair = struct {
 
     /// Get the 25 characters for the Polybius square.
     fn getTableChars(self: *const Playfair, key: []const u8) ![25]u8 {
-        var array = try std.ArrayList(u8).initCapacity(self.allocator, key.len + 26);
-        try array.appendSlice(key);
-        try array.appendSlice("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-        const raw_table_text = try array.toOwnedSlice();
+        var array: std.ArrayList(u8) = try .initCapacity(self.allocator, key.len + 26);
+        try array.appendSlice(self.allocator, key);
+        try array.appendSlice(self.allocator, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+        const raw_table_text = try array.toOwnedSlice(self.allocator);
         defer self.allocator.free(raw_table_text);
 
         // Assumes input consists only of upper case A-Z
@@ -106,8 +107,8 @@ const Playfair = struct {
         var table_text: [25]u8 = undefined;
         var n: usize = 0;
         for (raw_table_text) |c| {
-            if (ascii.isAlphabetic(c)) {
-                var next_char = ascii.toUpper(c);
+            if (std.ascii.isAlphabetic(c)) {
+                var next_char = std.ascii.toUpper(c);
                 switch (self.jiq) {
                     .use_q_removal => if (next_char == 'Q') {
                         continue;
@@ -124,7 +125,7 @@ const Playfair = struct {
                 }
             }
         }
-        assert(n == 25);
+        std.debug.assert(n == 25);
         return table_text;
     }
 
@@ -134,11 +135,11 @@ const Playfair = struct {
     /// Perform ''Q' removal or I'/'J' substitution dependent on variable `jiq`
     /// The caller owns the returned slice.
     fn getCleanText(self: *const Playfair, plain_text: []const u8) ![]u8 {
-        var clean_text = std.ArrayList(u8).init(self.allocator);
+        var clean_text: std.ArrayList(u8) = .empty;
         var prev_char: ?u8 = null;
         for (plain_text) |c| {
-            if (ascii.isAlphabetic(c)) {
-                var next_char = ascii.toUpper(c);
+            if (std.ascii.isAlphabetic(c)) {
+                var next_char = std.ascii.toUpper(c);
                 switch (self.jiq) {
                     .use_q_removal => if (next_char == 'Q') {
                         continue;
@@ -149,11 +150,11 @@ const Playfair = struct {
                 }
                 const len = clean_text.items.len;
                 if (prev_char == null or next_char != prev_char.? or len % 2 == 0)
-                    try clean_text.append(next_char)
+                    try clean_text.append(self.allocator, next_char)
                 else if (prev_char != repl1)
-                    try clean_text.append(repl1)
+                    try clean_text.append(self.allocator, repl1)
                 else
-                    try clean_text.append(repl2);
+                    try clean_text.append(self.allocator, repl2);
 
                 prev_char = next_char;
             }
@@ -161,11 +162,11 @@ const Playfair = struct {
         const len = clean_text.items.len;
         if (len % 2 != 0) {
             if (clean_text.items[len - 1] != repl1)
-                try clean_text.append(repl1)
+                try clean_text.append(self.allocator, repl1)
             else
-                try clean_text.append(repl2);
+                try clean_text.append(self.allocator, repl2);
         }
-        return try clean_text.toOwnedSlice();
+        return try clean_text.toOwnedSlice(self.allocator);
     }
 
     /// Caller owns returned slice.
@@ -201,7 +202,7 @@ const Playfair = struct {
                 row1 = (row1 + direction) % 5;
                 row2 = (row2 + direction) % 5;
             } else {
-                mem.swap(u4, &col1, &col2);
+                std.mem.swap(u4, &col1, &col2);
             }
 
             pair[0] = self.table[row1][col1];
@@ -209,6 +210,8 @@ const Playfair = struct {
         }
     }
 };
+
+const testing = std.testing;
 
 test "playfair cypher prepareText() use_ji_merge" {
     // this is how the key is used in creating the polybius square

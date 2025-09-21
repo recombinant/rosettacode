@@ -1,17 +1,20 @@
 // https://rosettacode.org/wiki/Playing_cards
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
-    var prng = std.Random.DefaultPrng.init(blk: {
+    var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
         try std.posix.getrandom(std.mem.asBytes(&seed));
         break :blk seed;
     });
     const random = prng.random();
 
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var deck = Deck.init();
+    var deck: Deck = .init();
 
     try stdout.writeAll("New deck:\n");
     try deck.show(stdout);
@@ -24,7 +27,7 @@ pub fn main() !void {
     for (0..4) |_| {
         var sep: []const u8 = "";
         for (0..5) |_| {
-            try stdout.print("{s}{?} ", .{ sep, deck.deal() });
+            try stdout.print("{s}{?f} ", .{ sep, deck.deal() });
             sep = " ";
         }
         try stdout.writeByte('\n');
@@ -32,6 +35,8 @@ pub fn main() !void {
 
     try stdout.print("\nLeft in deck {} cards:\n", .{deck.cards.len - deck.cards_dealt});
     try deck.show(stdout);
+
+    try stdout.flush();
 }
 
 const Card = struct {
@@ -41,10 +46,8 @@ const Card = struct {
     suit: Suit,
     pip: Pip,
 
-    pub fn format(self: Card, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
-        _ = fmt; // unused
-        _ = options; // unused
-        return try writer.print("{s}{s}", .{ @tagName(self.pip), @tagName(self.suit) });
+    pub fn format(self: Card, w: *std.Io.Writer) std.Io.Writer.Error!void {
+        return try w.print("{s}{s}", .{ @tagName(self.pip), @tagName(self.suit) });
     }
 };
 
@@ -57,7 +60,7 @@ const Deck = struct {
     cards_dealt: u16,
 
     fn init() Deck {
-        var deck = Deck{
+        var deck: Deck = .{
             .cards = undefined,
             .cards_dealt = 0,
         };
@@ -71,13 +74,13 @@ const Deck = struct {
         return deck;
     }
 
-    fn show(deck: *const Deck, writer: anytype) !void {
+    fn show(deck: *const Deck, w: *std.Io.Writer) !void {
         var sep: []const u8 = "";
         for (deck.cards[deck.cards_dealt..]) |card| {
-            try writer.print("{s}{}", .{ sep, card });
+            try w.print("{s}{f}", .{ sep, card });
             sep = " ";
         }
-        try writer.writeByte('\n');
+        try w.writeByte('\n');
     }
 
     fn deal(deck: *Deck) ?Card {

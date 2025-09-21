@@ -1,10 +1,11 @@
 // https://rosettacode.org/wiki/Pollard%27s_rho_algorithm
-// Translation of C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
 const std = @import("std");
 
 pub fn main() void {
     // --------------------------- Pseudo Random Number Generator
-    var prng = std.Random.DefaultPrng.init(blk: {
+    var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
         std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
         break :blk seed;

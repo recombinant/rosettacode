@@ -1,10 +1,11 @@
 // https://rosettacode.org/wiki/Permutations_by_swapping
+// {{works with|Zig|0.15.1}}
 // Zig makes use of wraparound addition.
 const std = @import("std");
 const print = std.debug.print;
 
 pub fn main() void {
-    var it = JohnsonTrotterIterator(4, u8).init([4]u8{ 11, 22, 33, 44 });
+    var it: JohnsonTrotterIterator(4, u8) = .init([4]u8{ 11, 22, 33, 44 });
     var count: usize = 0;
     while (it.next()) |values| {
         count += 1;

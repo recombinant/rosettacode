@@ -1,27 +1,32 @@
 // https://rosettacode.org/wiki/Polynomial_derivative
-// Translation of C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
 const std = @import("std");
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    try writer.writeAll("The derivatives of the following polynomials are:\n\n");
+    try stdout.writeAll("The derivatives of the following polynomials are:\n\n");
     const polynomials = [_][]const i32{ &.{5}, &.{ 4, -3 }, &.{ -1, 6, 5 }, &.{ -4, 3, -2, 1 }, &.{ 1, 1, 0, -1, -1 } };
     for (polynomials) |polynomial| {
-        try printVector(polynomial, writer);
-        try writer.writeAll(" => ");
+        try printVector(polynomial, stdout);
+        try stdout.writeAll(" => ");
         const d = try differentiate(allocator, polynomial);
-        try printVector(d, writer);
+        try printVector(d, stdout);
         allocator.free(d);
-        try writer.writeByte('\n');
+        try stdout.writeByte('\n');
     }
+
+    try stdout.flush();
 }
 
-fn printVector(vec: []const i32, writer: anytype) !void {
+fn printVector(vec: []const i32, writer: *std.Io.Writer) !void {
     try writer.writeByte('[');
     for (vec[0..vec.len], 1..) |n, i| {
         try writer.print("{}", .{n});
