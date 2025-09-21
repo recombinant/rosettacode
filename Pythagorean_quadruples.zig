@@ -1,23 +1,24 @@
 // https://rosettacode.org/wiki/Pythagorean_quadruples
+// {{works with|Zig|0.15.1}}
+
 // from https://github.com/tiehuis/zig-rosetta
 const std = @import("std");
-const print = std.debug.print;
 
 const N = 2200;
 const N2 = N * N * 2;
 
 pub fn main() !void {
-    var r = std.StaticBitSet(N + 1).initEmpty();
+    var r: std.StaticBitSet(N + 1) = .initEmpty();
 
     // Educated guess for the amount of memory required for `ab` DynamicBitSet
     var buffer: [20 + (N2 + 1) / @sizeOf(usize)]u8 = undefined;
-    var fba = std.heap.FixedBufferAllocator.init(&buffer);
+    var fba: std.heap.FixedBufferAllocator = .init(&buffer);
     const allocator = fba.allocator();
 
     // // 'ab' had a performance issue with Zig 0.14dev when using StaticBitSet
     // // so DynamicBitSet is used. DynamicBitSet is Ok for 'ab'
-    // var ab = std.StaticBitSet(N2 + 1).initEmpty();
-    var ab = try std.DynamicBitSet.initEmpty(allocator, N2 + 1);
+    // var ab: std.StaticBitSet(N2 + 1) = .initEmpty();
+    var ab: std.DynamicBitSet = try .initEmpty(allocator, N2 + 1);
 
     var a: usize = 1;
     while (a <= N) : (a += 1) {
@@ -42,10 +43,16 @@ pub fn main() !void {
         }
     }
 
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     var d: usize = 1;
     while (d <= N) : (d += 1)
         if (!r.isSet(d)) {
-            print("{} ", .{d});
+            try stdout.print("{} ", .{d});
         };
-    print("\n", .{});
+    try stdout.writeByte('\n');
+
+    try stdout.flush();
 }

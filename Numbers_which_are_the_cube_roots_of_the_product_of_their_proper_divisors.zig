@@ -1,11 +1,12 @@
 // https://rosettacode.org/wiki/Numbers_which_are_the_cube_roots_of_the_product_of_their_proper_divisors
-// Translation of Wren (alternative version)
+// {{works with|Zig|0.15.1}}
+// {{trans|Wren (alternative version)}}
 const std = @import("std");
-const testing = std.testing;
 const print = std.debug.print;
 
 pub fn main() !void {
-    var numbers50 = try std.BoundedArray(u64, 50).init(0);
+    var buffer: [50]u64 = undefined;
+    var numbers50: std.ArrayList(u64) = .initBuffer(&buffer);
 
     var count: usize = 0;
     var n: u64 = 1;
@@ -15,10 +16,10 @@ pub fn main() !void {
         if (n == 1 or dc == 8) {
             count += 1;
             if (count <= 50) {
-                try numbers50.append(n);
+                try numbers50.appendBounded(n);
                 if (count == 50) {
                     print("First 50 numbers which are the cube roots of the products of their proper divisors:\n", .{});
-                    for (numbers50.constSlice(), 1..) |number, i| {
+                    for (numbers50.items, 1..) |number, i| {
                         print("{d:3} ", .{number});
                         if (i % 10 == 0)
                             print("\n", .{});
@@ -49,6 +50,8 @@ fn divisorCount(n: u64) usize {
         };
     return count;
 }
+
+const testing = std.testing;
 
 test divisorCount {
     try testing.expectEqual(1, divisorCount(1));

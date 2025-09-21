@@ -1,8 +1,11 @@
 // https://rosettacode.org/wiki/Old_lady_swallowed_a_fly
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const Animal = struct {
         const Self = @This();
@@ -24,20 +27,22 @@ pub fn main() !void {
     };
 
     for (animals, 0..) |animal, i| {
-        try writer.print("There was an old lady who swallowed a {s},\n", .{animal.name});
+        try stdout.print("There was an old lady who swallowed a {s},\n", .{animal.name});
         if (i != 0)
-            try writer.writeAll(animal.lyric);
+            try stdout.writeAll(animal.lyric);
         if (i == animals.len - 1)
             break;
         var n = i;
         while (n != 0) {
             n -= 1;
-            try writer.print(
+            try stdout.print(
                 "She swallowed the {s} to catch the {s},\n",
                 .{ animals[n + 1].name, animals[n].name },
             );
         }
-        try writer.writeAll(animals[0].lyric);
-        try writer.writeByte('\n');
+        try stdout.writeAll(animals[0].lyric);
+        try stdout.writeByte('\n');
     }
+
+    try stdout.flush();
 }

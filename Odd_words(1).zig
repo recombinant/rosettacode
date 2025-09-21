@@ -1,11 +1,15 @@
 // https://rosettacode.org/wiki/Odd_words
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
+
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout = &stdout_writer.interface;
 
     var file: std.fs.File = try std.fs.cwd().openFile("data/unixdict.txt", .{});
     defer file.close();
@@ -14,7 +18,10 @@ pub fn main() !void {
     const unixdict_txt = try allocator.alloc(u8, file_size);
     defer allocator.free(unixdict_txt);
 
-    try file.reader().readNoEof(unixdict_txt);
+    var buffer: [4096]u8 = undefined;
+    var file_reader = file.reader(&buffer);
+    const r = &file_reader.interface;
+    try r.readSliceAll(unixdict_txt);
 
     // Need capacity for HashMap.
     // Number of words in text is equivalent to number of linefeed characters.
@@ -28,16 +35,16 @@ pub fn main() !void {
     };
 
     // StringArrayHashMap as insertion order is maintained.
-    var word_set = std.StringArrayHashMap(void).init(allocator);
-    defer word_set.deinit();
-    try word_set.ensureTotalCapacity(lf_count);
+    var word_set: std.StringArrayHashMapUnmanaged(void) = .empty;
+    defer word_set.deinit(allocator);
+    try word_set.ensureTotalCapacity(allocator, lf_count);
     var longest_word: usize = 0;
 
     // fill word_set with contents of "unixdict.txt"
-    var it = mem.splitScalar(u8, unixdict_txt, '\n');
+    var it = std.mem.splitScalar(u8, unixdict_txt, '\n');
     while (it.next()) |word| {
         if (word.len != 0) {
-            try word_set.putNoClobber(word, {});
+            try word_set.putNoClobber(allocator, word, {});
             longest_word = @max(longest_word, word.len);
         }
     }
@@ -56,7 +63,8 @@ pub fn main() !void {
             }
             const odd_word = odd_word_buffer[0 .. end + 1];
             if (word_set.contains(odd_word))
-                try std.io.getStdOut().writer().print("{s:10} {s}\n", .{ word, odd_word });
+                try stdout.print("{s:10} {s}\n", .{ word, odd_word });
         }
     }
+    try stdout.flush();
 }

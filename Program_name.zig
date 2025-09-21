@@ -1,9 +1,11 @@
 // https://rosettacode.org/wiki/Program_name
+// {{works with|Zig|0.15.1}}
+
 // Copied from rosettacode
 const std = @import("std");
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -12,6 +14,11 @@ pub fn main() !void {
 
     const program_name = std.fs.path.basename(args[0]);
 
-    const writer = std.io.getStdOut().writer();
-    try writer.print("{s}\n", .{program_name});
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    try stdout.print("{s}\n", .{program_name});
+
+    try stdout.flush();
 }

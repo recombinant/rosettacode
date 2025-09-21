@@ -1,22 +1,22 @@
 // https://rosettacode.org/wiki/Ordered_words
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
 
 pub fn main() !void {
     const text = @embedFile("data/unixdict.txt");
 
     // allocator ------------------------------------------
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     // ordered word list ----------------------------------
-    var words = std.ArrayList([]const u8).init(allocator);
-    defer words.deinit();
+    var words: std.ArrayList([]const u8) = .empty;
+    defer words.deinit(allocator);
 
     // find ordered words of longest length ---------------
     var maxlen: usize = 0;
-    var it = mem.splitScalar(u8, text, '\n');
+    var it = std.mem.splitScalar(u8, text, '\n');
     while (it.next()) |word| {
         const len = word.len;
         if (len >= maxlen and isOrdered(word)) {
@@ -24,11 +24,11 @@ pub fn main() !void {
                 maxlen = len;
                 words.clearRetainingCapacity();
             }
-            try words.append(word);
+            try words.append(allocator, word);
         }
     }
 
-    const list = try words.toOwnedSlice();
+    const list = try words.toOwnedSlice(allocator);
     defer allocator.free(list);
 
     try printWords(list);
@@ -45,9 +45,9 @@ fn isOrdered(word: []const u8) bool {
 
 fn printWords(words: [][]const u8) !void {
     // buffered stdout ------------------------------------
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // ----------------------------------------------------
 
     var sep: []const u8 = "";
@@ -58,5 +58,5 @@ fn printWords(words: [][]const u8) !void {
     try stdout.writeByte('\n');
 
     // flush buffered stdout ------------------------------
-    try bw.flush();
+    try stdout.flush();
 }

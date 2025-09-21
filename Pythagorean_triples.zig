@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Pythagorean_triples
+// {{works with|Zig|0.15.1}}
 // from https://github.com/tiehuis/zig-rosetta
 const std = @import("std");
 const print = std.debug.print;
@@ -17,7 +18,7 @@ const TripleCount = struct {
 };
 
 fn countTriples(x: usize, y: usize, z: usize, limit: usize) TripleCount {
-    var count = TripleCount{
+    var count: TripleCount = .{
         .primitives = 0,
         .total = 0,
     };

@@ -1,29 +1,33 @@
 // https://rosettacode.org/wiki/Radical_of_an_integer
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
-
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // --------------------------------------------------- task 1
-    try writer.writeAll("The radicals of 1 to 50 are:\n");
+    try stdout.writeAll("The radicals of 1 to 50 are:\n");
     var i: u64 = 1;
     while (i <= 50) : (i += 1) {
         const radical = calcRadical(i);
-        try writer.print("{d:4}", .{radical});
+        try stdout.print("{d:4}", .{radical});
         if (i % 10 == 0)
-            try writer.writeByte('\n');
+            try stdout.writeByte('\n');
     }
+    try stdout.flush();
 
     // --------------------------------------------------- task 2
-    try writer.writeByte('\n');
-    try writer.print("The radical of {d:6} is: {d:6}\n", .{ 99999, calcRadical(99999) });
-    try writer.print("The radical of {d:6} is: {d:6}\n", .{ 499999, calcRadical(499999) });
-    try writer.print("The radical of {d:6} is: {d:6}\n", .{ 999999, calcRadical(999999) });
+    try stdout.writeByte('\n');
+    try stdout.print("The radical of {d:6} is: {d:6}\n", .{ 99999, calcRadical(99999) });
+    try stdout.print("The radical of {d:6} is: {d:6}\n", .{ 499999, calcRadical(499999) });
+    try stdout.print("The radical of {d:6} is: {d:6}\n", .{ 999999, calcRadical(999999) });
+    try stdout.flush();
 
     // --------------------------------------------------- task 3
-    try writer.writeAll("\nDistribution of radicals up to 1,000,000:\n");
+    try stdout.writeAll("\nDistribution of radicals up to 1,000,000:\n");
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -39,10 +43,11 @@ pub fn main() !void {
         radical_count[count] += 1;
     }
     for (radical_count, 0..) |count, idx|
-        try writer.print("{d}: {d}\n", .{ idx, count });
+        try stdout.print("{d}: {d}\n", .{ idx, count });
+    try stdout.flush();
 
     // ----------------------------------------------- bonus task
-    try writer.writeAll("\nUp to 1,000,000:\n");
+    try stdout.writeAll("\nUp to 1,000,000:\n");
     i = 2;
     var prime_count: usize = 0;
     var prime_power_count: usize = 0;
@@ -52,10 +57,11 @@ pub fn main() !void {
             .prime_power => prime_power_count += 1,
             .neither => {},
         };
-    try writer.print("Primes: {d:5}\n", .{prime_count});
-    try writer.print("Powers: {d:5}\n", .{prime_power_count});
-    try writer.print("Plus 1: {d:5}\n", .{1});
-    try writer.print("Total:  {d:5}\n", .{prime_count + prime_power_count + 1});
+    try stdout.print("Primes: {d:5}\n", .{prime_count});
+    try stdout.print("Powers: {d:5}\n", .{prime_power_count});
+    try stdout.print("Plus 1: {d:5}\n", .{1});
+    try stdout.print("Total:  {d:5}\n", .{prime_count + prime_power_count + 1});
+    try stdout.flush();
 }
 
 /// The radical of n is the product of the distinct prime factors of n.

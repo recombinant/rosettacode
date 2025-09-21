@@ -1,30 +1,32 @@
 // https://rosettacode.org/wiki/N%27th
-// Translation of: C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
-const heap = std.heap;
-const math = std.math;
-const mem = std.mem;
-
-const print = std.debug.print;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
+    var buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &stdout_writer.interface;
+
     const ranges = [_][2]usize{ .{ 0, 25 }, .{ 250, 265 }, .{ 1000, 1025 } };
     for (ranges) |range|
-        try printRange(allocator, range[0], range[1]);
+        try printRange(allocator, range[0], range[1], stdout);
+
+    try stdout.flush();
 }
 
-fn printRange(allocator: mem.Allocator, lo: usize, hi: usize) !void {
-    print("Set [{},{}] :\n", .{ lo, hi });
+fn printRange(allocator: std.mem.Allocator, lo: usize, hi: usize, w: *std.Io.Writer) !void {
+    try w.print("Set [{},{}] :\n", .{ lo, hi });
     for (lo..hi + 1) |n| {
         const s = try nth(allocator, n, .{});
         defer allocator.free(s);
-        print("{s} ", .{s});
+        try w.print("{s} ", .{s});
     }
-    print("\n\n", .{});
+    try w.print("\n\n", .{});
 }
 
 const NthOptions = struct {
@@ -32,7 +34,7 @@ const NthOptions = struct {
 };
 
 /// Caller owns returned slice memory.
-fn nth(allocator: mem.Allocator, n: usize, options: NthOptions) ![]const u8 {
+fn nth(allocator: std.mem.Allocator, n: usize, options: NthOptions) ![]const u8 {
     const apostrophe: []const u8 = if (options.apostrophe) "'" else "";
 
     // Calculate the precise amount of memory required to
@@ -41,14 +43,15 @@ fn nth(allocator: mem.Allocator, n: usize, options: NthOptions) ![]const u8 {
     // Verified with LoggingAllocator.
 
     // count of digits + (1? for apostrophe) (2 for length of suffix)
-    const len = (if (n == 0) 1 else math.log10_int(n) + 1) + apostrophe.len + 2;
+    const len = (if (n == 0) 1 else std.math.log10_int(n) + 1) + apostrophe.len + 2;
 
-    var result = try std.ArrayList(u8).initCapacity(allocator, len);
-    const writer = result.writer();
+    var a: std.Io.Writer.Allocating = try .initCapacity(allocator, len);
+    defer a.deinit();
+    const w = &a.writer;
 
-    try writer.print("{d}{s}{s}", .{ n, apostrophe, getSuffix(n) });
+    try w.print("{d}{s}{s}", .{ n, apostrophe, getSuffix(n) });
 
-    return result.toOwnedSlice();
+    return a.toOwnedSlice();
 }
 
 fn getSuffix(n: usize) []const u8 {
