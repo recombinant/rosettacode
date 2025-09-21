@@ -111,8 +111,8 @@ const EulerGraph = struct {
         defer self.allocator.free(arc_i);
         @memset(arc_i, 0);
         // The current path we are on
-        var node_stack: NodeStack = try .init(self.allocator, start);
-        defer node_stack.deinit();
+        var node_stack: NodeStackUnmanaged = try .init(self.allocator, start);
+        defer node_stack.deinit(self.allocator);
 
         while (node_stack.size() > 0) {
             const node_i: usize = node_stack.top();
@@ -120,7 +120,7 @@ const EulerGraph = struct {
 
             if (arc_i[node_i] < node.arcs.items.len) {
                 // We haven't traversed all arcs on that node yet
-                try node_stack.push(node.arcs.items[arc_i[node_i]].v);
+                try node_stack.push(self.allocator, node.arcs.items[arc_i[node_i]].v);
                 arc_i[node_i] += 1;
             } else {
                 // We have traversed all arcs for this node, so add the node to Eulerian cycle
@@ -134,31 +134,29 @@ const EulerGraph = struct {
 };
 
 /// Thin wrapper around std.ArrayList to emulate a stack.
-const NodeStack = struct {
-    allocator: std.mem.Allocator,
+const NodeStackUnmanaged = struct {
     stack: std.ArrayList(usize),
 
-    fn init(allocator: std.mem.Allocator, start: usize) !NodeStack {
+    fn init(allocator: std.mem.Allocator, start: usize) !NodeStackUnmanaged {
         var stack: std.ArrayList(usize) = .empty;
         try stack.append(allocator, start);
-        return NodeStack{
-            .allocator = allocator,
+        return NodeStackUnmanaged{
             .stack = stack,
         };
     }
-    fn deinit(self: *NodeStack) void {
-        self.stack.deinit(self.allocator);
+    fn deinit(self: *NodeStackUnmanaged, allocator: std.mem.Allocator) void {
+        self.stack.deinit(allocator);
     }
-    fn size(self: *const NodeStack) usize {
+    fn size(self: *const NodeStackUnmanaged) usize {
         return self.stack.items.len;
     }
-    fn push(self: *NodeStack, node: usize) !void {
-        try self.stack.append(self.allocator, node);
+    fn push(self: *NodeStackUnmanaged, allocator: std.mem.Allocator, node: usize) !void {
+        try self.stack.append(allocator, node);
     }
-    fn pop(self: *NodeStack) void {
+    fn pop(self: *NodeStackUnmanaged) void {
         _ = self.stack.pop();
     }
-    fn top(self: *const NodeStack) usize {
+    fn top(self: *const NodeStackUnmanaged) usize {
         return self.stack.items[self.stack.items.len - 1];
     }
 };
