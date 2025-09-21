@@ -1,11 +1,11 @@
 // https://rosettacode.org/wiki/Sphenic_numbers
-// Translation of C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
 const std = @import("std");
-const mem = std.mem;
 const assert = std.debug.assert;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -38,7 +38,9 @@ pub fn main() !void {
         }
     }
 
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var n: usize = 0;
     try stdout.writeAll("Sphenic numbers < 1,000:\n");
@@ -92,6 +94,8 @@ pub fn main() !void {
         "The 5,000th sphenic triplet: ({}, {}, {})\n",
         .{ t5_000 - 2, t5_000 - 1, t5_000 },
     );
+
+    try stdout.flush();
 }
 
 // Sieve of Eratosthenese. Not quite brute force.
@@ -120,26 +124,26 @@ fn calcPrimeSieve(comptime limit: usize) std.StaticBitSet(limit) {
     return bits;
 }
 
-fn findPrimeFactors(allocator: mem.Allocator, n_: u32) ![]u32 {
+fn findPrimeFactors(allocator: std.mem.Allocator, n_: u32) ![]u32 {
     var n = n_;
-    var factors = std.ArrayList(u32).init(allocator);
+    var factors: std.ArrayList(u32) = .empty;
     if (n > 1 and (n & 1) == 0) {
-        try factors.append(2);
+        try factors.append(allocator, 2);
         while ((n & 1) == 0)
             n >>= 1;
     }
     var p: u32 = 3;
     while (p * p <= n) : (p += 2) {
         if (n % p == 0) {
-            try factors.append(p);
+            try factors.append(allocator, p);
             while (n % p == 0)
                 n /= p;
         }
     }
     if (n > 1)
-        try factors.append(n);
+        try factors.append(allocator, n);
 
-    return factors.toOwnedSlice();
+    return factors.toOwnedSlice(allocator);
 }
 
 const testing = std.testing;

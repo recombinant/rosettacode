@@ -1,10 +1,13 @@
 // https://rosettacode.org/wiki/Steffensen%27s_method
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 
 pub fn main() !void {
     // --------------------------------------------------------------
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // --------------------------------------------------------------
     var t0: f64 = 0;
     for (0..11) |_| {
@@ -20,6 +23,8 @@ pub fn main() !void {
             try stdout.writeAll("no answer\n");
         }
         t0 += 0.1;
+
+        try stdout.flush();
     }
 }
 

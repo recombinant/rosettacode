@@ -1,7 +1,7 @@
 // https://rosettacode.org/wiki/Shoelace_formula_for_polygonal_area
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 const testing = std.testing;
-const assert = std.debug.assert;
 
 pub fn main() !void {
     const points = [_]Point{
@@ -9,8 +9,13 @@ pub fn main() !void {
         .{ .x = 9, .y = 5 }, .{ .x = 5, .y = 6 },
     };
 
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     try stdout.print("{d}\n", .{shoelace(points[0..])});
+
+    try stdout.flush();
 }
 
 const Point = struct {
@@ -19,7 +24,7 @@ const Point = struct {
 };
 
 fn shoelace(points: []const Point) f64 {
-    assert(points.len > 2);
+    std.debug.assert(points.len > 2);
     var sum: f64 = 0;
     var p0 = points[points.len - 1];
     for (points[0..points.len]) |p1| {

@@ -1,12 +1,14 @@
 // https://www.rosettacode.org/wiki/Strip_a_set_of_characters_from_a_string
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
 
 pub fn main() !void {
     // ------------------------------------------------------- stdout
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // ---------------------------------------------------- allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // --------------------------------------------------------------
@@ -14,33 +16,35 @@ pub fn main() !void {
     defer allocator.free(s);
 
     try stdout.print("{s}\n", .{s});
+
+    try stdout.flush();
 }
 
 /// Caller owns returned slice memory.
-fn strip2(allocator: mem.Allocator, s: []const u8, remove: []const u8) ![]const u8 {
-    var buffer = std.ArrayList(u8).init(allocator);
-    const writer = buffer.writer();
+fn strip2(allocator: std.mem.Allocator, s: []const u8, remove: []const u8) ![]const u8 {
+    var a: std.Io.Writer.Allocating = .init(allocator);
+    defer a.deinit();
 
-    var it = mem.tokenizeAny(u8, s, remove);
+    var it = std.mem.tokenizeAny(u8, s, remove);
     while (it.next()) |substring|
-        try writer.writeAll(substring);
+        try a.writer.writeAll(substring);
 
-    return try buffer.toOwnedSlice();
+    return try a.toOwnedSlice();
 }
 
 /// Caller owns returned slice memory.
-fn strip(allocator: mem.Allocator, s: []const u8, remove: []const u8) ![]const u8 {
+fn strip(allocator: std.mem.Allocator, s: []const u8, remove: []const u8) ![]const u8 {
     // Determine size of stripped result.
     var size: usize = 0;
     for (s) |c|
-        if (mem.indexOfScalar(u8, remove, c) == null) {
+        if (std.mem.indexOfScalar(u8, remove, c) == null) {
             size += 1;
         };
 
     var stripped = try allocator.alloc(u8, size);
     var index: usize = 0;
     for (s) |c|
-        if (mem.indexOfScalar(u8, remove, c) == null) {
+        if (std.mem.indexOfScalar(u8, remove, c) == null) {
             stripped[index] = c;
             index += 1;
         };

@@ -1,10 +1,13 @@
 // https://rosettacode.org/wiki/Sierpinski_triangle
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 const ORDER = 4;
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const size = 1 << ORDER;
     var y: usize = size;
@@ -22,4 +25,6 @@ pub fn main() !void {
         }
         try stdout.writeByte('\n');
     }
+
+    try stdout.flush();
 }

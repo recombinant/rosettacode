@@ -1,28 +1,29 @@
 // https://rosettacode.org/wiki/Loops/Break
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
 
 const print = std.debug.print;
 
 pub fn main() !void {
-    var prng = std.Random.DefaultPrng.init(blk: {
+    var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        std.posix.getrandom(mem.asBytes(&seed)) catch unreachable;
+        std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
         break :blk seed;
     });
     const random = prng.random();
     // ----------------------------------------------------------
-    const stdout = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout);
-    var writer = bw.writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // ----------------------------------------------------------
     while (true) {
         const n1 = random.intRangeAtMost(u8, 0, 19);
-        try writer.print("{d}\n", .{n1});
+        try stdout.print("{d}\n", .{n1});
         if (n1 == 10)
             break;
         const n2 = random.intRangeAtMost(u8, 0, 19);
-        try writer.print("{d}\n", .{n2});
+        try stdout.print("{d}\n", .{n2});
     }
-    try bw.flush();
+
+    try stdout.flush();
 }

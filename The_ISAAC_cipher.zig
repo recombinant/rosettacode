@@ -1,4 +1,6 @@
 // https://rosettacode.org/wiki/The_ISAAC_cipher
+// {{works with|Zig|0.15.1}}
+
 // Links with the (tweaked) original C source code
 //   zig run The_ISAAC_cipher.zig The_ISAAC_cipher.c -lc -I.
 const std = @import("std");
@@ -48,22 +50,27 @@ pub fn main() !void {
         break :blk copy(&cptx, result);
     };
     // Program output
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     try stdout.print("Message: {s}\n", .{msg});
     try stdout.print("Key    : {s}\n", .{key});
     try stdout.print("XOR    : ", .{});
     // Output Vernam ciphertext as a string of hex digits
     for (vctx_slice) |ch| try stdout.print("{X:0>2}", .{ch});
-    try stdout.print("\n", .{});
+    try stdout.writeByte('\n');
     // Output Vernam decrypted plaintext
     try stdout.print("XOR dcr: {s}\n", .{vptx_slice});
     // Caesar
     try stdout.print("MOD    : ", .{});
     // Output Caesar ciphertext as a string of hex digits
     for (cctx_slice) |ch| try stdout.print("{X:0>2}", .{ch});
-    try stdout.print("\n", .{});
+    try stdout.writeByte('\n');
     // Output Caesar decrypted plaintext
     try stdout.print("MOD dcr: {s}\n", .{cptx_slice});
+
+    try stdout.flush();
 }
 // Output:
 // Message: a Top Secret secret

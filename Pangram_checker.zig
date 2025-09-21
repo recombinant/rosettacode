@@ -1,11 +1,12 @@
 // https://rosettacode.org/wiki/Pangram_checker
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const ascii = std.ascii;
-const math = std.math;
 const testing = std.testing;
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const phrases = pangram_phrases ++ not_pangram_phrases;
 
@@ -14,6 +15,8 @@ pub fn main() !void {
             "\"{s}\" is {s}a pangram\n",
             .{ phrase, if (isPangram(phrase)) "" else "not " },
         );
+
+    try stdout.flush();
 }
 
 const pangram_phrases = [_][]const u8{
@@ -34,11 +37,11 @@ fn isPangram(s: []const u8) bool {
     var bits: u26 = 0;
 
     for (s) |c|
-        if (ascii.isAlphabetic(c)) {
-            bits |= @as(u26, 1) << @truncate(ascii.toLower(c) - 'a');
+        if (std.ascii.isAlphabetic(c)) {
+            bits |= @as(u26, 1) << @truncate(std.ascii.toLower(c) - 'a');
         };
 
-    return bits == comptime math.maxInt(@TypeOf(bits));
+    return bits == comptime std.math.maxInt(@TypeOf(bits));
 }
 test isPangram {
     for (pangram_phrases) |phrase|
@@ -54,7 +57,7 @@ test "26 bits" {
     // Uses wraparound properties of two's complement arithmetic.
     const bits: BitType = @as(BitType, 0) -% 1;
 
-    try testing.expectEqual(math.maxInt(BitType), bits);
+    try testing.expectEqual(std.math.maxInt(BitType), bits);
 }
 
 /// Alternative implementation of isPangram() using std.StaticBitset
@@ -65,8 +68,8 @@ fn isPangramWithBitmap(s: []const u8) bool {
     var bits = std.StaticBitSet(26).initEmpty();
 
     for (s) |c|
-        if (ascii.isAlphabetic(c))
-            bits.set(ascii.toLower(c) - 'a');
+        if (std.ascii.isAlphabetic(c))
+            bits.set(std.ascii.toLower(c) - 'a');
 
     return bits.count() == 26;
 }

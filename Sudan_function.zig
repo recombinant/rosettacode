@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Sudan_function
+// {{works with|Zig|0.15.1}}
 
 // requires utf-8 terminal for printing to work.
 
@@ -16,7 +17,10 @@ const SudanError = error{
 };
 
 pub fn main() anyerror!void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     const parameters = [_]struct { n: u64, x: u64, y: u64 }{
         .{ .n = 0, .x = 0, .y = 0 }, .{ .n = 1, .x = 1, .y = 1 },
         .{ .n = 2, .x = 1, .y = 1 }, .{ .n = 2, .x = 2, .y = 1 },
@@ -34,5 +38,6 @@ pub fn main() anyerror!void {
             "F{s}({d}, {d}) = {d}\n",
             .{ subscript_n, p.x, p.y, sudan(p.n, p.x, p.y) },
         );
+        try stdout.flush();
     }
 }

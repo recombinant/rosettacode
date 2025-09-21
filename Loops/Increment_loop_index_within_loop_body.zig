@@ -1,23 +1,24 @@
 // https://rosettacode.org/wiki/Loops/Increment_loop_index_within_loop_body
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 const LIMIT = 42;
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout);
-    var writer = bw.writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var n: u8 = 0;
     var i: u64 = LIMIT;
     while (n < 42) : (i += 1)
         if (isPrime(i)) {
             n += 1;
-            try writer.print("n = {d:2}  {d}\n", .{ n, i });
+            try stdout.print("n = {d:2}  {d}\n", .{ n, i });
             i += i - 1;
         };
 
-    try bw.flush();
+    try stdout.flush();
 }
 
 fn isPrime(n: anytype) bool {
