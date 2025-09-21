@@ -1,26 +1,28 @@
 // https://rosettacode.org/wiki/Concatenate_two_primes_is_also_prime
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
-const math = std.math;
-const sort = std.sort;
-const print = std.debug.print;
 
 pub fn main() !void {
     const limit = 100;
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var primes = std.ArrayList(u32).init(allocator);
-    defer primes.deinit();
-    var results = std.ArrayList(u32).init(allocator);
-    defer results.deinit();
+    var primes: std.ArrayList(u32) = .empty;
+    defer primes.deinit(allocator);
+    var results: std.ArrayList(u32) = .empty;
+    defer results.deinit(allocator);
 
     for (0..limit) |i| {
         const p: u32 = @intCast(i);
         if (isPrime(p))
-            try primes.append(p);
+            try primes.append(allocator, p);
     }
 
     var factor: u32 = 1;
@@ -28,27 +30,29 @@ pub fn main() !void {
     for (primes.items) |p| {
         for (primes.items) |q| {
             if (q < factor or q > minimum) {
-                minimum = math.pow(u32, 10, math.log10_int(@as(u32, q)));
+                minimum = std.math.pow(u32, 10, std.math.log10_int(@as(u32, q)));
                 factor = minimum * 10;
             }
             const pq = (p * factor) + q;
             if (isPrime(pq))
-                try results.append(pq);
+                try results.append(allocator, pq);
         }
     }
-    sort.insertion(u32, results.items, {}, sort.asc(u32));
+    std.mem.sortUnstable(u32, results.items, {}, std.sort.asc(u32));
 
     var count: usize = 0;
-    print("Two primes under {d} concatenated together to form another prime:\n", .{limit});
+    try stdout.print("Two primes under {d} concatenated together to form another prime:\n", .{limit});
     for (results.items, 0..) |result, i| {
         if (i > 0 and result == results.items[i - 1])
             continue;
-        print("{d:6} ", .{result});
+        try stdout.print("{d:6} ", .{result});
         count += 1;
         if (count % 10 == 0)
-            print("\n", .{});
+            try stdout.writeByte('\n');
     }
-    print("\n\nFound {d} such concatenated primes.\n", .{count});
+    try stdout.print("\n\nFound {d} such concatenated primes.\n", .{count});
+
+    try stdout.flush();
 }
 
 fn isPrime(n: u32) bool {

@@ -1,14 +1,14 @@
 // https://rosettacode.org/wiki/Convert_seconds_to_compound_duration
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
-const mem = std.mem;
 
 pub fn main() !void {
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -18,11 +18,11 @@ pub fn main() !void {
         try stdout.print("{d:>7} sec = {s}\n", .{ seconds, str });
     }
 
-    try bw.flush();
+    try stdout.flush();
 }
 
 /// Caller owns returned memory.
-fn duration(allocator: mem.Allocator, seconds: u32) ![]const u8 {
+fn duration(allocator: std.mem.Allocator, seconds: u32) ![]const u8 {
     var quotient = seconds;
     var remainders: [5]u32 = undefined;
     const divisors: [4]u32 = .{ 60, 60, 24, 7 };
@@ -33,20 +33,19 @@ fn duration(allocator: mem.Allocator, seconds: u32) ![]const u8 {
         tptr.* = m;
     }
     remainders[remainders.len - 1] = quotient;
-    mem.reverse(u32, &remainders);
+    std.mem.reverse(u32, &remainders);
 
     const units = [_][]const u8{ "wk", "d", "hr", "min", "sec" };
 
-    var result = std.ArrayList(u8).init(allocator);
-    defer result.deinit();
-    const writer = result.writer();
+    var a: std.Io.Writer.Allocating = .init(allocator);
+    defer a.deinit();
 
     var sep: []const u8 = "";
-    for (remainders, units) |n, unit| {
+    for (remainders, units) |n, unit|
         if (n != 0) {
-            try writer.print("{s}{d} {s}", .{ sep, n, unit });
+            try a.writer.print("{s}{d} {s}", .{ sep, n, unit });
             sep = ", ";
-        }
-    }
-    return result.toOwnedSlice();
+        };
+
+    return a.toOwnedSlice();
 }

@@ -1,10 +1,11 @@
 // https://rosettacode.org/wiki/Curzon_numbers
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     //
     var k: u64 = 2;
     while (k <= 10) : (k += 2) {
@@ -26,7 +27,7 @@ pub fn main() !void {
         try stdout.print("1,000th Curzon number with base {d}: {d}\n\n", .{ k, n });
     }
     //
-    try bw.flush();
+    try stdout.flush();
 }
 
 fn isCurzon(n: u64, k: u64) bool {

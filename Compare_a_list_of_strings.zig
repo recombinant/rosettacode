@@ -1,13 +1,12 @@
 // https://rosettacode.org/wiki/Compare_a_list_of_strings
+// {{works with|Zig|0.15.1}}
+
 // from https://github.com/tiehuis/zig-rosetta
 const std = @import("std");
-const mem = std.mem;
-const testing = std.testing;
-const print = std.debug.print;
 
 fn stringsAreEqual(list: []const []const u8) bool {
     for (list) |s|
-        if (!mem.eql(u8, list[0], s)) {
+        if (!std.mem.eql(u8, list[0], s)) {
             return false;
         };
     return true;
@@ -15,13 +14,13 @@ fn stringsAreEqual(list: []const []const u8) bool {
 
 fn stringsAreInAscendingOrder(list: []const []const u8) bool {
     for (list[0 .. list.len - 1], list[1..list.len]) |a, b|
-        if (mem.order(u8, a, b) != .lt) {
+        if (std.mem.order(u8, a, b) != .lt) {
             return false;
         };
     return true;
 }
 
-pub fn main() void {
+pub fn main() !void {
     const lists = &[_][]const []const u8{
         &[_][]const u8{ "AA", "BB", "CC" },
         &[_][]const u8{ "AA", "AA", "AA" },
@@ -30,19 +29,25 @@ pub fn main() void {
         &[_][]const u8{"single_element"},
     };
 
-    for (lists) |list| {
-        print("                   list: ", .{});
-        for (list) |e|
-            print("{s} ", .{e});
-        print("\n", .{});
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-        print("lexicographically equal: {}\n", .{stringsAreEqual(list)});
-        print(" strict ascending order: {}\n", .{stringsAreInAscendingOrder(list)});
-        print("\n", .{});
+    for (lists) |list| {
+        try stdout.print("                   list: ", .{});
+        for (list) |e|
+            try stdout.writeAll(e);
+        try stdout.writeByte('\n');
+
+        try stdout.print("lexicographically equal: {}\n", .{stringsAreEqual(list)});
+        try stdout.print(" strict ascending order: {}\n", .{stringsAreInAscendingOrder(list)});
+        try stdout.writeByte('\n');
     }
+    try stdout.flush();
 }
 
 // Translation of Go tests
+const testing = std.testing;
 
 test stringsAreEqual {
     const eq_tests = [_]struct { desc: []const u8, list: []const []const u8, expected: bool }{

@@ -13,12 +13,12 @@ pub fn main() !void {
     const text = try std.ascii.allocLowerString(allocator, text_mixed);
     defer allocator.free(text);
 
-    var map: std.StringArrayHashMapUnmanaged(u32) = .init(allocator);
-    defer map.deinit();
+    var map: std.StringArrayHashMapUnmanaged(u32) = .empty;
+    defer map.deinit(allocator);
 
     var word_it: WordIterator = .init(text);
     while (word_it.next()) |word| {
-        const gop = try map.getOrPut(word);
+        const gop = try map.getOrPut(allocator, word);
         if (gop.found_existing)
             gop.value_ptr.* += 1
         else

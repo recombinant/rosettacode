@@ -21,7 +21,7 @@ pub fn main() !void {
     const stdout = &stdout_writer.interface;
     // --------------------------------------------------------------
     var word_set = try populateWordSet(allocator, text);
-    defer word_set.deinit();
+    defer word_set.deinit(allocator);
     // --------------------------------------------------------------
     try task1(allocator, word_set, stdout);
     try stdout.flush();
@@ -64,7 +64,7 @@ fn task1(allocator: std.mem.Allocator, word_set: WordSet, w: *std.Io.Writer) !vo
 /// Optional Extra task
 fn task2(allocator: std.mem.Allocator, word_set: WordSet, w: *std.Io.Writer) !void {
     var distinct_letters9: std.AutoArrayHashMapUnmanaged(u8, void) = .empty;
-    defer distinct_letters9.deinit();
+    defer distinct_letters9.deinit(allocator);
     var letter_list9: std.ArrayList(u8) = try .initCapacity(allocator, 9);
     defer letter_list9.deinit(allocator);
 
@@ -83,7 +83,7 @@ fn task2(allocator: std.mem.Allocator, word_set: WordSet, w: *std.Io.Writer) !vo
     for (words9) |word9| {
         distinct_letters9.clearRetainingCapacity();
         for (word9) |letter|
-            try distinct_letters9.put(letter, {});
+            try distinct_letters9.put(allocator, letter, {});
 
         // speed up
         accel9.clearRetainingCapacity();
@@ -144,14 +144,14 @@ fn populateWordSet(allocator: std.mem.Allocator, text: []const u8) !WordSet {
             word_count += 1;
     }
 
-    var word_set: WordSet = .init(allocator);
-    try word_set.ensureTotalCapacity(word_count);
+    var word_set: WordSet = .empty;
+    try word_set.ensureTotalCapacity(allocator, word_count);
 
     // populate set
     it = std.mem.splitScalar(u8, text, '\n');
     while (it.next()) |word|
         if (word.len >= 3 and word.len <= 9)
-            try word_set.putNoClobber(word, {});
+            try word_set.putNoClobber(allocator, word, {});
 
     return word_set;
 }

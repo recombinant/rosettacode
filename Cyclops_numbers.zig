@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Cyclops_numbers
-// Translation of C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
 const std = @import("std");
 const testing = std.testing;
 const print = std.debug.print;
@@ -9,7 +10,7 @@ pub fn main() void {
     const limit_stretch = 10_000_000;
     // --------------
     print("First {} cyclops numbers:\n", .{limit});
-    var it0 = CyclopsIterator.init();
+    var it0: CyclopsIterator = .init();
     for (0..limit) |count|
         printCyclops(count, limit, it0.next()[0]);
 
@@ -19,7 +20,7 @@ pub fn main() void {
     print("First cyclops after {} is {} at 1 based index {}\n\n", .{ limit_stretch, cyclops_number, cyclops_count });
     // ------------
     print("First {} prime cyclops numbers:\n\n", .{limit});
-    var it1 = PrimeCyclopsIterator.init();
+    var it1: PrimeCyclopsIterator = .init();
     for (0..limit) |count|
         printCyclops(count, limit, it1.next()[0]);
 
@@ -28,7 +29,7 @@ pub fn main() void {
     print("First prime cyclops after {} is {} at 1 based index {}\n\n", .{ limit_stretch, cyclops_number, cyclops_count });
     // ------------
     print("First {} blind prime cyclops numbers:\n", .{limit});
-    var it2 = BlindPrimeCyclopsIterator.init();
+    var it2: BlindPrimeCyclopsIterator = .init();
     for (0..limit) |count|
         printCyclops(count, limit, it2.next()[0]);
 
@@ -37,7 +38,7 @@ pub fn main() void {
     print("First blind prime cyclops after {} is {} at 1 based index {}\n\n", .{ limit_stretch, cyclops_number, cyclops_count });
     // ------------
     print("First {} palindromic prime cyclops numbers:\n", .{limit});
-    var it3 = PalindromicPrimeCyclopsIterator.init();
+    var it3: PalindromicPrimeCyclopsIterator = .init();
     for (0..limit) |count|
         printCyclops(count, limit, it3.next()[0]);
 
@@ -84,7 +85,7 @@ const PrimeCyclopsIterator = struct {
     fn init() PrimeCyclopsIterator {
         return PrimeCyclopsIterator{
             .count = 0,
-            .it = CyclopsIterator.init(),
+            .it = .init(),
         };
     }
 
@@ -106,7 +107,7 @@ const BlindPrimeCyclopsIterator = struct {
     fn init() BlindPrimeCyclopsIterator {
         return BlindPrimeCyclopsIterator{
             .count = 0,
-            .it = PrimeCyclopsIterator.init(),
+            .it = .init(),
         };
     }
 
@@ -128,7 +129,7 @@ const PalindromicPrimeCyclopsIterator = struct {
     fn init() PalindromicPrimeCyclopsIterator {
         return PalindromicPrimeCyclopsIterator{
             .count = 0,
-            .it = PrimeCyclopsIterator.init(),
+            .it = .init(),
         };
     }
 

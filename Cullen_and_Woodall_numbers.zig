@@ -1,58 +1,49 @@
 // https://rosettacode.org/wiki/Cullen_and_Woodall_numbers
-// TODO: complete stretch task - Woodhall primes and Cullen primes - requires GMP
+// {{works with|Zig|0.15.1}}
+// NOTE: stretch task is not here - Woodhall primes and Cullen primes - requires GMP
 const std = @import("std");
-const math = std.math;
-const print = std.debug.print;
 
-pub fn main() void {
-    displayNumberSequence(20, .cullen);
-    displayNumberSequence(20, .woodhall);
+pub fn main() !void {
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    print("These two run out of bits and stop.\nThey require a bit integer implementation with Miller-Rabin primality test.\n\n", .{});
-    displayPrimeNumberNSequence(5, .cullen);
-    displayPrimeNumberNSequence(12, .woodhall);
+    try displayNumberSequence(20, .Cullen, stdout);
+    try displayNumberSequence(20, .Woodhall, stdout);
+
+    try stdout.writeAll("These two run out of bits and stop.\nThey require a bit integer implementation with Miller-Rabin primality test.\n\n");
+    try displayPrimeNumberNSequence(5, .Cullen, stdout);
+    try displayPrimeNumberNSequence(12, .Woodhall, stdout);
+
+    try stdout.flush();
 }
 
-fn displayNumberSequence(count: usize, number_type: NumberType) void {
-    print("The first {} {} numbers are:\n", .{ count, number_type });
+fn displayNumberSequence(count: usize, number_type: NumberType, w: *std.Io.Writer) !void {
+    try w.print("The first {} {t} numbers are:\n", .{ count, number_type });
 
-    var it = NumberIterator.init(number_type);
+    var it: NumberIterator = .init(number_type);
 
     for (0..count) |_|
-        print("{} ", .{it.next()});
+        try w.print("{d} ", .{it.next()});
 
-    print("\n\n", .{});
+    _ = try w.splatByte('\n', 2);
 }
 
-fn displayPrimeNumberNSequence(count: usize, number_type: NumberType) void {
-    print("The first (up to) {} {} prime numbers are:\n", .{ count, number_type });
+fn displayPrimeNumberNSequence(count: usize, number_type: NumberType, w: *std.Io.Writer) !void {
+    try w.print("The first (up to) {} {t} prime numbers are:\n", .{ count, number_type });
 
-    var it = PrimeNumberNIterator.init(number_type);
+    var it: PrimeNumberNIterator = .init(number_type);
 
     for (0..count) |_| {
         const n = it.next() catch break;
-        print("{} ", .{n});
+        try w.print("{d} ", .{n});
     }
-    print("\n\n", .{});
+    _ = try w.splatByte('\n', 2);
 }
 
 const NumberType = enum {
-    cullen,
-    woodhall,
-
-    pub fn format(
-        self: NumberType,
-        comptime fmt: []const u8,
-        options: std.fmt.FormatOptions,
-        writer: anytype,
-    ) !void {
-        _ = fmt;
-        _ = options;
-        try writer.writeAll(switch (self) {
-            .cullen => "Cullen",
-            .woodhall => "Woodhall",
-        });
-    }
+    Cullen,
+    Woodhall,
 };
 
 const NumberIterator = struct {
@@ -68,10 +59,10 @@ const NumberIterator = struct {
 
     fn next(self: *NumberIterator) u64 {
         self.n += 1;
-        const two_to_the_n = math.shl(u64, 1, self.n);
+        const two_to_the_n = std.math.shl(u64, 1, self.n);
         return switch (self.number_type) {
-            .cullen => self.n * two_to_the_n + 1,
-            .woodhall => self.n * two_to_the_n - 1,
+            .Cullen => self.n * two_to_the_n + 1,
+            .Woodhall => self.n * two_to_the_n - 1,
         };
     }
 };
@@ -91,13 +82,13 @@ const PrimeNumberNIterator = struct {
     fn next(self: *PrimeNumberNIterator) !u128 {
         while (true) {
             self.n += 1;
-            const two_to_the_n = math.shl(u128, 1, self.n);
+            const two_to_the_n = std.math.shl(u128, 1, self.n);
             const ov = @mulWithOverflow(self.n, two_to_the_n);
             if (ov[1] != 0)
                 return error.Overflow;
             const result = switch (self.number_type) {
-                .cullen => self.n * two_to_the_n + 1,
-                .woodhall => self.n * two_to_the_n - 1,
+                .Cullen => self.n * two_to_the_n + 1,
+                .Woodhall => self.n * two_to_the_n - 1,
             };
             const b = isPrime(result) catch |err| return err;
             if (b)
@@ -122,7 +113,7 @@ fn isPrime(n: u128) !bool {
             return error.Overflow;
         d2 = ov[0];
         // Remove following line when use of big integers is implemented.
-        if (d2 > comptime math.maxInt(u48)) return error.Stopping; // arbitrarily give up now
+        if (d2 > comptime std.math.maxInt(u48)) return error.Stopping; // arbitrarily give up now
     }
     return true;
 }

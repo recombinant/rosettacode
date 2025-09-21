@@ -1,24 +1,22 @@
 // https://rosettacode.org/wiki/Cyclops_numbers
-// Translation of C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
 
 // Using a prime sieve generator is slower than than using the
 // slightly optimised CyclopsIterator. Improvements to the latter
 // would improve speed.
 
 const std = @import("std");
-const fmt = std.fmt;
-const math = std.math;
-const time = std.time;
 const print = std.debug.print;
 
 pub fn main() !void {
-    var t0 = try time.Timer.start();
+    var t0: std.time.Timer = try .start();
     // --------------
     const limit = 50;
     const limit_stretch = 10_000_000;
     // --------------
     print("First {} cyclops numbers:\n", .{limit});
-    var it0 = CyclopsIterator.init();
+    var it0: CyclopsIterator = .init();
     for (0..limit) |count|
         printCyclops(count, limit, it0.next()[0]);
 
@@ -28,7 +26,7 @@ pub fn main() !void {
     print("First cyclops after {} is {} at 1 based index {}\n\n", .{ limit_stretch, cyclops_number, cyclops_count });
     // ------------
     print("First {} prime cyclops numbers:\n\n", .{limit});
-    var it1 = PrimeCyclopsIterator.init();
+    var it1: PrimeCyclopsIterator = .init();
     for (0..limit) |count|
         printCyclops(count, limit, it1.next()[0]);
 
@@ -37,7 +35,7 @@ pub fn main() !void {
     print("First prime cyclops after {} is {} at 1 based index {}\n\n", .{ limit_stretch, cyclops_number, cyclops_count });
     // ------------
     print("First {} blind prime cyclops numbers:\n", .{limit});
-    var it2 = BlindPrimeCyclopsIterator.init();
+    var it2: BlindPrimeCyclopsIterator = .init();
     for (0..limit) |count|
         printCyclops(count, limit, it2.next()[0]);
 
@@ -46,14 +44,14 @@ pub fn main() !void {
     print("First blind prime cyclops after {} is {} at 1 based index {}\n\n", .{ limit_stretch, cyclops_number, cyclops_count });
     // ------------
     print("First {} palindromic prime cyclops numbers:\n", .{limit});
-    var it3 = PalindromicPrimeCyclopsIterator.init();
+    var it3: PalindromicPrimeCyclopsIterator = .init();
     for (0..limit) |count|
         printCyclops(count, limit, it3.next()[0]);
 
     cyclops_number = 0;
     while (cyclops_number < limit_stretch) cyclops_number, cyclops_count = it3.next();
     print("First palindromic prime cyclops after {} is {} at 1 based index {}\n\n", .{ limit_stretch, cyclops_number, cyclops_count });
-    print("Processed in {}\n", .{fmt.fmtDuration(t0.read())});
+    print("Processed in {D}\n", .{t0.read()});
 }
 
 fn printCyclops(count: usize, limit: usize, n: u64) void {
@@ -79,7 +77,7 @@ const CyclopsIterator = struct {
         var candidate = self.next_candidate;
 
         while (!isCyclopsNumber(candidate)) {
-            const n_digits: u64 = math.log10_int(candidate) + 1;
+            const n_digits: u64 = std.math.log10_int(candidate) + 1;
             if (n_digits % 2 == 0) {
                 // candidate to the next odd number of digits cyclops.
                 candidate = 0;
@@ -109,7 +107,7 @@ const PrimeCyclopsIterator = struct {
     fn init() PrimeCyclopsIterator {
         return PrimeCyclopsIterator{
             .count = 0,
-            .it = CyclopsIterator.init(),
+            .it = .init(),
         };
     }
 
@@ -131,7 +129,7 @@ const BlindPrimeCyclopsIterator = struct {
     fn init() BlindPrimeCyclopsIterator {
         return BlindPrimeCyclopsIterator{
             .count = 0,
-            .it = PrimeCyclopsIterator.init(),
+            .it = .init(),
         };
     }
 
@@ -153,7 +151,7 @@ const PalindromicPrimeCyclopsIterator = struct {
     fn init() PalindromicPrimeCyclopsIterator {
         return PalindromicPrimeCyclopsIterator{
             .count = 0,
-            .it = PrimeCyclopsIterator.init(),
+            .it = .init(),
         };
     }
 
@@ -172,7 +170,7 @@ fn isCyclopsNumber(n_: u64) bool {
     if (n_ == 0)
         return true;
 
-    const n_digits: u64 = math.log10_int(n_) + 1;
+    const n_digits: u64 = std.math.log10_int(n_) + 1;
     if (n_digits % 2 == 0)
         return false;
 

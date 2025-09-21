@@ -1,20 +1,25 @@
 // https://rosettacode.org/wiki/Composite_numbers_k_with_no_single_digit_factors_whose_factors_are_all_substrings_of_k
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
-
-const print = std.debug.print;
 
 pub fn main() void {
     var t0 = std.time.Timer.start() catch unreachable;
+
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     var amount: u32 = 7;
     var n: u32 = 11;
     while (amount > 0) : (n += 2) {
         if (factorsAreSubstrings(n)) {
-            print("{}\n", .{n});
+            stdout.print("{}\n", .{n}) catch unreachable;
+            stdout.flush() catch unreachable;
             amount -= 1;
         }
     }
-    print("\nprocessed in {}\n", .{std.fmt.fmtDuration(t0.read())});
+    std.log.info("processed in {D}", .{t0.read()});
 }
 fn isSubstring(n_: u32, k: u32) bool {
     var n = n_;
