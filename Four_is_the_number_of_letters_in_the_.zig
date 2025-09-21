@@ -1,5 +1,7 @@
 // https://rosettacode.org/wiki/Four_is_the_number_of_letters_in_the_...
-// Translation of C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
+
 // Differs from the C++ inasmuch as the C++ implementation uses std::string
 // (with associated allocation) whereas the Zig implementation uses
 // Tagged Unions and comptime strings thus avoiding the extra allocation
@@ -7,11 +9,14 @@
 const std = @import("std");
 
 pub fn main() !void {
-    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     {
         const n: usize = 201;
         const words = try getSentence(allocator, n);
@@ -21,14 +26,15 @@ pub fn main() !void {
         // defer allocator.free(s);
         // std.log.info("\"{s}\"", .{s});
 
-        try writer.print("Number of letters in first {} numbers in the sequence:\n", .{words.len});
+        try stdout.print("Number of letters in first {} numbers in the sequence:\n", .{words.len});
         for (words, 0..) |word, i| {
             if (i != 0)
-                try writer.writeByte(if (i % 25 == 0) '\n' else ' ');
-            try writer.print("{d:2}", .{word.countLetters()});
+                try stdout.writeByte(if (i % 25 == 0) '\n' else ' ');
+            try stdout.print("{d:2}", .{word.countLetters()});
         }
-        try writer.writeByte('\n');
-        try writer.print("Sentence length: {} characters\n\n", .{calcSentenceLength(words)});
+        try stdout.writeByte('\n');
+        try stdout.print("Sentence length: {} characters\n\n", .{calcSentenceLength(words)});
+        try stdout.flush();
     }
     {
         var n: usize = 1_000;
@@ -37,9 +43,10 @@ pub fn main() !void {
             defer allocator.free(words);
             const word = try words[n - 1].asString(allocator);
             defer allocator.free(word);
-            try writer.print("The {}th word is '{s}' and has {} letters. ", .{ n, word, words[n - 1].countLetters() });
-            try writer.print("Sentence length: {} characters\n", .{calcSentenceLength(words)});
+            try stdout.print("The {}th word is '{s}' and has {} letters. ", .{ n, word, words[n - 1].countLetters() });
+            try stdout.print("Sentence length: {} characters\n", .{calcSentenceLength(words)});
         }
+        try stdout.flush();
     }
 }
 
@@ -52,35 +59,35 @@ fn getSentence(allocator: std.mem.Allocator, count: usize) !Sentence {
         "letters", "in",   "the",      "first",  "word",
         "of",      "this", "sentence",
     };
-    var result = std.ArrayList(Word).init(allocator);
-    defer result.deinit();
+    var result: std.ArrayList(Word) = .empty;
+    defer result.deinit(allocator);
 
     if (count != 0) {
         // up to and including the first comma
         for (words, 1..) |letters, i| {
             if (i != words.len)
-                try result.append(Word{ .word = letters })
+                try result.append(allocator, Word{ .word = letters })
             else
-                try result.append(Word{ .word_comma = letters });
+                try result.append(allocator, Word{ .word_comma = letters });
         }
         var n: usize = result.items.len;
 
         var word_index: usize = 1;
         while (count > n) : (word_index += 1) {
-            n += try appendNumberName(&result, result.items[word_index].countLetters(), false);
-            try result.append(.{ .word = "in" });
-            try result.append(.{ .word = "the" });
+            n += try appendNumberName(&result, allocator, result.items[word_index].countLetters(), false);
+            try result.append(allocator, .{ .word = "in" });
+            try result.append(allocator, .{ .word = "the" });
             n += 2;
-            n += try appendNumberName(&result, word_index + 1, true);
-            const last = result.pop();
+            n += try appendNumberName(&result, allocator, word_index + 1, true);
+            const last = result.pop().?;
             switch (last) {
-                .word => |word| try result.append(.{ .word_comma = word }),
-                .word_hyphen => |pair| try result.append(.{ .word_hyphen_comma = pair }),
+                .word => |word| try result.append(allocator, .{ .word_comma = word }),
+                .word_hyphen => |pair| try result.append(allocator, .{ .word_hyphen_comma = pair }),
                 else => unreachable,
             }
         }
     }
-    return result.toOwnedSlice();
+    return result.toOwnedSlice(allocator);
 }
 /// Sentence length includes all words, space and punctuation.
 /// - hyphen words have a hyphen in the middle
@@ -104,7 +111,7 @@ fn calcSentenceLength(words: Sentence) usize {
 fn stringifySentence(allocator: std.mem.Allocator, words: Sentence) ![]const u8 {
     const sentence_length = calcSentenceLength(words);
     //
-    var result = try std.ArrayList(u8).initCapacity(allocator, sentence_length);
+    var result: std.ArrayList(u8) = try .initCapacity(allocator, sentence_length);
     for (words, 0..) |word, i| {
         if (i != 0)
             try result.append(' ');
@@ -217,7 +224,7 @@ fn getNamedNumber(n: u64) NamedNumber {
 }
 
 /// Recursive. Returns a count of the words added.
-fn appendNumberName(result: *std.ArrayList(Word), n: usize, ordinal: bool) !usize {
+fn appendNumberName(result: *std.ArrayList(Word), allocator: std.mem.Allocator, n: usize, ordinal: bool) !usize {
     const small = comptime [_]NumberName{
         .init("zero", "zeroth"),         .init("one", "first"),           .init("two", "second"),
         .init("three", "third"),         .init("four", "fourth"),         .init("five", "fifth"),
@@ -235,34 +242,35 @@ fn appendNumberName(result: *std.ArrayList(Word), n: usize, ordinal: bool) !usiz
     };
     var count: usize = 0;
     if (n < 20) {
-        try result.append(Word{ .word = small[n].getName(ordinal) });
+        try result.append(allocator, Word{ .word = small[n].getName(ordinal) });
         count = 1;
     } else if (n < 100) {
         if (n % 10 == 0) {
-            try result.append(Word{ .word = tens[n / 10 - 2].getName(ordinal) });
+            try result.append(allocator, Word{ .word = tens[n / 10 - 2].getName(ordinal) });
         } else {
             const word1 = tens[n / 10 - 2].getName(false);
             const word2 = small[n % 10].getName(ordinal);
-            try result.append(Word{ .word_hyphen = .{ word1, word2 } });
+            try result.append(allocator, Word{ .word_hyphen = .{ word1, word2 } });
         }
         count = 1;
     } else {
         const num: NamedNumber = getNamedNumber(n);
         const p = num.number;
-        count += try appendNumberName(result, n / p, false);
+        count += try appendNumberName(result, allocator, n / p, false);
         if (n % p == 0) {
-            try result.append(Word{ .word = num.getName(ordinal) });
+            try result.append(allocator, Word{ .word = num.getName(ordinal) });
             count += 1;
         } else {
-            try result.append(Word{ .word = num.getName(false) });
+            try result.append(allocator, Word{ .word = num.getName(false) });
             count += 1;
-            count += try appendNumberName(result, n % p, ordinal);
+            count += try appendNumberName(result, allocator, n % p, ordinal);
         }
     }
     return count;
 }
 
 const testing = std.testing;
+
 test getSentence {
     const words0 = try getSentence(testing.allocator, 0);
     defer testing.allocator.free(words0);

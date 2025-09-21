@@ -1,14 +1,18 @@
 // https://rosettacode.org/wiki/First_9_prime_Fibonacci_number
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 const testing = std.testing;
 
 pub fn main() !void {
     const limit = 9;
 
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     try stdout.print("The first {} prime Fibonacci numbers are:\n", .{limit});
 
-    var fibonacci = FibonacciIterator{};
+    var fibonacci: FibonacciIterator = .{};
     var count: u8 = 0;
     while (count != limit) {
         const n = fibonacci.next();
@@ -18,6 +22,7 @@ pub fn main() !void {
         }
     }
     try stdout.writeByte('\n');
+    try stdout.flush();
 }
 
 const FibonacciIterator = struct {
@@ -63,7 +68,7 @@ test FibonacciIterator {
         196418, 317811, 514229,
     };
 
-    var it = FibonacciIterator{};
+    var it: FibonacciIterator = .{};
     for (sequence) |n|
         try testing.expectEqual(n, it.next());
 }

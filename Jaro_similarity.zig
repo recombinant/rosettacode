@@ -1,21 +1,26 @@
 // https://rosettacode.org/wiki/Jaro_similarity
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 // Translation of C (keeping comments)
 const std = @import("std");
-const mem = std.mem;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     try stdout.print("{d:.6}\n", .{try jaro(allocator, "MARTHA", "MARHTA")});
     try stdout.print("{d:.6}\n", .{try jaro(allocator, "DIXON", "DICKSONX")});
     try stdout.print("{d:.6}\n", .{try jaro(allocator, "JELLYFISH", "SMELLYFISH")});
+
+    try stdout.flush();
 }
 
-fn jaro(allocator: mem.Allocator, str1: []const u8, str2: []const u8) !f64 {
+fn jaro(allocator: std.mem.Allocator, str1: []const u8, str2: []const u8) !f64 {
     // if both strings are empty return 1
     // if only one of the strings is empty return 0
     if (str1.len == 0 and str2.len == 0) return 1;
@@ -26,10 +31,10 @@ fn jaro(allocator: mem.Allocator, str1: []const u8, str2: []const u8) !f64 {
     const match_distance = @max(str1.len, str2.len) / 2 - 1;
 
     // arrays of bools that signify if that char in the matching string has a match
-    var str1_matches = try std.DynamicBitSet.initEmpty(allocator, str1.len);
+    var str1_matches: std.DynamicBitSet = try .initEmpty(allocator, str1.len);
     defer str1_matches.deinit();
 
-    var str2_matches = try std.DynamicBitSet.initEmpty(allocator, str2.len);
+    var str2_matches: std.DynamicBitSet = try .initEmpty(allocator, str2.len);
     defer str2_matches.deinit();
 
     // find the matches

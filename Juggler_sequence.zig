@@ -1,33 +1,38 @@
 // https://rosettacode.org/wiki/Juggler_sequence
-// Translation of Go
+// {{works with|Zig|0.15.1}}
+// {{trans|Go}}
 const std = @import("std");
 
 const Int = std.math.big.int.Managed;
 
 pub fn main() !void {
     // --------------------------------------------------- allocators
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // --------------------------------------------------------------
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
     const arena_allocator = arena.allocator();
     // --------------------------------------------------------------
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     {
-        try writer.writeAll("n    l[n]  i[n]  h[n]\n");
-        try writer.writeAll("-----------------------------------\n");
+        try stdout.writeAll("n    l[n]  i[n]  h[n]\n");
+        try stdout.writeAll("-----------------------------------\n");
         var n: u8 = 20;
         while (n < 40) : (n += 1) {
             const count, const max_count, var max = try juggler(allocator, n);
             const s = try max.toString(arena_allocator, 10, .lower);
-            try writer.print("{d}    {d:2}   {d:2}    {s}\n", .{ n, count, max_count, s });
+            try stdout.print("{d}    {d:2}   {d:2}    {s}\n", .{ n, count, max_count, s });
+            try stdout.flush();
             _ = arena.reset(.retain_capacity);
             max.deinit();
         }
     }
-    try writer.writeByte('\n');
+    try stdout.writeByte('\n');
     {
         const nums = [_]u32{
             113, 173, 193, 2183, 11229, 15065, 15845, 30817,
@@ -37,16 +42,18 @@ pub fn main() !void {
             // 48443, 275485, 1267909, 2264915, 5812827, 7110201,
             // 56261531, 92502777, 172376627, 604398963,
         };
-        try writer.writeAll("      n        l[n]   i[n]   d[n]\n");
-        try writer.writeAll("-------------------------------------\n");
+        try stdout.writeAll("      n        l[n]   i[n]   d[n]\n");
+        try stdout.writeAll("-------------------------------------\n");
         for (nums) |n| {
             const count, const max_count, var max = try juggler(allocator, n);
             const s = try max.toString(arena_allocator, 10, .lower);
-            try writer.print("{d:11}    {d:3}    {d:3}    {d}\n", .{ n, count, max_count, s.len });
+            try stdout.print("{d:11}    {d:3}    {d:3}    {d}\n", .{ n, count, max_count, s.len });
+            try stdout.flush();
             _ = arena.reset(.retain_capacity);
             max.deinit();
         }
     }
+    try stdout.flush();
 }
 fn juggler(allocator: std.mem.Allocator, n: anytype) !struct { usize, usize, Int } {
     const T = @TypeOf(n);
@@ -56,17 +63,17 @@ fn juggler(allocator: std.mem.Allocator, n: anytype) !struct { usize, usize, Int
     var count: usize = 0;
     var max_count: usize = 0;
 
-    var one = try Int.initSet(allocator, 1);
+    var one: Int = try .initSet(allocator, 1);
     defer one.deinit();
-    var two = try Int.initSet(allocator, 2);
+    var two: Int = try .initSet(allocator, 2);
     defer two.deinit();
 
-    var a = try Int.initSet(allocator, n);
-    var max = try Int.initSet(allocator, n);
-    var q = try Int.init(allocator);
-    var r = try Int.init(allocator);
-    var rma1 = try Int.init(allocator);
-    var rma2 = try Int.init(allocator);
+    var a: Int = try .initSet(allocator, n);
+    var max: Int = try .initSet(allocator, n);
+    var q: Int = try .init(allocator);
+    var r: Int = try .init(allocator);
+    var rma1: Int = try .init(allocator);
+    var rma2: Int = try .init(allocator);
     defer a.deinit();
     defer q.deinit();
     defer r.deinit();

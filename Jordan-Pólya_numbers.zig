@@ -1,11 +1,13 @@
 // https://rosettacode.org/wiki/Jordan-Pólya_numbers
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -54,6 +56,8 @@ pub fn main() !void {
         }
         try stdout.writeAll("\n\n");
     }
+
+    try stdout.flush();
 }
 
 // This are calculated at comptime.
@@ -92,12 +96,12 @@ fn findNearestInArray(a: []u64, n: u64) usize {
     return r;
 }
 
-fn jordanPolya(allocator: mem.Allocator, limit: u64) ![]u64 {
-    var res = std.ArrayList(u64).init(allocator);
+fn jordanPolya(allocator: std.mem.Allocator, limit: u64) ![]u64 {
+    var res: std.ArrayList(u64) = .empty;
     const ix = findNearestFact(limit);
 
     for (0..ix + 1) |i|
-        try res.append(factorials[i]);
+        try res.append(allocator, factorials[i]);
 
     var k: usize = 2;
     while (k < res.items.len) : (k += 1) {
@@ -110,9 +114,9 @@ fn jordanPolya(allocator: mem.Allocator, limit: u64) ![]u64 {
             while (true) {
                 const p = findNearestInArray(res.items, kl);
                 if (p < res.items.len and res.items[p] != kl)
-                    try res.insert(p, kl)
+                    try res.insert(allocator, p, kl)
                 else if (p == res.items.len)
-                    try res.append(kl);
+                    try res.append(allocator, kl);
                 if (kl > limit / rk)
                     break;
                 kl *= rk;
@@ -120,10 +124,10 @@ fn jordanPolya(allocator: mem.Allocator, limit: u64) ![]u64 {
         }
     }
     _ = res.orderedRemove(0);
-    return res.toOwnedSlice();
+    return res.toOwnedSlice(allocator);
 }
 
-fn decompose(allocator: mem.Allocator, n: u64, start_: usize) ![]usize {
+fn decompose(allocator: std.mem.Allocator, n: u64, start_: usize) ![]usize {
     var start = if (start_ == 0)
         factorials.len
     else
@@ -136,14 +140,14 @@ fn decompose(allocator: mem.Allocator, n: u64, start_: usize) ![]usize {
             return allocator.alloc(usize, 0);
 
         var m = n;
-        var f = std.ArrayList(usize).init(allocator);
-        defer f.deinit();
+        var f: std.ArrayList(usize) = .empty;
+        defer f.deinit(allocator);
 
         while (m % factorials[start] == 0) {
-            try f.append(start);
+            try f.append(allocator, start);
             m = m / factorials[start];
             if (m == 1)
-                return f.toOwnedSlice();
+                return f.toOwnedSlice(allocator);
         }
         if (f.items.len > 0) {
             const g = try decompose(allocator, m, start - 1);
@@ -152,8 +156,8 @@ fn decompose(allocator: mem.Allocator, n: u64, start_: usize) ![]usize {
                 var prod: u64 = 1;
                 for (g) |e| prod *= factorials[e];
                 if (prod == m) {
-                    try f.appendSlice(g);
-                    return f.toOwnedSlice();
+                    try f.appendSlice(allocator, g);
+                    return f.toOwnedSlice(allocator);
                 }
             }
         }

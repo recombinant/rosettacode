@@ -1,12 +1,14 @@
 // https://rosettacode.org/wiki/Find_adjacent_primes_which_differ_by_a_square_integer
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
-    var bw = std.io.bufferedWriter(std.io.getStdOut().writer());
-    const writer = bw.writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const limit = 1_000_000;
-    try writer.print("Adjacent primes under {} whose difference is a square > 36:\n", .{limit});
+    try stdout.print("Adjacent primes under {} whose difference is a square > 36:\n", .{limit});
 
     var a: u32 = undefined;
     var b: u32 = 3;
@@ -14,9 +16,9 @@ pub fn main() !void {
         a = nextPrime(b);
         const diff = a - b;
         if (diff > 36 and isSquare(diff))
-            try writer.print("{} - {} = {}\n", .{ a, b, diff });
+            try stdout.print("{} - {} = {}\n", .{ a, b, diff });
     }
-    try bw.flush();
+    try stdout.flush();
 }
 
 fn nextPrime(n_: anytype) @TypeOf(n_) {

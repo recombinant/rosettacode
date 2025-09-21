@@ -1,9 +1,10 @@
 // https://rosettacode.org/wiki/Forward_difference
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 //
 // Original C binomCoeff example trundles off the end of the array with k + j
 //
 const std = @import("std");
-const mem = std.mem;
 
 pub fn main() !void {
     try main1();
@@ -13,8 +14,11 @@ pub fn main() !void {
 // --------------------------------------------------------------
 
 pub fn main1() !void {
-    const stdout = std.io.getStdOut().writer();
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -29,13 +33,14 @@ pub fn main1() !void {
     }
 
     try stdout.writeByte('\n');
+    try stdout.flush();
 }
 
 const FwdDiffError = error{
     OrderTooHigh,
 };
 
-fn fwdDiff(allocator: mem.Allocator, x_: []const f64, order: usize) ![]f64 {
+fn fwdDiff(allocator: std.mem.Allocator, x_: []const f64, order: usize) ![]f64 {
     // handle two special cases
     if (order >= x_.len) return FwdDiffError.OrderTooHigh;
 
@@ -54,7 +59,7 @@ fn fwdDiff(allocator: mem.Allocator, x_: []const f64, order: usize) ![]f64 {
     return try allocator.realloc(y, len);
 }
 
-fn binomCoeff(allocator: mem.Allocator, n: i32) ![]i32 {
+fn binomCoeff(allocator: std.mem.Allocator, n: i32) ![]i32 {
     var b = try allocator.alloc(i32, 1 + @as(usize, @intCast(n)));
     b[0] = if (@rem(n, 2) == 0) 1 else -1;
 
@@ -70,8 +75,11 @@ fn binomCoeff(allocator: mem.Allocator, n: i32) ![]i32 {
 // --------------------------------------------------------------
 /// Use method with Pascal triangle, binomial coefficients are pre-computed
 pub fn main2() !void {
-    const stdout = std.io.getStdOut().writer();
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -99,4 +107,5 @@ pub fn main2() !void {
             try stdout.print("{d:5} ", .{n});
         try stdout.writeByte('\n');
     }
+    try stdout.flush();
 }

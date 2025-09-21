@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Forbidden_numbers
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 
 fn isForbidden(n: anytype) bool {
@@ -17,21 +18,24 @@ fn isForbidden(n: anytype) bool {
 }
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     {
-        try writer.writeAll("The first 50 forbidden numbers are:\n");
+        try stdout.writeAll("The first 50 forbidden numbers are:\n");
         var count: usize = 0;
         var i: u16 = 0;
         while (count < 50) : (i += 1) {
             if (isForbidden(i)) {
                 count += 1;
                 const sep: u8 = if (count % 10 == 0) '\n' else ' ';
-                try writer.print("{d:3}{c}", .{ i, sep });
+                try stdout.print("{d:3}{c}", .{ i, sep });
             }
         }
     }
+    try stdout.flush();
     {
-        try writer.writeAll("\n\n");
+        try stdout.writeAll("\n\n");
         var limit: usize = 500;
         var count: usize = 0;
         var i: u32 = 0;
@@ -39,7 +43,8 @@ pub fn main() !void {
             if (isForbidden(i))
                 count += 1;
             if (i == limit) {
-                try writer.print("Forbidden number count <= {d:11}: {d:10}\n", .{ limit, count });
+                try stdout.print("Forbidden number count <= {d:11}: {d:10}\n", .{ limit, count });
+                try stdout.flush();
                 if (limit == 500_000_000)
                     break;
                 limit *= 10;

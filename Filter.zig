@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Filter
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 /// Returns slice of `output`
@@ -14,11 +15,11 @@ fn filter(comptime T: type, context: anytype, output: []T, unfiltered: []const T
 
 /// Caller owns returned slice and must free with `allocator`.
 fn allocFilter(comptime T: type, allocator: std.mem.Allocator, context: anytype, unfiltered: []const T, predicate: fn (@TypeOf(context), item: T) bool) ![]T {
-    var result = std.ArrayList(T).init(allocator);
+    var result: std.ArrayList(T) = .empty;
     for (unfiltered) |v|
         if (predicate(context, v))
-            try result.append(v);
-    return result.toOwnedSlice();
+            try result.append(allocator, v);
+    return result.toOwnedSlice(allocator);
 }
 
 pub fn main() !void {
@@ -32,7 +33,7 @@ pub fn main() !void {
     std.debug.print("Odd numbers:  {any}\n", .{result_odd});
 
     // ---------------------------------------------------- allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // --------------------------------------------------------------
@@ -51,7 +52,9 @@ pub fn main() !void {
     };
     const result_words = try allocFilter([]const u8, allocator, @as([]const u8, "aeiou"), &words, containsLetters);
     defer allocator.free(result_words);
-    std.debug.print("Contains any of \"aeiou\": {s}", .{result_words});
+    const printable = try std.mem.join(allocator, ", ", result_words);
+    defer allocator.free(printable);
+    std.debug.print("Contains any of \"aeiou\": {s}", .{printable});
 }
 
 fn isOddOrEven(even_context: bool, item: u16) bool {

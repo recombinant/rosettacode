@@ -1,13 +1,15 @@
 // https://rosettacode.org/wiki/Josephus_problem
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const data = [_]struct { n: usize, step: usize }{
         .{ .n = 5, .step = 2 },
@@ -22,19 +24,21 @@ pub fn main() !void {
             .{ result[0 .. result.len - 1], result[result.len - 1] },
         );
     }
+
+    try stdout.flush();
 }
 
 /// Caller owns returned slice memory.
-fn j(allocator: mem.Allocator, n: usize, k: usize) ![]usize {
-    var p = try std.ArrayList(usize).initCapacity(allocator, n);
-    for (0..n) |i| try p.append(i);
-    defer p.deinit();
+fn j(allocator: std.mem.Allocator, n: usize, k: usize) ![]usize {
+    var p: std.ArrayList(usize) = try .initCapacity(allocator, n);
+    defer p.deinit(allocator);
+    for (0..n) |i| try p.append(allocator, i);
 
     var i: usize = 0;
-    var seq = try std.ArrayList(usize).initCapacity(allocator, n);
+    var seq: std.ArrayList(usize) = try .initCapacity(allocator, n);
     while (p.items.len != 0) {
         i = (i + k - 1) % p.items.len;
-        try seq.append(p.orderedRemove(i));
+        try seq.append(allocator, p.orderedRemove(i));
     }
-    return try seq.toOwnedSlice();
+    return try seq.toOwnedSlice(allocator);
 }

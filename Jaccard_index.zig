@@ -1,10 +1,6 @@
 // https://rosettacode.org/wiki/Jaccard_index
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const heap = std.heap;
-const io = std.io;
-const mem = std.mem;
-
-const assert = std.debug.assert;
 
 const JaccardIndex = struct { i: usize, u: usize };
 const JType = u16;
@@ -33,19 +29,21 @@ fn jaccardIndex(a: *const JSet, b: *const JSet) !JaccardIndex {
 }
 
 pub fn main() !void {
-    const stdout = io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     // ------------------------------------------ Allocator
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // ----------------------------------------------- Data
-    var a = try JSet.init(allocator, 'a', &[_]JType{});
-    var b = try JSet.init(allocator, 'b', &[_]JType{ 1, 2, 3, 4, 5 });
-    var c = try JSet.init(allocator, 'c', &[_]JType{ 1, 3, 5, 7, 9 });
-    var d = try JSet.init(allocator, 'd', &[_]JType{ 2, 4, 6, 8, 10 });
-    var e = try JSet.init(allocator, 'e', &[_]JType{ 2, 3, 5, 7 });
-    var f = try JSet.init(allocator, 'f', &[_]JType{8});
-    defer for ([_]*JSet{ &a, &b, &c, &d, &e, &f }) |set| set.deinit();
+    var a: JSet = try .init(allocator, 'a', &[_]JType{});
+    var b: JSet = try .init(allocator, 'b', &[_]JType{ 1, 2, 3, 4, 5 });
+    var c: JSet = try .init(allocator, 'c', &[_]JType{ 1, 3, 5, 7, 9 });
+    var d: JSet = try .init(allocator, 'd', &[_]JType{ 2, 4, 6, 8, 10 });
+    var e: JSet = try .init(allocator, 'e', &[_]JType{ 2, 3, 5, 7 });
+    var f: JSet = try .init(allocator, 'f', &[_]JType{8});
+    defer for ([_]*JSet{ &a, &b, &c, &d, &e, &f }) |set| set.deinit(allocator);
     // -------------------------------- Print original data
     const isets = [_]JSet{ a, b, c, d, e, f };
     for (isets) |se|
@@ -65,25 +63,26 @@ pub fn main() !void {
         }
         try stdout.writeByte('\n');
     }
+    try stdout.flush();
 }
 
 /// Façade over AutoArrayHashMap to provide a set.
 const JSet = struct {
     id: u8,
-    set: std.AutoArrayHashMap(JType, void),
+    set: std.AutoArrayHashMapUnmanaged(JType, void),
 
-    fn init(allocator: mem.Allocator, id: u8, array: []const JType) !JSet {
-        var set = std.AutoArrayHashMap(JType, void).init(allocator);
+    fn init(allocator: std.mem.Allocator, id: u8, array: []const JType) !JSet {
+        var set: std.AutoArrayHashMapUnmanaged(JType, void) = .empty;
         for (array) |n|
-            try set.put(n, {});
-        assert(set.count() == array.len);
+            try set.put(allocator, n, {});
+        std.debug.assert(set.count() == array.len);
         return JSet{
             .id = id,
             .set = set,
         };
     }
-    fn deinit(self: *JSet) void {
-        self.set.deinit();
+    fn deinit(self: *JSet, allocator: std.mem.Allocator) void {
+        self.set.deinit(allocator);
     }
     fn values(self: *const JSet) []const JType {
         return self.set.keys();
