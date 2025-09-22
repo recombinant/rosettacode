@@ -1,153 +1,98 @@
-// https://rosettacode.org/wiki/Emirp_primes
+// https://rosettacode.org/wiki/Erdős-primes
+// {{works with|Zig|0.15.1}}
+
+// zig run Erdős-primes.zig -I ../primesieve-12.9/zig-out/include/ ../primesieve-12.9/zig-out/lib/primesieve.lib -lstdc++
 const std = @import("std");
-const math = std.math;
-const mem = std.mem;
-const sort = std.sort;
-const testing = std.testing;
-const assert = std.debug.assert;
-const print = std.debug.print;
+const ps = @cImport({
+    @cInclude("primesieve.h");
+});
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .{};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var factorials = try FactorialList.init(allocator);
-    defer factorials.deinit();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var pit = PrimeIterator.init();
+    // sieve for isPrime()
+    const limit = 1_000_000;
+    const sieve = try PrimeSieve.init(allocator, limit);
+    defer sieve.deinit(allocator);
 
-    var primes = std.ArrayList(u64).init(allocator);
-    defer primes.deinit();
-    try primes.append(2);
+    var it: ps.primesieve_iterator = undefined;
+    ps.primesieve_init(&it);
+    defer ps.primesieve_free_iterator(&it);
 
     var count: usize = 0;
-    var erdos_prime_count: usize = 0;
-    const p: u64 = blk: {
-        print("\nErdős primes less that 2500: ", .{});
-        while (true) {
-            const p = pit.next();
-            try primes.append(p);
-
-            if (try isErdos(p, primes.items, &factorials)) {
-                if (p < 2500) {
-                    // Task 1
-                    print("{} ", .{p});
-                    erdos_prime_count = count;
-                } else if (erdos_prime_count != 0) {
-                    // Task 1, optional
-                    print("\n\nThe number of Erdős primes less that 2500: {}\n", .{erdos_prime_count});
-                    erdos_prime_count = 0;
-                }
-                count += 1;
-                if (count == 7875)
-                    break :blk p; // Task 2
+    var found = false;
+    try stdout.writeAll("Erdős primes under 2500:\n");
+    while (true) {
+        const p = ps.primesieve_next_prime(&it);
+        if (it.is_error != 0 or p == ps.PRIMESIEVE_ERROR)
+            return error.PrimesieveError;
+        if (isErdos(p, &sieve)) {
+            if (p > 2500 and !found) {
+                // Task 1, optional
+                try stdout.print("\n\nThe number of Erdős primes less than 2,500: {}\n", .{count});
+                found = true;
+            }
+            count += 1;
+            if (p < 2500)
+                try stdout.print("{} ", .{p}) // Task 1
+            else if (count == 7875) {
+                // Task 2
+                try stdout.print("\nThe 7,875th Erdős prime is: {}\n", .{p});
+                break;
             }
         }
-    };
-    print("\nThe {}th Erdős prime is {}\n", .{ count, p }); // Task 2
+    }
+    try stdout.flush();
 }
 
-fn orderU64(context: u64, item: u64) math.Order {
-    return math.order(item, context);
-}
-
-fn isErdos(prime: u64, primes: []const u64, factorials: *FactorialList) !bool {
+fn isErdos(prime: u64, sieve: *const PrimeSieve) bool {
     var k: u64 = 1;
-    while (try factorials.factorial(k) < prime) {
-        const value = prime - try factorials.factorial(k);
-        if (sort.binarySearch(u64, primes, value, orderU64) != null)
+    var factorial: u64 = 1;
+    while (factorial < prime) {
+        if (sieve.isPrime(prime - factorial))
             return false;
         k += 1;
+        factorial *= k;
     }
     return true;
 }
 
-const FactorialList = struct {
-    allocator: mem.Allocator,
-    factorial_list: std.ArrayList(u64),
+const PrimeSieve = struct {
+    sieve: []const bool,
 
-    fn init(allocator: mem.Allocator) !FactorialList {
-        var factorial_list = std.ArrayList(u64).init(allocator);
-        try factorial_list.append(1); // 0!
-        return FactorialList{
-            .allocator = allocator,
-            .factorial_list = factorial_list,
+    fn init(allocator: std.mem.Allocator, limit: usize) !PrimeSieve {
+        var primes = try allocator.alloc(bool, limit);
+        @memset(primes, false);
+        var it: ps.primesieve_iterator = undefined;
+        ps.primesieve_init(&it);
+        defer ps.primesieve_free_iterator(&it);
+        {
+            // consume 2
+            const p = ps.primesieve_next_prime(&it);
+            if (it.is_error != 0 or p == ps.PRIMESIEVE_ERROR)
+                return error.PrimesieveError;
+        }
+        while (true) {
+            const p = ps.primesieve_next_prime(&it);
+            if (it.is_error != 0 or p == ps.PRIMESIEVE_ERROR)
+                return error.PrimesieveError;
+            if (p >= limit) break;
+            primes[p >> 1] = true;
+        }
+        return PrimeSieve{
+            .sieve = primes,
         };
     }
-    fn deinit(self: *FactorialList) void {
-        self.factorial_list.deinit();
+    fn deinit(self: *const PrimeSieve, allocator: std.mem.Allocator) void {
+        allocator.free(self.sieve);
     }
-
-    fn factorial(self: *FactorialList, n: u64) !u64 {
-        if (n < self.factorial_list.items.len)
-            return self.factorial_list.items[n];
-        // Specialized. Cannot calculate an arbitrary factorial.
-        assert(n == self.factorial_list.items.len);
-        const prev_factorial = self.factorial_list.items[self.factorial_list.items.len - 1];
-        const this_factorial = prev_factorial * n;
-        try self.factorial_list.append(this_factorial);
-        return this_factorial;
+    fn isPrime(self: PrimeSieve, n: u64) bool {
+        return n == 2 or ((n & 1) == 1 and self.sieve[n >> 1]);
     }
 };
-
-fn isPrime(n: u64) bool {
-    if (n <= 3)
-        return n > 1;
-    if (n % 2 == 0 or n % 3 == 0)
-        return false;
-
-    var d: u32 = 5;
-    while (d * d <= n) : (d += 6)
-        if (n % d == 0 or n % (d + 2) == 0)
-            return false;
-
-    return true;
-}
-
-const PrimeIterator = struct {
-    n: u64,
-    step: u64,
-
-    fn init() PrimeIterator {
-        return .{ .n = 2, .step = 1 };
-    }
-
-    fn next(self: *PrimeIterator) u64 {
-        var n: u64 = self.n;
-        const step = self.step;
-        while (!isPrime(n))
-            n += step;
-        self.step = 2; // Even numbers > 2 are not prime.
-        self.n = n + step;
-        return n;
-    }
-};
-
-test FactorialList {
-    var factorials = try FactorialList.init(testing.allocator);
-    defer factorials.deinit();
-
-    const expected_list = [_]u64{ 1, 1, 2, 6, 24, 120, 720, 5_040, 40_320, 362_880 };
-
-    for (expected_list, 0..) |expected, n|
-        try testing.expectEqual(expected, try factorials.factorial(@intCast(n)));
-}
-
-test PrimeIterator {
-    var it = PrimeIterator.init();
-    const expected_list = [_]u64{ 2, 3, 5, 7, 11, 13, 17, 19, 23, 29 };
-
-    for (expected_list) |expected|
-        try testing.expectEqual(expected, it.next());
-}
-
-test isPrime {
-    const primes_list = [_]u64{ 2, 3, 5, 7, 11, 13, 17, 19, 23, 29 };
-    const composite_list = [_]u64{ 4, 6, 8, 9, 10, 12, 14, 15, 16, 18, 20, 21 };
-
-    for (primes_list) |prime|
-        try testing.expect(isPrime(prime));
-    for (composite_list) |composite|
-        try testing.expect(!isPrime(composite));
-}
