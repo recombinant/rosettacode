@@ -1,11 +1,12 @@
 // https://rosettacode.org/wiki/Miller–Rabin_primality_test
+// {{works with|Zig|0.15.1}}
 // Translation of
 // https://algoteka.com/samples/46/miller%25E2%2580%2593rabin-primality-test-c-plus-plus-simple-64-bit-implementation
 const std = @import("std");
 
 pub fn main() !void {
     // -------------------------------------------- random number
-    var prng = std.Random.DefaultPrng.init(blk: {
+    var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
         std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
         break :blk seed;
@@ -98,7 +99,7 @@ fn primeTest(n: anytype, random: std.Random, options: PrimeTestOptions) bool {
 
 const testing = std.testing;
 test "primeTest primes" {
-    var prng = std.Random.DefaultPrng.init(testing.random_seed);
+    var prng: std.Random.DefaultPrng = .init(testing.random_seed);
     const random = prng.random();
 
     const primes = [_]u7{ 2, 3, 5, 7, 11, 13, 17, 19, 23, 29 };
@@ -107,7 +108,7 @@ test "primeTest primes" {
 }
 
 test "primeTest composites" {
-    var prng = std.Random.DefaultPrng.init(testing.random_seed);
+    var prng: std.Random.DefaultPrng = .init(testing.random_seed);
     const random = prng.random();
 
     const primes = [_]u7{ 2, 3, 5, 7, 11, 13, 17, 19, 23, 29 };
@@ -118,7 +119,7 @@ test "primeTest composites" {
 }
 
 test "primeTest large primes" {
-    var prng = std.Random.DefaultPrng.init(testing.random_seed);
+    var prng: std.Random.DefaultPrng = .init(testing.random_seed);
     const random = prng.random();
 
     const n64 = std.math.pow(u64, 2, 62);
@@ -137,7 +138,7 @@ test "primeTest large primes" {
 }
 
 test "primeTest large composites" {
-    var prng = std.Random.DefaultPrng.init(testing.random_seed);
+    var prng: std.Random.DefaultPrng = .init(testing.random_seed);
     const random = prng.random();
 
     const n64 = std.math.pow(u64, 2, 62);

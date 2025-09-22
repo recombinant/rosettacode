@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Square-free_integers
-// Translation of C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
 const std = @import("std");
 const print = std.debug.print;
 
@@ -36,22 +37,21 @@ fn isSquareFree(n_: anytype) bool {
 fn printSquareFreeNumbers(from: u64, to: u64) !void {
     print("Square-free numbers between {} and {}:\n", .{ from, to });
     var buffer: [128]u8 = undefined;
-    var stream = std.io.fixedBufferStream(&buffer);
-    const writer = stream.writer();
+    var writer: std.Io.Writer = .fixed(&buffer);
     var i = from;
     while (i <= to) : (i += 1) {
         if (isSquareFree(i)) {
-            if (try stream.getPos() != 0)
+            if (writer.end != 0)
                 try writer.writeByte(' ');
-            try std.fmt.formatInt(i, 10, .lower, .{}, writer);
-            if (try stream.getPos() >= 80) {
-                print("{s}\n", .{stream.getWritten()});
-                try stream.seekTo(0);
+            try writer.printInt(i, 10, .lower, .{});
+            if (writer.end >= 80) {
+                print("{s}\n", .{writer.buffered()});
+                _ = writer.consumeAll();
             }
         }
     }
-    if (try stream.getEndPos() != 0)
-        print("{s}\n", .{stream.getWritten()});
+    if (writer.end != 0)
+        print("{s}\n", .{writer.buffered()});
     print("\n", .{});
 }
 

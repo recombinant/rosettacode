@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Elementary_cellular_automaton/Random_number_generator
-// Translation of Go
+// {{works with|Zig|0.15.1}}
+// {{trans|Go}}
 const std = @import("std");
 
 pub fn main() !void {
@@ -40,5 +41,5 @@ fn evolve(state_: u64, rule: u16) void {
         }
         std.debug.print(" {}", .{b});
     }
-    std.debug.print("\n", .{});
+    std.debug.writeByte('\n');
 }

@@ -1,9 +1,10 @@
 // https://rosettacode.org/wiki/Parallel_brute_force
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 const Sha256 = std.crypto.hash.sha2.Sha256;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -19,22 +20,26 @@ pub fn main() !void {
     defer for (hashes) |hash| allocator.destroy(hash);
 
     var n_jobs = std.Thread.getCpuCount() catch 1;
-    // std.log.debug("cpu count = {}", .{n_jobs});
+    std.log.debug("cpu count = {}", .{n_jobs});
 
-    var pool: std.Thread.Pool = undefined;
-    try pool.init(.{ .allocator = allocator, .n_jobs = n_jobs });
-    defer pool.deinit();
+    var t0: std.time.Timer = try .start();
+    {
+        var pool: std.Thread.Pool = undefined;
+        try pool.init(.{ .allocator = allocator, .n_jobs = n_jobs });
+        defer pool.deinit();
 
-    var start: usize = 0;
-    while (n_jobs != 0) : (n_jobs -= 1) {
-        const n_letters = (alphabet.len - start) / n_jobs;
-        if (n_letters == 0)
-            continue;
-        const end = start + n_letters;
-        // std.log.debug("{} {} {} {} {}", .{ n_jobs, alphabet.len, start, end, n_letters });
-        try pool.spawn(bruteForce, .{ alphabet, &hashes, start, end });
-        start = end;
+        var start: usize = 0;
+        while (n_jobs != 0) : (n_jobs -= 1) {
+            const n_letters = (alphabet.len - start) / n_jobs;
+            if (n_letters == 0)
+                continue;
+            const end = start + n_letters;
+            // std.log.debug("{} {} {} {} {}", .{ n_jobs, alphabet.len, start, end, n_letters });
+            try pool.spawn(bruteForce, .{ alphabet, &hashes, start, end });
+            start = end;
+        }
     }
+    std.log.info("processed in {D}", .{t0.read()});
 }
 
 const Hash = struct {

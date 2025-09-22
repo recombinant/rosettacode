@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Loops/With_multiple_ranges
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 /// To avoid global variables use a struct as a namespace
@@ -32,7 +33,7 @@ pub fn main() void {
     const seven = 7;
     const p = ipow(11, x);
 
-    var sum_prod = SumProd{};
+    var sum_prod: SumProd = .{};
 
     // start, end, step in an array of tuples
     const ranges = [_]struct { i32, i32, i32 }{

@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Own_digits_power_sum
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 
 const MAX_BASE = 10;
@@ -18,7 +19,7 @@ pub fn main() !void {
     for (numbers) |n|
         std.debug.print("{}\n", .{n});
 
-    std.debug.print("\nprocessed in {}\n", .{std.fmt.fmtDuration(t1)});
+    std.log.info("processed in {D}", .{t1});
 }
 
 const SumType = u32;
