@@ -15,14 +15,14 @@ pub fn main() !void {
 
     // ------------------------ hash map for anagram lookup
     // string vs list of words
-    var anagrams: std.StringHashMap(std.ArrayList([]const u8)) = .init(allocator);
+    var anagrams: std.StringHashMapUnmanaged(std.ArrayList([]const u8)) = .empty;
     defer {
         var it = anagrams.iterator();
         while (it.next()) |anagram| {
             allocator.free(anagram.key_ptr.*);
             anagram.value_ptr.deinit(allocator);
         }
-        anagrams.deinit();
+        anagrams.deinit(allocator);
     }
 
     // fill anagram lookup --------------------------------
@@ -35,7 +35,7 @@ pub fn main() !void {
             const key = try allocator.dupe(u8, word);
             std.mem.sortUnstable(u8, key, {}, std.sort.asc(u8));
 
-            const gop = try anagrams.getOrPut(key);
+            const gop = try anagrams.getOrPut(allocator, key);
             if (gop.found_existing)
                 allocator.free(key)
             else

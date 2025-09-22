@@ -7,11 +7,11 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var word_set = std.StringHashMap(void).init(allocator);
+    var word_set: std.StringHashMapUnmanaged(void) = .empty;
     defer {
         var it = word_set.keyIterator();
         while (it.next()) |key| allocator.free(key.*);
-        word_set.deinit();
+        word_set.deinit(allocator);
     }
 
     var file: std.fs.File = try std.fs.cwd().openFile("data/unixdict.txt", .{});
@@ -29,7 +29,7 @@ pub fn main() !void {
     // count the words for `word_set` capacity
     const count = try getWordCount(r, &w);
     // with the exact count no realloc will be necessary
-    try word_set.ensureTotalCapacity(count);
+    try word_set.ensureTotalCapacity(allocator, count);
     std.debug.print("dictionary usable word count = {}\n", .{count});
 
     try file_reader.seekTo(0); // rewind
@@ -47,16 +47,16 @@ pub fn main() !void {
 
         if (word.len > 4) {
             const m = try allocator.dupe(u8, word);
-            try word_set.putNoClobber(m, {});
+            try word_set.putNoClobber(allocator, m, {});
             max_len = @max(max_len, word.len / 2 + 1);
         }
     }
 
-    var odd_word_set = std.StringHashMap(void).init(allocator);
+    var odd_word_set: std.StringHashMapUnmanaged(void) = .empty;
     defer {
         var it = odd_word_set.keyIterator();
         while (it.next()) |key| allocator.free(key.*);
-        odd_word_set.deinit();
+        odd_word_set.deinit(allocator);
     }
 
     var buffer3 = try allocator.alloc(u8, max_len);
@@ -73,7 +73,7 @@ pub fn main() !void {
             const odd_word = buffer3[0..len];
             if (word_set.contains(odd_word)) {
                 if (!odd_word_set.contains(odd_word))
-                    try odd_word_set.putNoClobber(try allocator.dupe(u8, odd_word), {});
+                    try odd_word_set.putNoClobber(allocator, try allocator.dupe(u8, odd_word), {});
             }
         }
     }

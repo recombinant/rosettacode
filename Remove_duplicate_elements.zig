@@ -25,11 +25,11 @@ pub fn main() anyerror!void {
 fn removeDuplicates1(allocator: std.mem.Allocator, a: []u16) ![]u16 {
     if (a.len <= 1) return a;
 
-    var map = std.AutoHashMap(u16, void).init(allocator);
-    defer map.deinit();
+    var map: std.AutoHashMapUnmanaged(u16, void) = .empty;
+    defer map.deinit(allocator);
 
     for (a) |number|
-        try map.put(number, {});
+        try map.put(allocator, number, {});
 
     var result = a;
     var it = map.keyIterator();

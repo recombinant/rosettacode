@@ -16,17 +16,17 @@ pub fn main() !void {
     var a: std.ArrayList(isize) = try .initCapacity(allocator, 400_000);
     defer a.deinit(allocator);
 
-    var used = std.AutoHashMap(isize, void).init(allocator);
-    defer used.deinit();
-    try used.ensureTotalCapacity(1001);
+    var used: std.AutoHashMapUnmanaged(isize, void) = .empty;
+    defer used.deinit(allocator);
+    try used.ensureTotalCapacity(allocator, 1001);
 
-    var used1000 = std.AutoHashMap(isize, void).init(allocator);
-    defer used1000.deinit();
-    try used1000.ensureTotalCapacity(1001);
+    var used1000: std.AutoHashMapUnmanaged(isize, void) = .empty;
+    defer used1000.deinit(allocator);
+    try used1000.ensureTotalCapacity(allocator, 1001);
 
     try a.append(allocator, 0);
-    try used.put(0, {});
-    try used1000.put(0, {});
+    try used.put(allocator, 0, {});
+    try used1000.put(allocator, 0, {});
 
     var n: usize = 1;
     var found_dup = false;
@@ -39,9 +39,9 @@ pub fn main() !void {
         const already_used = used.contains(next);
         try a.append(allocator, next);
         if (!already_used) {
-            try used.put(next, {});
+            try used.put(allocator, next, {});
             if (next <= 1000)
-                try used1000.put(next, {});
+                try used1000.put(allocator, next, {});
         }
 
         if (n == 14)

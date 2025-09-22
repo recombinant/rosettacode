@@ -112,9 +112,9 @@ fn getMianChowla2(allocator: std.mem.Allocator, n: usize) ![]u64 {
     var mc = try allocator.alloc(u64, n);
     mc[0] = 1;
 
-    var is = std.AutoHashMap(u64, void).init(allocator);
-    defer is.deinit();
-    try is.put(2, {});
+    var is: std.AutoHashMapUnmanaged(u64, void) = .empty;
+    defer is.deinit(allocator);
+    try is.put(allocator, 2, {});
 
     var isx: std.ArrayList(u64) = .empty;
     defer isx.deinit(allocator);
@@ -133,7 +133,7 @@ fn getMianChowla2(allocator: std.mem.Allocator, n: usize) ![]u64 {
                 try isx.append(allocator, sum);
             }
             for (isx.items) |x|
-                try is.put(x, {});
+                try is.put(allocator, x, {});
             break;
         }
     }

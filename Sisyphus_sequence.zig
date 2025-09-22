@@ -20,7 +20,7 @@ pub fn main() !void {
     const allocator = arena.allocator();
     // --------------------------------------------------------------
     var counter: Counter = try .init(allocator);
-    defer counter.deinit();
+    defer counter.deinit(allocator);
 
     var sisyphus: SisyphusSequenceGenerator = try .init();
     defer sisyphus.deinit();
@@ -126,18 +126,18 @@ const SisyphusSequenceGenerator = struct {
 };
 
 const Counter = struct {
-    found: std.AutoHashMap(u64, usize),
+    found: std.AutoHashMapUnmanaged(u64, usize),
     count: usize = 0,
 
     fn init(allocator: std.mem.Allocator) !Counter {
-        var found = std.AutoHashMap(u64, usize).init(allocator);
-        try found.ensureTotalCapacity(250);
+        var found: std.AutoHashMapUnmanaged(u64, usize) = .empty;
+        try found.ensureTotalCapacity(allocator, 250);
         for (1..250) |n|
-            try found.put(@as(u64, n), 0);
+            try found.put(allocator, @as(u64, n), 0);
         return Counter{ .found = found };
     }
-    fn deinit(self: *Counter) void {
-        self.found.deinit();
+    fn deinit(self: *Counter, allocator: std.mem.Allocator) void {
+        self.found.deinit(allocator);
     }
     fn add(self: *Counter, n: u64) !void {
         self.count += 1;
