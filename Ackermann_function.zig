@@ -24,7 +24,7 @@ pub fn main() !void {
     @setEvalBranchQuota(11_164_370);
     var t1: std.time.Timer = try .start();
     const a1 = comptime ackermann(m, n);
-    try stdout.print("comptime processed in {D}\n", .{t1.read()});
+    try stdout.print("evaluated at comptime processed in {D} at runtime\n", .{t1.read()});
     try stdout.print("A({}, {}) = {}\n\n", .{ m, n, a1 });
 
     var t2: std.time.Timer = try .start();
