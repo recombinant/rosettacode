@@ -1,21 +1,28 @@
 // https://www.rosettacode.org/wiki/Rare_numbers
-// Naïve brute force implementation  of first five rare numbers.
+// {{works with|Zig|0.15.1}}
+
+// Naïve brute force implementation of first five rare numbers.
 const std = @import("std");
-const math = std.math;
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var t0: std.time.Timer = try .start();
 
-    var t0 = try std.time.Timer.start();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var count: usize = 0;
     var n: u64 = 0;
     while (count < 5) : (n += 1)
         if (isRare(n)) {
             try stdout.print("{d}\n", .{n});
+            try stdout.flush();
             count += 1;
         };
-    try stdout.print("Processed in {}\n\n", .{std.fmt.fmtDuration(t0.read())});
+    try stdout.writeByte('\n');
+    try stdout.flush();
+
+    std.log.info("Processed in {D}", .{t0.read()});
 }
 
 fn isRare(n: u64) bool {
@@ -59,7 +66,7 @@ fn isPerfectSquare(n: u64) bool {
         else => return false,
     }
 
-    const s: u64 = math.sqrt(n);
+    const s: u64 = std.math.sqrt(n);
     return s * s == n;
 }
 

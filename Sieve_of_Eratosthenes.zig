@@ -1,6 +1,6 @@
 // https://rosettacode.org/wiki/Sieve_of_Eratosthenes
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const math = std.math;
 const print = std.debug.print;
 
 fn Sieve(comptime max: usize) type {
@@ -11,14 +11,14 @@ fn Sieve(comptime max: usize) type {
         primes: T,
 
         fn init() Self {
-            var result = Self{ .primes = T.initFull() };
+            var result: Self = .{ .primes = T.initFull() };
 
             const primes = &result.primes;
             primes.unset(0);
             primes.unset(1);
 
             const limit = max + 1;
-            const root_limit = math.sqrt(limit) + 1;
+            const root_limit = std.math.sqrt(limit) + 1;
             // Sieve of Eratosthenes
             for (2..root_limit) |n|
                 if (primes.isSet(n)) {

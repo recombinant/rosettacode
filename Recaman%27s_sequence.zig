@@ -1,17 +1,20 @@
 // https://rosettacode.org/wiki/Recaman%27s_sequence
-// Translation of Go
+// {{works with|Zig|0.15.1}}
+// {{trans|Go}}
 const std = @import("std");
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     // arraylist can be initialised with capacity as the answers are known...
-    var a = try std.ArrayList(isize).initCapacity(allocator, 400_000);
-    defer a.deinit();
+    var a: std.ArrayList(isize) = try .initCapacity(allocator, 400_000);
+    defer a.deinit(allocator);
 
     var used = std.AutoHashMap(isize, void).init(allocator);
     defer used.deinit();
@@ -21,7 +24,7 @@ pub fn main() !void {
     defer used1000.deinit();
     try used1000.ensureTotalCapacity(1001);
 
-    try a.append(0);
+    try a.append(allocator, 0);
     try used.put(0, {});
     try used1000.put(0, {});
 
@@ -34,7 +37,7 @@ pub fn main() !void {
             next += 2 * @as(isize, @intCast(n));
 
         const already_used = used.contains(next);
-        try a.append(next);
+        try a.append(allocator, next);
         if (!already_used) {
             try used.put(next, {});
             if (next <= 1000)
@@ -42,14 +45,15 @@ pub fn main() !void {
         }
 
         if (n == 14)
-            try writer.print("The first 15 terms of the Recaman's sequence are: {any}\n", .{a.items});
+            try stdout.print("The first 15 terms of the Recaman's sequence are: {any}\n", .{a.items});
 
         if (!found_dup and already_used) {
-            try writer.print("The first duplicated term is a[{d}] = {d}\n", .{ n, next });
+            try stdout.print("The first duplicated term is a[{d}] = {d}\n", .{ n, next });
             found_dup = true;
         }
 
         if (used1000.count() == 1001)
-            try writer.print("Terms up to a[{d}] are needed to generate 0 to 1000\n", .{n});
+            try stdout.print("Terms up to a[{d}] are needed to generate 0 to 1000\n", .{n});
     }
+    try stdout.flush();
 }

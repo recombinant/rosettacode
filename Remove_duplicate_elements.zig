@@ -1,12 +1,12 @@
 // https://rosettacode.org/wiki/Remove_duplicate_elements
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
-const sort = std.sort;
+
 const testing = std.testing;
 const print = std.debug.print;
 
 pub fn main() anyerror!void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -22,7 +22,7 @@ pub fn main() anyerror!void {
     print("Method 3: {any}\n", .{removeDuplicates3(&a3)});
 }
 
-fn removeDuplicates1(allocator: mem.Allocator, a: []u16) ![]u16 {
+fn removeDuplicates1(allocator: std.mem.Allocator, a: []u16) ![]u16 {
     if (a.len <= 1) return a;
 
     var map = std.AutoHashMap(u16, void).init(allocator);
@@ -44,7 +44,7 @@ fn removeDuplicates2(a: []u16) []u16 {
     if (a.len <= 1) return a;
 
     var result = a;
-    sort.insertion(u16, result, {}, sort.asc(u16));
+    std.mem.sortUnstable(u16, result, {}, std.sort.asc(u16));
 
     var i: usize = result.len;
     while (i != 1) {
@@ -100,12 +100,12 @@ test "method1" {
     const b3b = try removeDuplicates1(allocator, &a3b);
     const b3c = try removeDuplicates1(allocator, &a3c);
     // sort result as removeDuplicates1() cannot guarantee order
-    sort.insertion(u16, b0, {}, sort.asc(u16));
-    sort.insertion(u16, b1, {}, sort.asc(u16));
-    sort.insertion(u16, b2, {}, sort.asc(u16));
-    sort.insertion(u16, b3a, {}, sort.asc(u16));
-    sort.insertion(u16, b3b, {}, sort.asc(u16));
-    sort.insertion(u16, b3c, {}, sort.asc(u16));
+    std.mem.sortUnstable(u16, b0, {}, std.sort.asc(u16));
+    std.mem.sortUnstable(u16, b1, {}, std.sort.asc(u16));
+    std.mem.sortUnstable(u16, b2, {}, std.sort.asc(u16));
+    std.mem.sortUnstable(u16, b3a, {}, std.sort.asc(u16));
+    std.mem.sortUnstable(u16, b3b, {}, std.sort.asc(u16));
+    std.mem.sortUnstable(u16, b3c, {}, std.sort.asc(u16));
 
     try testing.expectEqualSlices(u16, &[0]u16{}, b0);
     try testing.expectEqualSlices(u16, &[1]u16{1}, b1);
