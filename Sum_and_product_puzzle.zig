@@ -43,8 +43,8 @@ pub fn main() !void {
 }
 
 fn printList(list: List, w: *std.Io.Writer) !void {
-    var node_ = list.first;
-    while (node_) |node| : (node_ = node.next) {
+    var it = list.first;
+    while (it) |node| : (it = node.next) {
         const item: *Item = @fieldParentPtr("node", node);
         const sum = item.x + item.y;
         const product = item.x * item.y;
