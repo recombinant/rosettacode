@@ -1,14 +1,17 @@
 // https://rosettacode.org/wiki/Sum_of_primes_in_odd_positions_is_prime
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() !void {
-    var t0 = try std.time.Timer.start();
+    var t0: std.time.Timer = try .start();
 
     var sum: u32 = 0;
 
-    const writer = std.io.getStdOut().writer();
-    try writer.writeAll(" i   p[i]  Σp[i]\n");
-    try writer.writeAll("----------------\n");
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+    try stdout.writeAll(" i   p[i]  Σp[i]\n");
+    try stdout.writeAll("----------------\n");
 
     var i: usize = 1;
     var p: u16 = 2;
@@ -21,14 +24,16 @@ pub fn main() !void {
             if (i & 1 != 0) {
                 sum += p;
                 if (isPrime(sum))
-                    try writer.print("{d:3}   {d:3}  {d:5}\n", .{ i, p, sum });
+                    try stdout.print("{d:3}   {d:3}  {d:5}\n", .{ i, p, sum });
             }
             i += 1;
         }
     }
-    try writer.writeByte('\n');
+    try stdout.writeByte('\n');
 
-    std.log.info("processed in {}\n", .{std.fmt.fmtDuration(t0.read())});
+    try stdout.flush();
+
+    std.log.info("processed in {D}", .{t0.read()});
 }
 
 fn isPrime(n: anytype) bool {

@@ -1,30 +1,32 @@
 // https://rosettacode.org/wiki/Sierpinski_arrowhead_curve
-// Translation of C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
 const std = @import("std");
-const mem = std.mem;
 
 const sqrt3_2: f32 = @sqrt(3.0) * 0.5;
 const Point = struct { x: f32, y: f32 };
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     var file = try std.fs.cwd().createFile("sierpinski_arrowhead.svg", .{});
     defer file.close();
 
-    var buf = std.io.bufferedWriter(file.writer());
+    var buffer: [4096]u8 = undefined;
+    var file_writer = file.writer(&buffer);
+    const w = &file_writer.interface;
 
-    try writeSierpinskiArrowhead(allocator, buf.writer(), 600, 8);
+    try writeSierpinskiArrowhead(allocator, 600, 8, w);
 
-    try buf.flush();
+    try w.flush();
 }
 
-fn writeSierpinskiArrowhead(allocator: mem.Allocator, writer: anytype, size: usize, iterations: u16) !void {
-    try writer.print("<svg xmlns='http://www.w3.org/2000/svg' width='{d}' height='{d}'>", .{ size, size });
-    try writer.writeAll("<rect width='100%' height='100%' fill='white'/>");
-    try writer.writeAll("<path stroke='black' fill='none' d='");
+fn writeSierpinskiArrowhead(allocator: std.mem.Allocator, size: usize, iterations: u16, w: *std.Io.Writer) !void {
+    try w.print("<svg xmlns='http://www.w3.org/2000/svg' width='{d}' height='{d}'>", .{ size, size });
+    try w.writeAll("<rect width='100%' height='100%' fill='white'/>");
+    try w.writeAll("<path stroke='black' fill='none' d='");
     const margin = 20;
     const side: f32 = @as(f32, @floatFromInt(size)) - 2 * margin;
     const x: f32 = margin;
@@ -35,23 +37,23 @@ fn writeSierpinskiArrowhead(allocator: mem.Allocator, writer: anytype, size: usi
     points[1] = Point{ .x = x + side, .y = y };
     for (0..iterations) |_| {
         var slice = try sierpinskiArrowheadNext(allocator, points);
-        mem.swap([]Point, &slice, &points);
+        std.mem.swap([]Point, &slice, &points);
         allocator.free(slice);
     }
     var buffer1: [10]u8 = undefined;
     var buffer2: [10]u8 = undefined;
     // L instruction is not required as it is implied by the M
-    try writer.writeByte('M');
+    try w.writeByte('M');
     for (points) |point| {
-        try writer.print("{s} {s} ", .{
+        try w.print("{s} {s} ", .{
             try toString(&buffer1, point.x),
             try toString(&buffer2, point.y),
         });
     }
-    try writer.writeAll("'/></svg>");
+    try w.writeAll("'/></svg>");
 }
 
-fn sierpinskiArrowheadNext(allocator: mem.Allocator, points: []Point) ![]Point {
+fn sierpinskiArrowheadNext(allocator: std.mem.Allocator, points: []Point) ![]Point {
     var output = try allocator.alloc(Point, 3 * (points.len - 1) + 1);
 
     var j: usize = 0;

@@ -1,7 +1,6 @@
 // https://rosettacode.org/wiki/Spelling_of_ordinal_numbers
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const heap = std.heap;
-const mem = std.mem;
 
 const assert = std.debug.assert;
 const print = std.debug.print;
@@ -11,7 +10,7 @@ const WordType = number_names.WordType;
 const parseInteger = number_names.parseInteger;
 
 pub fn main() !void {
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -31,7 +30,7 @@ const irregular_ordinals = [20]?[]const u8{
 
 /// Refer spellInteger() in Number_names.zig for documentation.
 /// Caller owns returned slice memory.
-fn spellOrdinal(allocator: mem.Allocator, n: i64) ![]u8 {
+fn spellOrdinal(allocator: std.mem.Allocator, n: i64) ![]u8 {
     const words = try parseInteger(allocator, n);
     defer allocator.free(words);
     assert(words.len != 0);
@@ -41,8 +40,8 @@ fn spellOrdinal(allocator: mem.Allocator, n: i64) ![]u8 {
     const text = try WordType.spellCardinal(allocator, words[0..last_word]);
 
     // Allow for extra 3 bytes i.e. replacing 'twenty' with 'twentieth' or 'two' with 'second'
-    var result = try std.ArrayList(u8).initCapacity(allocator, WordType.getLength(words) + 3);
-    try result.appendSlice(text);
+    var result: std.ArrayList(u8) = try .initCapacity(allocator, WordType.getLength(words) + 3);
+    try result.appendSlice(allocator, text);
 
     allocator.free(text);
 
@@ -51,29 +50,29 @@ fn spellOrdinal(allocator: mem.Allocator, n: i64) ![]u8 {
         .separator => unreachable,
         .small => |index| {
             if (irregular_ordinals[index]) |ordinal|
-                try result.appendSlice(ordinal)
+                try result.appendSlice(allocator, ordinal)
             else {
-                try result.appendSlice(number_names.small[index]);
-                try result.appendSlice("th");
+                try result.appendSlice(allocator, number_names.small[index]);
+                try result.appendSlice(allocator, "th");
             }
         },
         .tens => |index| {
             const tens = number_names.tens[index];
             assert(tens.len != 0);
             assert(tens[tens.len - 1] == 'y');
-            try result.appendSlice(tens[0 .. tens.len - 1]);
-            try result.appendSlice("ieth");
+            try result.appendSlice(allocator, tens[0 .. tens.len - 1]);
+            try result.appendSlice(allocator, "ieth");
         },
         .hundred => {
-            try result.appendSlice(number_names.hundred);
-            try result.appendSlice("th");
+            try result.appendSlice(allocator, number_names.hundred);
+            try result.appendSlice(allocator, "th");
         },
         .millions => |index| {
             const millions = number_names.millions[index];
             assert(millions.len != 0);
-            try result.appendSlice(millions);
-            try result.appendSlice("th");
+            try result.appendSlice(allocator, millions);
+            try result.appendSlice(allocator, "th");
         },
     }
-    return result.toOwnedSlice();
+    return result.toOwnedSlice(allocator);
 }

@@ -1,11 +1,16 @@
 // https://rosettacode.org/wiki/Sutherland-Hodgman_polygon_clipping
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
+    // --------------------------------
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+    // --------------------------------
 
     const subject_points = [_]Point{
         .{ .x = 50, .y = 150 },  .{ .x = 200, .y = 50 },  .{ .x = 350, .y = 150 }, .{ .x = 350, .y = 300 },
@@ -22,33 +27,34 @@ pub fn main() !void {
     // for (clipped) |point|
     //     std.debug.print("{d} {d}\n", .{ point.x, point.y });
 
-    const writer = std.io.getStdOut().writer();
+    try stdout.print("<svg xmlns='http://www.w3.org/2000/svg' width='{d}' height='{d}'>\n", .{ 380, 380 });
+    try stdout.writeAll("<rect width='100%' height='100%' fill='ghostwhite'/>\n");
 
-    try writer.print("<svg xmlns='http://www.w3.org/2000/svg' width='{d}' height='{d}'>\n", .{ 380, 380 });
-    try writer.writeAll("<rect width='100%' height='100%' fill='ghostwhite'/>\n");
-
-    try writer.writeAll("<path stroke='lightgreen' fill='none' d='");
-    try writer.writeByte('M'); // L instruction is not required as it is implied by the M
+    try stdout.writeAll("<path stroke='lightgreen' fill='none' d='");
+    try stdout.writeByte('M'); // L instruction is not required as it is implied by the M
     for (subject_points) |point|
-        try writer.print("{d} {d} ", .{ point.x, point.y });
-    try writer.print("{d} {d}\n", .{ subject_points[0].x, subject_points[0].y });
-    try writer.writeAll("'/>\n");
+        try stdout.print("{d} {d} ", .{ point.x, point.y });
+    try stdout.print("{d} {d}\n", .{ subject_points[0].x, subject_points[0].y });
+    try stdout.writeAll("'/>\n");
 
-    try writer.writeAll("<path stroke='lightsalmon' fill='none' d='");
-    try writer.writeByte('M');
+    try stdout.writeAll("<path stroke='lightsalmon' fill='none' d='");
+    try stdout.writeByte('M');
     for (clipping_points) |point|
-        try writer.print("{d} {d} ", .{ point.x, point.y });
-    try writer.print("{d} {d}\n", .{ clipping_points[0].x, clipping_points[0].y });
-    try writer.writeAll("'/>\n");
+        try stdout.print("{d} {d} ", .{ point.x, point.y });
+    try stdout.print("{d} {d}\n", .{ clipping_points[0].x, clipping_points[0].y });
+    try stdout.writeAll("'/>\n");
 
-    try writer.writeAll("<path stroke='black' stroke-width='2' fill='none' d='");
-    try writer.writeByte('M');
+    try stdout.writeAll("<path stroke='black' stroke-width='2' fill='none' d='");
+    try stdout.writeByte('M');
     for (clipped) |point|
-        try writer.print("{d} {d} ", .{ point.x, point.y });
-    try writer.print("{d} {d}\n", .{ clipped[0].x, clipped[0].y });
-    try writer.writeAll("'/>\n");
+        try stdout.print("{d} {d} ", .{ point.x, point.y });
+    try stdout.print("{d} {d}\n", .{ clipped[0].x, clipped[0].y });
+    try stdout.writeAll("'/>\n");
 
-    try writer.writeAll("</svg>\n");
+    try stdout.writeAll("</svg>\n");
+
+    // --------------------------------
+    try stdout.flush();
 }
 
 const Point = struct {
@@ -85,7 +91,7 @@ const Edge = struct {
 const Polygon = []Edge;
 const PointArray = std.ArrayList(Point);
 
-fn createPolygon(allocator: mem.Allocator, vertices: []const Point) !Polygon {
+fn createPolygon(allocator: std.mem.Allocator, vertices: []const Point) !Polygon {
     const polygon = try allocator.alloc(Edge, vertices.len);
     const len = vertices.len;
     for (polygon, 0..) |*edge, i|
@@ -96,18 +102,18 @@ fn createPolygon(allocator: mem.Allocator, vertices: []const Point) !Polygon {
     return polygon;
 }
 
-fn clip(allocator: mem.Allocator, subject_vertices: []const Point, clip_vertices: []const Point) ![]Point {
+fn clip(allocator: std.mem.Allocator, subject_vertices: []const Point, clip_vertices: []const Point) ![]Point {
     std.debug.assert(subject_vertices.len > 1);
     std.debug.assert(clip_vertices.len > 1);
 
     const clip_polygon = try createPolygon(allocator, clip_vertices);
     defer allocator.free(clip_polygon);
 
-    var output_list = try PointArray.initCapacity(allocator, subject_vertices.len);
-    try output_list.appendSlice(subject_vertices);
+    var output_list: PointArray = try .initCapacity(allocator, subject_vertices.len);
+    try output_list.appendSlice(allocator, subject_vertices);
 
     for (clip_polygon) |clip_edge| {
-        const input_list = try output_list.toOwnedSlice();
+        const input_list = try output_list.toOwnedSlice(allocator);
         defer allocator.free(input_list);
 
         for (0..input_list.len) |i| {
@@ -118,11 +124,11 @@ fn clip(allocator: mem.Allocator, subject_vertices: []const Point, clip_vertices
 
             if (current_point.inside(clip_edge)) {
                 if (!prev_point.inside(clip_edge))
-                    try output_list.append(intersecting_point);
-                try output_list.append(current_point);
+                    try output_list.append(allocator, intersecting_point);
+                try output_list.append(allocator, current_point);
             } else if (prev_point.inside(clip_edge))
-                try output_list.append(intersecting_point);
+                try output_list.append(allocator, intersecting_point);
         }
     }
-    return try output_list.toOwnedSlice();
+    return try output_list.toOwnedSlice(allocator);
 }

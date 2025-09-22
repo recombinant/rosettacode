@@ -1,17 +1,17 @@
 // https://rosettacode.org/wiki/Maze_generation
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
 const print = std.debug.print;
 
 pub fn main() void {
-    var mg = MazeGenerator(8, 8).init();
+    var mg: MazeGenerator(8, 8) = .init();
     mg.generate(0, 0);
     mg.display();
 }
 
 fn MazeGenerator(comptime width: u16, comptime height: u16) type {
     return struct {
-        grid: [width * height]?Cell = [1]?Cell{null} ** (width * height),
+        grid: [width * height]?Cell = @splat(null),
         rand: std.Random,
 
         // static struct to keep prng in scope
@@ -24,8 +24,8 @@ fn MazeGenerator(comptime width: u16, comptime height: u16) type {
         fn init() Self {
             if (S.rand == null) {
                 var seed: u64 = undefined;
-                std.posix.getrandom(mem.asBytes(&seed)) catch unreachable;
-                S.prng = std.Random.DefaultPrng.init(seed);
+                std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
+                S.prng = .init(seed);
                 S.rand = S.prng.random();
             }
             return Self{ .rand = S.rand.? };
@@ -74,7 +74,7 @@ fn MazeGenerator(comptime width: u16, comptime height: u16) type {
         fn setCellDirection(self: *Self, x: usize, y: usize, d: Direction) void {
             const cell = &self.grid[x + y * width];
             if (cell.* == null)
-                cell.* = Cell.init();
+                cell.* = .init();
             cell.*.?.clearDirection(d);
         }
 

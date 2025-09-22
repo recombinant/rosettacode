@@ -1,9 +1,11 @@
 // https://rosettacode.org/wiki/Munchausen_numbers
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const math = std.math;
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const limit = 5_000; // the upper bound of the search
 
@@ -11,6 +13,8 @@ pub fn main() !void {
     while (number <= limit) : (number += 1)
         if (isMunchausen(number))
             try stdout.print("{d} (munchausen)\n", .{number});
+
+    try stdout.flush();
 }
 
 /// If the sum is equal to the number itself then the number will
@@ -34,11 +38,11 @@ fn isMunchausen(n_: anytype) bool {
         // not a Munchausen number.
 
         // Find the sum of the digits raised to themselves.
-        const pow = math.powi(T, digit, digit) catch |err|
+        const pow = std.math.powi(T, digit, digit) catch |err|
             switch (err) {
-            error.Overflow => return false,
-            error.Underflow => unreachable,
-        };
+                error.Overflow => return false,
+                error.Underflow => unreachable,
+            };
 
         const ov = @addWithOverflow(sum, pow);
         if (ov[1] != 0)
