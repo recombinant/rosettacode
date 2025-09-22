@@ -1,16 +1,23 @@
 // https://rosettacode.org/wiki/Twin_primes_whose_sum_is_square_number
-// Translation of C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
 const std = @import("std");
 
-pub fn main() void {
+pub fn main() !void {
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     var n: u32 = 3;
     while (n < 10_000) : (n += 2)
         if (isPrime(n) and isPrime(n + 2)) {
             const sum: u32 = 2 * n + 2;
             const sqrt: u32 = std.math.sqrt(sum);
             if (sum == sqrt * sqrt)
-                std.debug.print("{}² = {} + {}\n", .{ sqrt, n, n + 2 });
+                try stdout.print("{}² = {} + {}\n", .{ sqrt, n, n + 2 });
         };
+
+    try stdout.flush();
 }
 
 fn isPrime(n: anytype) bool {

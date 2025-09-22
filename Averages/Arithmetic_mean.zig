@@ -1,8 +1,10 @@
 // https://rosettacode.org/wiki/Averages/Arithmetic_mean
 const std = @import("std");
-
+// {{works with|Zig|0.15.1}}
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     {
         const v = [_]f64{ 1, 2, 2.718, 3, 3.142 };
@@ -45,6 +47,8 @@ pub fn main() !void {
             }
         }
     }
+
+    try stdout.flush();
 }
 
 fn mean(v: []const f64) f64 {

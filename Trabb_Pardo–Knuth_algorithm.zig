@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Trabb_Pardo%E2%80%93Knuth_algorithm
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 // Please enter 11 numbers : 10 -1 1 2 3 4 4.3 4.305 4.303 4.302 4.301
@@ -15,36 +16,47 @@ const std = @import("std");
 // f(10.0000) = Overflow!
 
 pub fn main() !void {
-    const check = 400;
+    const overflow_value = 400;
 
-    const writer = std.io.getStdOut().writer();
-    const reader = std.io.getStdIn().reader();
+    var stdin_buffer: [1024]u8 = undefined;
+    var stdin_reader = std.fs.File.stdin().reader(&stdin_buffer);
+    const stdin = &stdin_reader.interface;
 
-    try writer.writeAll("Please enter 11 numbers : ");
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    var buffer: [1024]u8 = undefined;
-    const line = try reader.readUntilDelimiter(&buffer, '\n');
+    try stdout.writeAll("Please enter 11 numbers : ");
+    try stdout.flush();
 
-    var ba = try std.BoundedArray(f64, 11).init(0);
+    var buffer1: [1024]u8 = undefined;
+    var w: std.Io.Writer = .fixed(&buffer1);
+
+    _ = try stdin.streamDelimiter(&w, '\n');
+    const line = w.buffered();
+
+    var buffer2: [11]f64 = undefined;
+    var a: std.ArrayList(f64) = .initBuffer(&buffer2);
     var it = std.mem.splitAny(u8, line, " \t\r\n");
     while (it.next()) |word| {
         if (word.len == 0)
             continue;
         const number = try std.fmt.parseFloat(f64, word);
-        ba.append(number) catch return error.TooManyNumbers;
+        a.appendBounded(number) catch return error.TooManyNumbers;
     }
-    if (ba.len != 11) return error.InsufficientNumbers;
+    if (a.items.len != 11) return error.InsufficientNumbers;
 
-    const s = ba.slice();
-    std.mem.reverse(f64, s);
-    for (s) |n| {
+    std.mem.reverse(f64, a.items);
+    for (a.items) |n| {
         const result = @sqrt(@abs(n)) + 5 * std.math.pow(f64, n, 3);
 
-        try writer.print("f({d:7.4}) = ", .{n});
+        try stdout.print("f({d:7.4}) = ", .{n});
 
-        if (result > check)
-            try writer.writeAll("Overflow!\n")
+        if (result > overflow_value)
+            try stdout.writeAll("Overflow!\n")
         else
-            try writer.print("{d:8.4}\n", .{result});
+            try stdout.print("{d:8.4}\n", .{result});
     }
+
+    try stdout.flush();
 }

@@ -1,23 +1,31 @@
 // https://rosettacode.org/wiki/Ulam_spiral_(for_primes)
+// {{works with|Zig|0.15.1}}
+
 // based on code from https://github.com/tiehuis/zig-rosetta
 const std = @import("std");
 
-pub fn main() void {
-    ulam(9);
+pub fn main() !void {
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    try ulam(9, stdout);
+
+    try stdout.flush();
 }
 
-fn ulam(n_: usize) void {
+fn ulam(n_: usize, w: *std.Io.Writer) !void {
     const n = if (n_ % 2 == 0) n_ + 1 else n_;
 
     for (0..n) |x| {
         for (0..n) |y| {
             const z = cell(y, x, n);
             if (isPrime(z))
-                std.debug.print(" #", .{})
+                try w.print(" #", .{})
             else
-                std.debug.print("  ", .{});
+                try w.writeAll("  ");
         }
-        std.debug.print("\n", .{});
+        try w.writeByte('\n');
     }
 }
 

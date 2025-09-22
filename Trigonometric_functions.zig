@@ -1,10 +1,13 @@
 // https://www.rosettacode.org/wiki/Trigonometric_functions
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 const math = std.math;
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const pi: f64 = math.pi;
     // pi / 4 is 45 degrees. All answers should be the same
@@ -25,6 +28,8 @@ pub fn main() !void {
     // arctangent
     temp = math.atan(@tan(radians));
     try stdout.print("{d} {d}\n", .{ temp, math.radiansToDegrees(temp) });
+
+    try stdout.flush();
 }
 
 // The following functions are also available:

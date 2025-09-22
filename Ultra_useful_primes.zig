@@ -1,17 +1,24 @@
 // https://rosettacode.org/wiki/Ultra_useful_primes
+// {{works with|Zig|0.15.1}}
 // Uses Miller-Rabin primality test from https://rosettacode.org/wiki/Miller–Rabin_primality_test
 const std = @import("std");
 
 pub fn main() !void {
-    var prng = std.Random.DefaultPrng.init(blk: {
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
         std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
         break :blk seed;
     });
     const random = prng.random();
 
-    inline for (1..11) |i|
-        std.debug.print("{d:2} {d}\n", .{ i, useful(@intCast(i), random) });
+    inline for (1..11) |i| {
+        try stdout.print("{d:2} {d}\n", .{ i, useful(@intCast(i), random) });
+        try stdout.flush();
+    }
 }
 
 fn useful(comptime n: u16, random: std.Random) u16 {
@@ -102,4 +109,3 @@ fn modpow(T: type, a_: T, b_: T, mod: T) T {
     }
     return result;
 }
-// --------------------------------------------------------------
