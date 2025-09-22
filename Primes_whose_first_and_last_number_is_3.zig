@@ -1,12 +1,15 @@
 // https://rosettacode.org/wiki/Primes_whose_first_and_last_number_is_3
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var np: usize = 1;
-    try writer.writeAll("   3 ");
+    try stdout.writeAll("   3 ");
     for (1..6) |d| {
         var i: usize = 3;
         while (i < std.math.pow(usize, 10, d) - 1) : (i += 10) {
@@ -15,17 +18,18 @@ pub fn main() !void {
                 np += 1;
                 if (n < 4009) {
                     const sep: u8 = if (np % 10 == 0) '\n' else ' ';
-                    try writer.print("{d:4}{c}", .{ n, sep });
+                    try stdout.print("{d:4}{c}", .{ n, sep });
                 }
             }
         }
     }
     if (np % 10 != 0)
-        try writer.writeByte('\n');
-    try writer.print(
+        try stdout.writeByte('\n');
+    try stdout.print(
         "\nThere were {d} primes of the form 3x3 below one million.\n",
         .{np},
     );
+    try stdout.flush();
 }
 
 fn isPrime(n: anytype) bool {

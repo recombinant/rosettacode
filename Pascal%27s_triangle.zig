@@ -1,21 +1,25 @@
 // https://rosettacode.org/wiki/Pascal%27s_triangle
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    try printPascalsTriangle(allocator, writer, 17);
+    try printPascalsTriangle(allocator, stdout, 17);
+
+    try stdout.flush();
 }
 
 /// Pretty print Pascal's Triangle. The triangle is created as
 /// strings so that the length of the final line is known for
 /// calculating the padding necessary to center all the lines.
-fn printPascalsTriangle(allocator: mem.Allocator, writer: anytype, n: u8) !void {
+fn printPascalsTriangle(allocator: std.mem.Allocator, w: *std.Io.Writer, n: u8) !void {
     // The triangle as numbers
     var triangle1 = try allocator.alloc([]u64, n);
     defer {
@@ -41,20 +45,20 @@ fn printPascalsTriangle(allocator: mem.Allocator, writer: anytype, n: u8) !void 
         allocator.free(triangle2);
     }
     for (triangle1, 0..) |values, i| {
-        var line = std.ArrayList(u8).init(allocator);
-        var line_writer = line.writer();
+        var line: std.Io.Writer.Allocating = .init(allocator);
+        defer line.deinit();
         for (values, 0..) |value, j| {
             if (j != 0)
-                try line_writer.writeByte(' ');
-            try line_writer.print("{d}", .{value});
+                try line.writer.writeByte(' ');
+            try line.writer.print("{d}", .{value});
         }
         triangle2[i] = try line.toOwnedSlice();
     }
     // Pretty print the triangle
     const half_len = triangle2[triangle2.len - 1].len / 2;
     for (triangle2) |line| {
-        try writer.writeByteNTimes(' ', half_len - line.len / 2);
-        try writer.writeAll(line);
-        try writer.writeByte('\n');
+        _ = try w.splatByte(' ', half_len - line.len / 2);
+        try w.writeAll(line);
+        try w.writeByte('\n');
     }
 }

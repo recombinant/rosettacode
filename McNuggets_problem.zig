@@ -1,12 +1,19 @@
 // https://rosettacode.org/wiki/McNuggets_problem
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
+
 // No allocation required.
 const std = @import("std");
 pub fn main() !void {
     const max = mcnuggets(100);
 
-    const writer = std.io.getStdOut().writer();
-    try writer.print("Maximum non-McNuggets number is {}\n", .{max});
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    try stdout.print("Maximum non-McNuggets number is {}\n", .{max});
+
+    try stdout.flush();
 }
 
 fn mcnuggets(limit: usize) usize {

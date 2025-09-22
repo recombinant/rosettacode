@@ -1,5 +1,7 @@
 // https://rosettacode.org/wiki/Pell%27s_equation
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
+
 // Neither C nor C++ gave the correct answer for 277 because of integer overflow which was performed silently as undefined behaviour.
 
 // Zig gives the correct answer for 277.
@@ -9,12 +11,16 @@
 const std = @import("std");
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    try printSolvedPell(61, writer);
-    try printSolvedPell(109, writer);
-    try printSolvedPell(181, writer);
-    try printSolvedPell(277, writer);
+    try printSolvedPell(61, stdout);
+    try printSolvedPell(109, stdout);
+    try printSolvedPell(181, stdout);
+    try printSolvedPell(277, stdout);
+
+    try stdout.flush();
 }
 
 const Pair = struct {
@@ -34,14 +40,14 @@ fn solvePell(n: u256) Pair {
 
     // n is a perfect square - no solution other than 1,0
     if (x * x == n)
-        return Pair.init(1, 0);
+        return .init(1, 0);
 
     // there are non-trivial solutions
     var y = x;
     var z: u256 = 1;
     var r = 2 * x;
-    var e = Pair.init(1, 0);
-    var f = Pair.init(0, 1);
+    var e: Pair = .init(1, 0);
+    var f: Pair = .init(0, 1);
     var a: u256 = 0;
     var b: u256 = 0;
 
@@ -49,8 +55,8 @@ fn solvePell(n: u256) Pair {
         y = r * z - y;
         z = (n - y * y) / z;
         r = (x + y) / z;
-        e = Pair.init(e.v2, r * e.v2 + e.v1);
-        f = Pair.init(f.v2, r * f.v2 + f.v1);
+        e = .init(e.v2, r * e.v2 + e.v1);
+        f = .init(f.v2, r * f.v2 + f.v1);
         a = e.v2 + x * f.v2;
         b = f.v2;
         const ov = @subWithOverflow(a * a, n * b * b);
@@ -62,7 +68,7 @@ fn solvePell(n: u256) Pair {
     return Pair.init(a, b);
 }
 
-fn printSolvedPell(n: u256, writer: anytype) !void {
+fn printSolvedPell(n: u256, w: *std.Io.Writer) !void {
     const r = solvePell(n);
-    try writer.print("x^2 - {d:3} * y^2 = 1 for x = {d:21} and y = {d:19}\n", .{ n, r.v1, r.v2 });
+    try w.print("x^2 - {d:3} * y^2 = 1 for x = {d:21} and y = {d:19}\n", .{ n, r.v1, r.v2 });
 }

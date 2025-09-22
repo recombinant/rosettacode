@@ -1,11 +1,10 @@
 // https://rosettacode.org/wiki/Primorial_numbers
+// {{works with|Zig|0.15.1}}
+
+// To improve speed use this C library for prime numbers:
+// https://github.com/kimwalisch/primesieve
+
 const std = @import("std");
-const fmt = std.fmt;
-const heap = std.heap;
-const io = std.io;
-const math = std.math;
-const mem = std.mem;
-const time = std.time;
 
 const Int = std.math.big.int.Managed;
 
@@ -13,26 +12,32 @@ const Int = std.math.big.int.Managed;
 const AutoSieveType = @import("sieve.zig").AutoSieveType;
 const PrimeGen = @import("sieve.zig").PrimeGen;
 
-const assert = std.debug.assert;
-const print = std.debug.print;
-
 pub fn main() !void {
-    var t0 = try time.Timer.start();
+    var t0: std.time.Timer = try .start();
 
-    try part1();
-    try part2v2();
-    try part3(); // Slow
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    print("processed in {}\n", .{fmt.fmtDuration(t0.read())});
+    try part1(stdout);
+    try stdout.flush();
+
+    try part2v2(stdout);
+    try stdout.flush();
+
+    try part3(stdout); // Slow
+    try stdout.flush();
+
+    std.log.info("processed in {D}", .{t0.read()});
 }
 
-/// Show the first ten primorial numbers   (0 ──► 9,   inclusive)
-fn part1() !void {
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+/// Show the first ten primorial numbers (0 ──► 9, inclusive)
+fn part1(w: *std.Io.Writer) !void {
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var primes = PrimeGen(u8).init(allocator);
+    var primes: PrimeGen(u8) = .init(allocator);
     defer primes.deinit();
 
     var total: u64 = 1;
@@ -45,29 +50,29 @@ fn part1() !void {
     }) {
         if (index == 10)
             break;
-        print("Primorial({d}) = {s}\n", .{ index, try commatize(&buffer, total) });
+        try w.print("Primorial({d}) = {s}\n", .{ index, try commatize(&buffer, total) });
     }
 }
 
 /// Part2 Show the length of primorial numbers whose indexes are:
 ///       10 100 1,000 10,000 and 100,000.
-fn part2v1() !void {
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+fn part2v1(w: *std.Io.Writer) !void {
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     // 1,299,709 is the 100,000th prime
     const T = AutoSieveType(1_288_709);
-    var primes = PrimeGen(T).init(allocator);
+    var primes: PrimeGen(T) = .init(allocator);
     defer primes.deinit();
 
-    var prime_ = try Int.initSet(allocator, 1);
+    var prime_: Int = try .initSet(allocator, 1);
     defer prime_.deinit();
-    var total_ = try Int.initSet(allocator, 1);
+    var total_: Int = try .initSet(allocator, 1);
     defer total_.deinit();
     // Use a temporary and swap() before or after multiplication
     // as bare multiplication with aliasing will be slower.
-    var tmp_ = try Int.init(allocator);
+    var tmp_: Int = try .init(allocator);
     defer tmp_.deinit();
 
     var index: usize = 0;
@@ -86,7 +91,7 @@ fn part2v1() !void {
             100_000,
             => {
                 const total: []const u8 = try total_.toString(allocator, 10, .lower);
-                print(
+                try w.print(
                     "Primorial({s}) = has {s} digits\n",
                     .{ try commatize(&buf1, index), try commatize(&buf2, total.len) },
                 );
@@ -107,21 +112,22 @@ fn part2v1() !void {
 ///       10 100 1,000 10,000 and 100,000.
 /// Uses a translation of the Go example's vecprod() function.
 /// part2v2() is faster than part2v1() as there are fewer big integer multiplications.
-fn part2v2() !void {
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+fn part2v2(w: *std.Io.Writer) !void {
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     // 1,299,709 is the 100,000th prime
     const T = AutoSieveType(1_288_709);
-    var primes = PrimeGen(T).init(allocator);
+    var primes: PrimeGen(T) = .init(allocator);
     defer primes.deinit();
 
-    const PrimesArray = std.BoundedArray(Int, 100_000 - 10_000 + 1);
-    var primes_array = try PrimesArray.init(0);
-    defer for (primes_array.slice()) |*item| item.deinit(); // should only be one Int remaining
+    var buffer: [100_000 - 10_000 + 1]Int = undefined;
+    const PrimesArray = std.ArrayList(Int);
+    var primes_array: PrimesArray = .initBuffer(&buffer);
+    defer for (primes_array.items) |*item| item.deinit(); // should only be one Int remaining
 
-    var one = try Int.initSet(allocator, 1);
+    var one: Int = try .initSet(allocator, 1);
     defer one.deinit();
     var index: usize = 0;
 
@@ -137,10 +143,10 @@ fn part2v2() !void {
             100_000,
             => {
                 const total_: Int = if (index == 0) one else try vecProd(allocator, PrimesArray, &primes_array);
-                assert(primes_array.len == 1 or index == 0);
+                std.debug.assert(primes_array.items.len == 1 or index == 0);
 
                 const total: []const u8 = try total_.toString(allocator, 10, .lower);
-                print(
+                try w.print(
                     "Primorial({s}) = has {s} digits\n",
                     .{ try commatize(&buf1, index), try commatize(&buf2, total.len) },
                 );
@@ -151,30 +157,29 @@ fn part2v2() !void {
             },
             else => {},
         }
-        try primes_array.append(try Int.initSet(allocator, prime));
+        try primes_array.append(allocator, try .initSet(allocator, prime));
     }
 }
 
 /// Show the length of the one millionth primorial number
-fn part3() !void {
-    // print("calculating...", .{});
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+fn part3(w: *std.Io.Writer) !void {
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const T = AutoSieveType(15_485_863); // 1,000,000th prime
-    var primes = PrimeGen(T).init(allocator);
+    var primes: PrimeGen(T) = .init(allocator);
     defer primes.deinit();
 
     const primes_array = try allocator.alloc(Int, 1_000_000);
     defer allocator.free(primes_array);
 
     for (primes_array) |*p|
-        p.* = try Int.initSet(allocator, (try primes.next()).?);
+        p.* = try .initSet(allocator, (try primes.next()).?);
 
     // // Use a temporary and swap() before or after multiplication
     // // as bare multiplication with aliasing will be slower.
-    var tmp = try Int.init(allocator);
+    var tmp: Int = try .init(allocator);
     defer tmp.deinit();
 
     // Use the vecprod from the Go example.
@@ -196,7 +201,7 @@ fn part3() !void {
     // print(" finished\n", .{});
     defer s[0].deinit();
     // TODO: use this string length code rather than the quick fix approximation
-    // Zig 0.14dev toString() is extraordinarily slow compared to GNU GMP
+    // Zig 0.15.1 toString() is extraordinarily slow compared to GNU GMP
     // SLOW // // print("writing string...\n", .{});
     // SLOW // const value = try s[0].toString(allocator, 10, .lower);
     // SLOW // defer allocator.free(value);
@@ -213,7 +218,7 @@ fn part3() !void {
     var buffer1: [maxDecimalCommatized()]u8 = undefined;
     var buffer2: [maxDecimalCommatized()]u8 = undefined;
 
-    print("Primorial({s}) = has {s} digits (approximately)\n", .{ try commatize(&buffer1, primes_array.len), try commatize(&buffer2, approx_length) });
+    try w.print("Primorial({s}) = has {s} digits (approximately)\n", .{ try commatize(&buffer1, primes_array.len), try commatize(&buffer2, approx_length) });
 }
 
 /// Translation of the vecprod from the Go example.
@@ -222,13 +227,13 @@ fn part3() !void {
 /// All other Int values in `primes_array` will be deinit()
 /// and `primes_array` shrunk to a list of 1 item.
 /// T is a std.BoundArray type.
-fn vecProd(allocator: mem.Allocator, T: type, primes_array: *T) !Int {
+fn vecProd(allocator: std.mem.Allocator, T: type, primes_array: *T) !Int {
     // Use a temporary and swap() after multiplication
     // as bare multiplication with aliasing will be slower.
-    var tmp = try Int.init(allocator);
+    var tmp: Int = try .init(allocator);
     defer tmp.deinit();
 
-    var s = primes_array.slice();
+    var s = primes_array.items;
     var le = s.len;
     while (le > 1) {
         for (0..le / 2) |i| {
@@ -242,27 +247,26 @@ fn vecProd(allocator: mem.Allocator, T: type, primes_array: *T) !Int {
         s = s[0..c];
         le = c;
     }
-    try primes_array.resize(1);
-    return primes_array.get(0);
+    try primes_array.resize(allocator, 1);
+    return primes_array.items[0];
 }
 
 fn commatize(buffer: []u8, n: u64) ![]const u8 {
     // number as string without commas
     var buffer2: [maxDecimalChars(@TypeOf(n))]u8 = undefined;
-    const size = fmt.formatIntBuf(&buffer2, n, 10, .lower, .{});
+    const size = std.fmt.printInt(&buffer2, n, 10, .lower, .{});
     const s = buffer2[0..size];
     //
-    var stream = io.fixedBufferStream(buffer);
-    const writer = stream.writer();
+    var w: std.Io.Writer = .fixed(buffer);
 
     // write number string as string with inserted commas
     const last = s.len - 1;
     for (s, 0..) |c, idx| {
-        try writer.writeByte(c);
+        try w.writeByte(c);
         if (last - idx != 0 and (last - idx) % 3 == 0)
-            try writer.writeByte(',');
+            try w.writeByte(',');
     }
-    return stream.getWritten();
+    return w.buffered();
 }
 
 fn maxDecimalCommatized() usize {
@@ -274,7 +278,7 @@ fn maxDecimalCommatized() usize {
 fn maxDecimalChars(comptime T: type) usize {
     if (@typeInfo(T) != .int or @typeInfo(T).int.signedness != .unsigned)
         @compileError("type must be an unsigned integer.");
-    const max_int: comptime_float = @floatFromInt(math.maxInt(T));
+    const max_int: comptime_float = @floatFromInt(std.math.maxInt(T));
     return @intFromFloat(@log10(max_int) + 1);
 }
 

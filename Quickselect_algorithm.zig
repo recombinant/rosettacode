@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Quickselect_algorithm
+// {{works with|Zig|0.15.1}}
 // Two available partition algorithm functions - Hoare's and Lomuto's.
 // A third, Alexandrescu's, is not here as it wouldn't work correctly
 // "out of the box" with duplicates in the supplied slice.
@@ -117,7 +118,7 @@ test "partition" {
             const max = std.math.powi(u64, 10, array_len) catch unreachable;
             if (debug_timeit) {
                 elapsed = 0;
-                t0 = try std.time.Timer.start();
+                t0 = try .start();
             }
             // test all possible combinations for array
             for (0..max) |n| {
@@ -180,7 +181,7 @@ fn digitsFromNumber(output: []u8, n_: usize) []u8 {
 // kthElement test uses random numbers. It would be more rigorous
 // to iterate through number ranges as per the partition test.
 test kthElement {
-    var prng = std.Random.DefaultPrng.init(blk: {
+    var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
         std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
         break :blk seed;

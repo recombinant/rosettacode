@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Minimum_multiple_of_m_where_digital_sum_equals_m
+// {{works with|Zig|0.15.1}}
 // OEIS A131382
 const std = @import("std");
 
@@ -19,20 +20,22 @@ fn a131382(n: u64) u64 {
 }
 
 pub fn main() !void {
-    var t0 = try std.time.Timer.start();
+    var t0: std.time.Timer = try .start();
 
-    var bw = std.io.bufferedWriter(std.io.getStdOut().writer());
-    const writer = bw.writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var n: u64 = 1;
     while (n <= 70) : (n += 1) {
-        try writer.print("{d:9}", .{a131382(n)});
+        try stdout.print("{d:9}", .{a131382(n)});
         if (n % 10 == 0) {
-            try writer.writeByte('\n');
-            try bw.flush();
+            try stdout.writeByte('\n');
+            try stdout.flush();
         }
     }
-    try bw.flush();
+    try stdout.writeByte('\n');
+    try stdout.flush();
 
-    std.log.info("processed in {}\n", .{std.fmt.fmtDuration(t0.read())});
+    std.log.info("processed in {D}", .{t0.read()});
 }

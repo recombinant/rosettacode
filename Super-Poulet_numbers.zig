@@ -1,14 +1,16 @@
 // https://rosettacode.org/wiki/Super-Poulet_numbers
-// Translation of C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
 const std = @import("std");
-const heap = std.heap;
-const mem = std.mem;
-const print = std.debug.print;
 
 pub fn main() !void {
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
+
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var n: u64 = 2;
     var count: usize = 0;
@@ -16,12 +18,15 @@ pub fn main() !void {
         if (try isSuperPouletNumber(allocator, n)) {
             count += 1;
             if (count <= 20) {
-                print("{d:5}", .{n});
-                print("{c}", .{@as(u8, if (count % 5 == 0) '\n' else ' ')});
-                if (count == 20)
-                    print("\n", .{});
+                try stdout.print("{d:5}", .{n});
+                try stdout.print("{c}", .{@as(u8, if (count % 5 == 0) '\n' else ' ')});
+                if (count == 20) {
+                    try stdout.writeByte('\n');
+                    try stdout.flush();
+                }
             } else if (n > 1_000_000) {
-                print("First super-Poulet number greater than one million is {} at index {}.", .{ n, count });
+                try stdout.print("First super-Poulet number greater than one million is {} at index {}.", .{ n, count });
+                try stdout.flush();
                 break;
             }
         }
@@ -70,16 +75,16 @@ fn isPrime(n: u64) bool {
 }
 
 /// Caller owns returned slice memory.
-fn divisors(allocator: mem.Allocator, n_: u64) ![]u64 {
-    var result = std.ArrayList(u64).init(allocator);
-    errdefer result.deinit();
+fn divisors(allocator: std.mem.Allocator, n_: u64) ![]u64 {
+    var result: std.ArrayList(u64) = .empty;
+    errdefer result.deinit(allocator);
 
-    try result.append(1);
+    try result.append(allocator, 1);
 
     var n = n_;
     var power: u64 = 2;
     while (n & 1 == 0) {
-        try result.append(power);
+        try result.append(allocator, power);
         power <<= 1;
         n >>= 1;
     }
@@ -89,7 +94,7 @@ fn divisors(allocator: mem.Allocator, n_: u64) ![]u64 {
         power = p;
         while (n % p == 0) {
             for (0..len) |i|
-                try result.append(power * result.items[i]);
+                try result.append(allocator, power * result.items[i]);
             power *= p;
             n /= p;
         }
@@ -97,33 +102,33 @@ fn divisors(allocator: mem.Allocator, n_: u64) ![]u64 {
     if (n > 1) {
         const len = result.items.len;
         for (0..len) |i|
-            try result.append(n * result.items[i]);
+            try result.append(allocator, n * result.items[i]);
     }
-    return try result.toOwnedSlice();
+    return try result.toOwnedSlice(allocator);
 }
 
 /// Caller owns returned slice memory.
-fn divisors2(allocator: mem.Allocator, n: u64) ![]u64 {
-    var result = std.ArrayList(u64).init(allocator);
+fn divisors2(allocator: std.mem.Allocator, n: u64) ![]u64 {
+    var result: std.ArrayList(u64) = .empty;
     errdefer result.deinit();
 
-    try result.append(n);
+    try result.append(allocator, n);
     var d: u64 = 2;
     while (d * d <= n) : (d += 1)
         if (n % d == 0) {
             const q = n / d;
-            try result.append(d);
+            try result.append(allocator, d);
             if (q != d)
-                try result.append(q);
+                try result.append(allocator, q);
         };
-    return try result.toOwnedSlice();
+    return try result.toOwnedSlice(allocator);
 }
 
 fn isPouletNumber(n: u64) bool {
     return modpow(2, n - 1, n) == 1 and !isPrime(n);
 }
 
-fn isSuperPouletNumber(allocator: mem.Allocator, n: u64) !bool {
+fn isSuperPouletNumber(allocator: std.mem.Allocator, n: u64) !bool {
     if (!isPouletNumber(n))
         return false;
 
@@ -137,11 +142,9 @@ fn isSuperPouletNumber(allocator: mem.Allocator, n: u64) !bool {
 }
 
 const testing = std.testing;
-const math = std.math;
-const sort = std.sort;
 
 test modpow {
-    const expected: u64 = math.pow(u64, 7, 5) % 3;
+    const expected: u64 = std.math.pow(u64, 7, 5) % 3;
     try testing.expectEqual(expected, modpow(7, 5, 3));
 }
 
@@ -178,7 +181,7 @@ test divisors {
     testing.allocator.free(divs2);
 
     const divs6 = try divisors(testing.allocator, 6);
-    mem.sort(u64, divs6, {}, sort.asc(u64));
+    std.mem.sortUnstable(u64, divs6, {}, std.sort.asc(u64));
     try testing.expectEqualSlices(u64, &[_]u64{ 1, 2, 3, 6 }, divs6);
     testing.allocator.free(divs6);
 
@@ -187,7 +190,7 @@ test divisors {
     testing.allocator.free(divs23);
 
     const divs24 = try divisors(testing.allocator, 24);
-    mem.sort(u64, divs24, {}, sort.asc(u64));
+    std.mem.sortUnstable(u64, divs24, {}, std.sort.asc(u64));
     try testing.expectEqualSlices(u64, &[_]u64{ 1, 2, 3, 4, 6, 8, 12, 24 }, divs24);
     testing.allocator.free(divs24);
 }

@@ -1,14 +1,17 @@
 // https://rosettacode.org/wiki/Three_word_location
-// Translation of Go
+// {{works with|Zig|0.15.1}}
+// {{trans|Go}}
 const std = @import("std");
 
 pub fn main() !void {
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    try writer.writeAll("Starting figures:\n");
+    try stdout.writeAll("Starting figures:\n");
     const lat = 28.3852;
     const lon = -81.5638;
-    try writer.print("  latitude = {d:.4}, longitude = {d:.4}\n", .{ lat, lon });
+    try stdout.print("  latitude = {d:.4}, longitude = {d:.4}\n", .{ lat, lon });
 
     // convert lat and lon to positive integers
     const ilat: u64 = @intFromFloat(lat * 10_000 + 900_000);
@@ -32,8 +35,8 @@ pub fn main() !void {
     const w3 = try toWord(&buffer3, n3);
 
     // and print the results
-    try writer.writeAll("\nThree word location is:\n");
-    try writer.print("  {s} {s} {s}\n", .{ w1, w2, w3 });
+    try stdout.writeAll("\nThree word location is:\n");
+    try stdout.print("  {s} {s} {s}\n", .{ w1, w2, w3 });
 
     // now reverse the procedure
     const n1_rev = try fromWord(w1);
@@ -47,15 +50,16 @@ pub fn main() !void {
     const lon_rev = (@as(f64, @floatFromInt(ilon_rev)) - 1_800_000) / 10_000;
 
     // and print the results
-    try writer.writeAll("\nAfter reversing the procedure:\n");
-    try writer.print("  latitude = {d:.4}, longitude = {d:.4}\n", .{ lat_rev, lon_rev });
+    try stdout.writeAll("\nAfter reversing the procedure:\n");
+    try stdout.print("  latitude = {d:.4}, longitude = {d:.4}\n", .{ lat_rev, lon_rev });
+
+    try stdout.flush();
 }
 
-fn toWord(output: []u8, w: u64) ![]u8 {
-    var stream = std.io.fixedBufferStream(output);
-    const writer = stream.writer();
-    try writer.print("W{d:0>5}", .{w});
-    return stream.getWritten();
+fn toWord(output: []u8, n: u64) ![]u8 {
+    var w: std.Io.Writer = .fixed(output);
+    try w.print("W{d:0>5}", .{n});
+    return w.buffered();
 }
 
 fn fromWord(ws: []const u8) !u64 {

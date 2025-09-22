@@ -1,6 +1,9 @@
 // https://rosettacode.org/wiki/Multi-base_primes
-// Translation of C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
+
 // Using cpp primesieve from https://github.com/kimwalisch/primesieve/
+// zig run Multi-base_primes-cxx.zig -I ../primesieve-12.9/zig-out/include/ ../primesieve-12.9/zig-out/lib/primesieve.lib -lstdc++
 const std = @import("std");
 const ps = @cImport({
     @cInclude("primesieve.h");
@@ -11,7 +14,7 @@ const ps = @cImport({
 // };
 
 pub fn main() !void {
-    // var t0 = try std.time.Timer.start();
+    var t0: std.time.Timer = try .start();
 
     const max_base = 36;
     const max_length = 5;
@@ -20,26 +23,30 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    const writer = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    try multiBasePrimes(allocator, max_base, max_length, writer);
+    try multiBasePrimes(allocator, max_base, max_length, stdout);
 
-    // std.log.info("processed in {}\n", .{std.fmt.fmtDuration(t0.read())});
+    try stdout.flush();
+
+    std.log.info("processed in {D}", .{t0.read()});
 }
 
-fn multiBasePrimes(allocator: std.mem.Allocator, max_base: u6, max_length: u4, writer: anytype) !void {
+fn multiBasePrimes(allocator: std.mem.Allocator, max_base: u6, max_length: u4, w: *std.Io.Writer) !void {
     const sieve = try PrimeSieve.init(allocator, try std.math.powi(u64, max_base, max_length));
     defer sieve.deinit(allocator);
     var length: u4 = 1;
     while (length <= max_length) : (length += 1) {
-        try writer.print("{}-character strings which are prime in most bases: ", .{length});
+        try w.print("{}-character strings which are prime in most bases: ", .{length});
         var most_bases: u6 = 0;
 
-        var max_strings = std.ArrayList(Pair).init(allocator);
+        var max_strings: std.ArrayList(Pair) = .empty;
         defer {
             for (max_strings.items) |pair|
                 pair.deinit(allocator);
-            max_strings.deinit();
+            max_strings.deinit(allocator);
         }
 
         var digits = try allocator.alloc(u6, length);
@@ -47,8 +54,8 @@ fn multiBasePrimes(allocator: std.mem.Allocator, max_base: u6, max_length: u4, w
         @memset(digits, 0);
         digits[0] = 1;
 
-        var bases = std.ArrayList(u6).init(allocator);
-        defer bases.deinit();
+        var bases: std.ArrayList(u6) = .empty;
+        defer bases.deinit(allocator);
 
         var do = false;
         while (true) {
@@ -69,7 +76,7 @@ fn multiBasePrimes(allocator: std.mem.Allocator, max_base: u6, max_length: u4, w
                 for (digits) |d|
                     n = n * b + d;
                 if (sieve.isPrime(n))
-                    try bases.append(b);
+                    try bases.append(allocator, b);
             }
             if (bases.items.len > most_bases) {
                 most_bases = @intCast(bases.items.len);
@@ -78,13 +85,13 @@ fn multiBasePrimes(allocator: std.mem.Allocator, max_base: u6, max_length: u4, w
                 max_strings.clearRetainingCapacity();
             }
             if (bases.items.len == most_bases)
-                try max_strings.append(try Pair.init(allocator, digits, bases.items));
+                try max_strings.append(allocator, try Pair.init(allocator, digits, bases.items));
         } // while (increment(digits, max_base));
-        try writer.print("{}\n", .{most_bases});
+        try w.print("{}\n", .{most_bases});
         var buffer: [128]u8 = undefined;
         for (max_strings.items) |m|
-            try writer.print("{s} -> {any}\n", .{ toString(&buffer, m.digits), m.bases });
-        try writer.writeByte('\n');
+            try w.print("{s} -> {any}\n", .{ toString(&buffer, m.digits), m.bases });
+        try w.writeByte('\n');
     }
 }
 
