@@ -41,5 +41,5 @@ fn evolve(state_: u64, rule: u16) void {
         }
         std.debug.print(" {}", .{b});
     }
-    std.debug.writeByte('\n');
+    std.debug.print("\n", .{});
 }
