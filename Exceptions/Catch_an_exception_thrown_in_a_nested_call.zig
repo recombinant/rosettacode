@@ -1,4 +1,6 @@
 // https://rosettacode.org/wiki/Exceptions/Catch_an_exception_thrown_in_a_nested_call
+// {{works with|Zig|0.15.1}}
+
 // from https://github.com/tiehuis/zig-rosetta
 const std = @import("std");
 const print = std.debug.print;

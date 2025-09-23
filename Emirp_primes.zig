@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Emirp_primes
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 const print = std.debug.print;
 

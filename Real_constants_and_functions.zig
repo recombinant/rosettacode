@@ -1,4 +1,6 @@
 // https://rosettacode.org/wiki/Real_constants_and_functions
+// {{works with|Zig|0.15.1}}
+
 // Copied from rosettacode
 const std = @import("std");
 

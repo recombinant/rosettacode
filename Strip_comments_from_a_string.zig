@@ -1,6 +1,6 @@
 // https://rosettacode.org/wiki/Strip_comments_from_a_string
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
 const print = std.debug.print;
 
 pub fn main() void {
@@ -12,8 +12,8 @@ pub fn main() void {
     const markers = "#;";
 
     for (strings) |s| {
-        const intermediate = if (mem.indexOfAny(u8, s, markers)) |idx| s[0..idx] else s;
-        const stripped = mem.trim(u8, intermediate, "\t ");
+        const intermediate = if (std.mem.indexOfAny(u8, s, markers)) |idx| s[0..idx] else s;
+        const stripped = std.mem.trim(u8, intermediate, "\t ");
 
         print("'{s}' -> '{s}'\n", .{ s, stripped });
     }

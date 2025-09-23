@@ -1,9 +1,7 @@
 // https://rosettacode.org/wiki/EKG_sequence_convergence
-// Translation of Go
+// {{works with|Zig|0.15.1}}
+// {{trans|Go}}
 const std = @import("std");
-const math = std.math;
-const mem = std.mem;
-const sort = std.sort;
 const assert = std.debug.assert;
 const print = std.debug.print;
 
@@ -20,7 +18,7 @@ pub fn main() void {
             while (true) : (i += 1) {
                 // a potential sequence member cannot already have been used
                 // and must have a factor in common with previous member
-                if ((mem.indexOfScalar(u16, ekg[s][0..n], i) == null) and math.gcd(ekg[s][n - 1], i) > 1) {
+                if ((std.mem.indexOfScalar(u16, ekg[s][0..n], i) == null) and std.math.gcd(ekg[s][n - 1], i) > 1) {
                     ekg[s][n] = i;
                     break;
                 }
@@ -44,8 +42,8 @@ pub fn main() void {
 fn areSame(s: []u16, t: []u16) bool {
     assert(s.len == t.len);
 
-    sort.insertion(u16, s, {}, sort.asc(u16));
-    sort.insertion(u16, t, {}, sort.asc(u16));
+    std.mem.sortUnstable(u16, s, {}, std.sort.asc(u16));
+    std.mem.sortUnstable(u16, t, {}, std.sort.asc(u16));
 
-    return mem.eql(u16, s, t);
+    return std.mem.eql(u16, s, t);
 }

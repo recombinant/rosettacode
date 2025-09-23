@@ -1,13 +1,12 @@
 // https://rosettacode.org/wiki/Find_words_with_alternating_vowels_and_consonants
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const mem = std.mem;
-const meta = std.meta;
 const print = std.debug.print;
 
 pub fn main() void {
     const text = @embedFile("data/unixdict.txt");
 
-    var it = mem.splitScalar(u8, text, '\n');
+    var it = std.mem.splitScalar(u8, text, '\n');
 
     var count: u32 = 0;
     while (it.next()) |word|

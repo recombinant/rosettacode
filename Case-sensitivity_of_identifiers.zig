@@ -1,4 +1,6 @@
 // https://rosettacode.org/wiki/Case-sensitivity_of_identifiers
+// {{works with|Zig|0.15.1}}
+
 // from https://github.com/tiehuis/zig-rosetta
 const std = @import("std");
 const print = std.debug.print;

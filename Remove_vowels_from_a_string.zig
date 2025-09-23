@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Remove_vowels_from_a_string
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 const assert = std.debug.assert;
 const print = std.debug.print;
