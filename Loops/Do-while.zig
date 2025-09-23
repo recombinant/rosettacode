@@ -1,8 +1,14 @@
 // https://rosettacode.org/wiki/Loops/Do-while
+// {{works with|Zig|0.15.1}}
+
 // Copied from rosettacode
 const std = @import("std");
 
 pub fn main() !void {
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     var a: u8 = 0;
     // no do-while in syntax, trust the optimizer to do
     // correct Loop inversion https://en.wikipedia.org/wiki/Loop_inversion
@@ -12,6 +18,8 @@ pub fn main() !void {
     while (alive == true or a % 6 != 0) {
         alive = false;
         a += 1;
-        try std.io.getStdOut().writer().print("{d}\n", .{a});
+        try stdout.print("{d}\n", .{a});
     }
+
+    try stdout.flush();
 }

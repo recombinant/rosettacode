@@ -1,7 +1,8 @@
 // https://rosettacode.org/wiki/Assertions
+// {{works with|Zig|0.15.1}}
+
 // from https://github.com/tiehuis/zig-rosetta
 const std = @import("std");
-const posix = std.posix;
 const assert = std.debug.assert;
 
 pub fn main() void {
@@ -10,7 +11,7 @@ pub fn main() void {
     comptime assert(a == 42);
 
     var b: [2]u8 = undefined;
-    posix.getrandom(&b) catch unreachable;
+    std.posix.getrandom(&b) catch unreachable;
     // Run-time assertion
     assert(b[0] == 42);
 }

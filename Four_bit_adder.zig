@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Four_bit_adder
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 // Zig has a bit type, u1,
 const std = @import("std");
 

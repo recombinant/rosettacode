@@ -1,12 +1,19 @@
 // https://rosettacode.org/wiki/Logistic_curve_fitting_in_epidemiology
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 
 pub fn main() !void {
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     const r: f64 = solve(&f, .{});
     const R0: f64 = @exp(12 * r);
 
-    try std.io.getStdOut().writer().print("r = {d:.6}, R0 = {d:.5}\n", .{ r, R0 });
+    try stdout.print("r = {d:.6}, R0 = {d:.5}\n", .{ r, R0 });
+
+    try stdout.flush();
 }
 
 const K = 7_800_000_000;

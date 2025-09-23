@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/ISBN13_check_digit
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 
 pub fn main() void {

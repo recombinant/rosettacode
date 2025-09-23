@@ -1,37 +1,43 @@
 // https://rosettacode.org/wiki/Smallest_enclosing_circle_problem
+// {{works with|Zig|0.15.1}}
+
 // Translation of Wren following the same C++ code:
 // https://www.geeksforgeeks.org/minimum-enclosing-circle-set-2-welzls-algorithm/?ref=rp
 const std = @import("std");
-const math = std.math;
-const mem = std.mem;
+
+// TODO: fix - welzHelper parameters are incorrect.
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     // Allocator ------------------------------------------
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
-    // var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    // var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     // defer arena.deinit();
     // const allocator = arena.allocator();
 
     // Random number generator ----------------------------
-    var prng = std.Random.DefaultPrng.init(blk: {
+    var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        try std.posix.getrandom(mem.asBytes(&seed));
+        try std.posix.getrandom(std.mem.asBytes(&seed));
         break :blk seed;
     });
     const rand = prng.random();
 
     // ----------------------------------------------------
-    const point_arrays: []const []const Point = &[_][]const Point{
-        &[_]Point{ Point{ .x = 0, .y = 0 }, Point{ .x = 0, .y = 1 }, Point{ .x = 1, .y = 0 } },
-        &[_]Point{ Point{ .x = 5, .y = -2 }, Point{ .x = -3, .y = -2 }, Point{ .x = -2, .y = 5 }, Point{ .x = 1, .y = 6 }, Point{ .x = 0, .y = 2 } },
+    const point_arrays: []const []const Point = &.{
+        &[_]Point{ .{ .x = 0, .y = 0 }, .{ .x = 0, .y = 1 }, .{ .x = 1, .y = 0 } },
+        &[_]Point{ .{ .x = 5, .y = -2 }, .{ .x = -3, .y = -2 }, .{ .x = -2, .y = 5 }, .{ .x = 1, .y = 6 }, Point{ .x = 0, .y = 2 } },
     };
 
     for (point_arrays) |points|
-        try stdout.print("\n{d:.2}\n", .{try welzl(allocator, rand, points)});
+        try stdout.print("\n{f}\n", .{try welzl(allocator, rand, points)});
+
+    try stdout.flush();
 }
 
 const Point = struct {
@@ -39,26 +45,15 @@ const Point = struct {
     y: f64,
 
     fn distance(self: Point, other: Point) f64 {
-        return math.hypot(self.x - other.x, self.y - other.y);
+        return std.math.hypot(self.x - other.x, self.y - other.y);
     }
     fn distSq(self: Point, other: Point) f64 {
         return (self.x - other.x) * (self.x - other.x) + (self.y - other.y) * (self.y - other.y);
     }
 
     /// Custom formatter for Point struct
-    pub fn format(self: Point, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
-        if (fmt.len == 0) {
-            return std.fmt.format(writer, "Point({}, {})", .{ self.x, self.y });
-        } else if (comptime mem.eql(u8, fmt, "d")) {
-            try writer.writeAll("Point(x=");
-            try std.fmt.formatType(self.x, "d", options, writer, std.options.fmt_max_depth);
-            try writer.writeAll(", y=");
-            try std.fmt.formatType(self.y, "d", options, writer, std.options.fmt_max_depth);
-            try writer.writeAll(")");
-            return;
-        } else {
-            @compileError("unknown format character: '" ++ fmt ++ "'");
-        }
+    pub fn format(self: Point, w: *std.Io.Writer) std.Io.Writer.Error!void {
+        try w.print("Point({}, {})", .{ self.x, self.y });
     }
 };
 
@@ -94,19 +89,8 @@ const Circle = struct {
     }
 
     /// Custom formatter for Circle struct
-    pub fn format(self: Circle, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
-        if (fmt.len == 0) {
-            return std.fmt.format(writer, "Circle({}, {})", .{ self.c, self.r });
-        } else if (comptime mem.eql(u8, fmt, "d")) {
-            try writer.writeAll("Circle(center=");
-            try self.c.format(fmt, options, writer);
-            try writer.writeAll(", radius=");
-            try std.fmt.formatType(self.r, "d", options, writer, std.options.fmt_max_depth);
-            try writer.writeAll(")");
-            return;
-        } else {
-            @compileError("unknown format character: '" ++ fmt ++ "'");
-        }
+    pub fn format(self: Circle, w: *std.Io.Writer) std.Io.Writer.Error!void {
+        try w.print("Circle(centre={f}, radius={})", .{ self.c, self.r });
     }
 };
 
@@ -123,15 +107,14 @@ fn getCircleCenter(pt1: Point, pt2: Point, pt3: Point) Point {
     return Point{ .x = (cy * b - by * c) / (2 * d), .y = (bx * c - cx * b) / (2 * d) };
 }
 
-fn welzl(allocator: mem.Allocator, rand: std.Random, input_points: []const Point) !Circle {
+fn welzl(allocator: std.mem.Allocator, rand: std.Random, input_points: []const Point) !Circle {
     const points = try allocator.dupe(Point, input_points);
     defer allocator.free(points);
     rand.shuffle(Point, points);
 
-    var boundary_points = std.ArrayList(Point).init(allocator);
-    boundary_points.deinit();
+    var boundary_points: std.ArrayList(Point) = .empty;
 
-    return try welzl_helper(rand, points, boundary_points);
+    return try welzl_helper(allocator, rand, points, &boundary_points);
 }
 
 // Returns the MEC using Welzl's algorithm
@@ -139,7 +122,7 @@ fn welzl(allocator: mem.Allocator, rand: std.Random, input_points: []const Point
 // points on the circle boundary.
 // n represents the number of points in P
 // that are not yet processed.
-fn welzl_helper(rand: std.Random, points: []Point, R: std.ArrayList(Point)) !Circle {
+fn welzl_helper(allocator: std.mem.Allocator, rand: std.Random, points: []Point, R: *std.ArrayList(Point)) !Circle {
     // Base case when all points processed or |R| = 3
     if (points.len == 0 or R.items.len == 3) return try secTrivial(R.items);
 
@@ -150,22 +133,22 @@ fn welzl_helper(rand: std.Random, points: []Point, R: std.ArrayList(Point)) !Cir
     // Put the picked point at the end of P
     // since it's more efficient than
     // deleting from the middle of the vector
-    mem.swap(Point, &points[idx], &points[points.len - 1]);
+    std.mem.swap(Point, &points[idx], &points[points.len - 1]);
     const points_slice = points[0 .. points.len - 1];
 
     // Get the MEC circle d from the
     // set of points P - {p}
-    const d: Circle = try welzl_helper(rand, points_slice, R);
+    const d: Circle = try welzl_helper(allocator, rand, points_slice, R);
 
     if (d.contains(p)) return d;
 
-    var boundary_points = try R.clone();
-    defer boundary_points.deinit();
+    var boundary_points = try R.clone(allocator);
+    defer boundary_points.deinit(allocator);
     // Otherwise, must be on the boundary of the MEC
-    try boundary_points.append(p);
+    try boundary_points.append(allocator, p);
 
     // Return the MEC for P - {p} and R U {p}
-    return try welzl_helper(rand, points_slice, boundary_points);
+    return try welzl_helper(allocator, rand, points_slice, &boundary_points);
 }
 
 const TrivalCircleError = error{

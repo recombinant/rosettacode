@@ -1,6 +1,6 @@
 // https://rosettacode.org/wiki/Coprimes
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const math = std.math;
 const print = std.debug.print;
 
 pub fn main() void {
@@ -18,5 +18,5 @@ pub fn main() void {
 }
 
 fn isComprimePair(x: u32, y: u32) bool {
-    return math.gcd(x, y) == 1;
+    return std.math.gcd(x, y) == 1;
 }

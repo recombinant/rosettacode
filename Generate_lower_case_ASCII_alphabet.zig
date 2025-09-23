@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Generate_lower_case_ASCII_alphabet
+// {{works with|Zig|0.15.1}}
 // Copied from rosettacode
 const std = @import("std");
 
@@ -9,8 +10,13 @@ pub fn main() !void {
     inline while (i < cnt_lower) : (i += 1)
         lower[i] = i + 'a';
 
-    const stdout_wr = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     for (lower) |l|
-        try stdout_wr.print("{c} ", .{l});
-    try stdout_wr.writeByte('\n');
+        try stdout.print("{c} ", .{l});
+    try stdout.writeByte('\n');
+
+    try stdout.flush();
 }

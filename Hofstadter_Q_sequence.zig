@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Hofstadter_Q_sequence
-// Translation of Nim
+// {{works with|Zig|0.15.1}}
+// {{trans|Nim}}
 const std = @import("std");
 const print = std.debug.print;
 

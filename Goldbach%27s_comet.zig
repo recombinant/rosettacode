@@ -1,7 +1,7 @@
 // https://rosettacode.org/wiki/Goldbach%27s_comet
-// Copied from C++
+// {{works with|Zig|0.15.1}}
+// {{trans|C++}}
 const std = @import("std");
-const mem = std.mem;
 
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
@@ -20,7 +20,7 @@ pub fn main() !void {
 const Goldbach = struct {
     primes: std.DynamicBitSet,
 
-    fn init(allocator: mem.Allocator, limit: u32) !Goldbach {
+    fn init(allocator: std.mem.Allocator, limit: u32) !Goldbach {
         var primes = try std.DynamicBitSet.initFull(allocator, limit);
         primes.setValue(0, false);
         primes.setValue(1, false);

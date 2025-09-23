@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Sort_an_integer_array
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() void {

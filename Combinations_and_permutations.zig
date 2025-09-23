@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Combinations_and_permutations
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 const Number = f64;
 
@@ -16,7 +17,9 @@ fn comb(n: Number, k: Number) Number {
 }
 
 pub fn main() !void {
-    var stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const p: Number = 12;
     const c: Number = 60;
@@ -28,4 +31,6 @@ pub fn main() !void {
     var k: Number = 10;
     while (k < c) : (k += 10)
         try stdout.print("C({d},{d}) = {d}\n", .{ c, k, @floor(comb(c, k)) });
+
+    try stdout.flush();
 }

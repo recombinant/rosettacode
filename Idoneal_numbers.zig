@@ -1,7 +1,10 @@
 // https://rosettacode.org/wiki/Idoneal_numbers
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
+
 // Using, say, a 16 bit integer C would silently fail with integer overflow.
-// Zig would panic on overflow but can be written to check for and respond to these overflows.
+// Zig (Debug & ReleaseSafe modes) would panic on overflow but can be written to
+// check for and respond to these overflows in any mode.
 const std = @import("std");
 const assert = std.debug.assert;
 const print = std.debug.print;
@@ -10,14 +13,15 @@ pub fn main() void {
     const newline_count = 10;
     var count: usize = 0;
     var n: u16 = 1;
-    while (n <= 1850) : (n += 1) {
+    while (n <= 1850) : (n += 1)
         if (isIdoneal(n)) {
             print("{d:4} ", .{n});
             count += 1;
             if (count % newline_count == 0) print("\n", .{});
-        }
-    }
-    if (count % newline_count != 0) print("\n", .{});
+        };
+
+    if (count % newline_count != 0)
+        print("\n", .{});
 }
 
 fn isIdoneal(n: anytype) bool {
