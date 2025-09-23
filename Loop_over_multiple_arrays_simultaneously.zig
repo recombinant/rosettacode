@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Loop_over_multiple_arrays_simultaneously
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() void {

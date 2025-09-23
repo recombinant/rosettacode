@@ -1,6 +1,6 @@
 // https://rosettacode.org/wiki/Palindrome_detection
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const ascii = std.ascii;
 const print = std.debug.print;
 const testing = std.testing;
 
@@ -40,12 +40,12 @@ fn isPalindrome(s: []const u8) bool {
     var low: usize = 0;
     var high = s.len - 1;
     while (low < high) {
-        if (!ascii.isAlphabetic(s[low]))
+        if (!std.ascii.isAlphabetic(s[low]))
             low += 1
-        else if (!ascii.isAlphabetic(s[high]))
+        else if (!std.ascii.isAlphabetic(s[high]))
             high -= 1
         else {
-            if (ascii.toLower(s[low]) != ascii.toLower(s[high]))
+            if (std.ascii.toLower(s[low]) != std.ascii.toLower(s[high]))
                 return false
             else {
                 low += 1;
