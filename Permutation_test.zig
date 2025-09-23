@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Permutation_test
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 const print = std.debug.print;
 

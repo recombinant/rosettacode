@@ -1,8 +1,8 @@
 // https://rosettacode.org/wiki/Largest_palindrome_product
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const math = std.math;
+
 const print = std.debug.print;
-const testing = std.testing;
 
 pub fn main() void {
     // Brute force
@@ -45,6 +45,8 @@ fn isPalindrome(n: u64) bool {
     return n == k;
 }
 
+const testing = std.testing;
+
 test isPalindrome {
     try testing.expect(isPalindrome(0));
     try testing.expect(isPalindrome(1));
@@ -58,7 +60,7 @@ test isPalindrome {
 
 // Translation of Wren
 fn findLargestPrimeProduct(n: u64) struct { u64, u64, u64 } {
-    var pow: u64 = math.pow(u64, 10, n);
+    var pow: u64 = std.math.pow(u64, 10, n);
     const low: u64 = pow * 9;
     pow *= 10;
     const high: u64 = pow - 1;

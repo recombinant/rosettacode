@@ -2,9 +2,12 @@
 // {{works with|Zig|0.15.1}}
 // {{trans|Go}}
 const std = @import("std");
-const print = std.debug.print;
 
-pub fn main() void {
+pub fn main() !void {
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     const samples = [_][]const []const u8{
         &[_][]const u8{ "baabababc", "baabc", "bbbabc" },
         &[_][]const u8{ "baabababc", "baabc", "bbbazc" },
@@ -14,10 +17,12 @@ pub fn main() void {
         &[_][]const u8{""},
     };
     for (samples) |sample| {
-        print("{{", .{});
-        for (sample) |s| print("\"{s}\" ", .{s});
-        print("}} -> \"{s}\"\n", .{lcs(sample)});
+        try stdout.writeAll("{{");
+        for (sample) |s|
+            try stdout.print("\"{s}\" ", .{s});
+        try stdout.print("}} -> \"{s}\"\n", .{lcs(sample)});
     }
+    try stdout.flush();
 }
 
 fn lcs(a: []const []const u8) []const u8 {

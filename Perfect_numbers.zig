@@ -1,7 +1,8 @@
 // https://rosettacode.org/wiki/Perfect_numbers
+// {{works with|Zig|0.15.1}}
+
 // from https://github.com/tiehuis/zig-rosetta
 const std = @import("std");
-const math = std.math;
 const print = std.debug.print;
 
 pub fn main() void {
@@ -12,7 +13,7 @@ pub fn main() void {
 }
 
 fn isPerfect(n: usize) bool {
-    const max = math.sqrt(n) + 1;
+    const max = std.math.sqrt(n) + 1;
 
     var tot: usize = 1;
     var i: usize = 2;

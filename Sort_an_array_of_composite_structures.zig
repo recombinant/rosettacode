@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Sort_an_array_of_composite_structures
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 const Entry = struct {
@@ -21,7 +22,7 @@ pub fn main() void {
     };
 
     // Several sort algorithms are also available in std.sort
-    std.mem.sort(Entry, &elements, {}, Entry.lessThan);
+    std.mem.sortUnstable(Entry, &elements, {}, Entry.lessThan);
 
     for (elements) |e|
         std.debug.print("{s:<9} {d}\n", .{ e.name, e.value });

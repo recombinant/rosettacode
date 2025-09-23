@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Numbers_with_same_digit_set_in_base_10_and_base_16
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 const print = std.debug.print;
 

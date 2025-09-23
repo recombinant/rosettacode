@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Numbers_with_prime_digits_whose_sum_is_13
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 const print = std.debug.print;
 

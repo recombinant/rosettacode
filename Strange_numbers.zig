@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Strange_numbers
+// {{works with|Zig|0.15.1}}
 
 // zig run Strange_numbers.zig | fmt
 const std = @import("std");

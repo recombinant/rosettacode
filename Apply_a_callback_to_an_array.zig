@@ -1,4 +1,6 @@
 // https://rosettacode.org/wiki/Apply_a_callback_to_an_array
+// {{works with|Zig|0.15.1}}
+
 // from https://github.com/tiehuis/zig-rosetta
 const std = @import("std");
 const print = std.debug.print;
