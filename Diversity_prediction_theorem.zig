@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Diversity_prediction_theorem
-// Translation of Go
+// {{works with|Zig|0.15.1}}
+// {{trans|Go}}
 const std = @import("std");
 const print = std.debug.print;
 
