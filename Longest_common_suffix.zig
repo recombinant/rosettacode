@@ -1,8 +1,7 @@
 // https://rosettacode.org/wiki/Longest_common_suffix
-// Translation of Go
+// {{works with|Zig|0.15.1}}
+// {{trans|Go}}
 const std = @import("std");
-const math = std.math;
-const mem = std.mem;
 const print = std.debug.print;
 
 pub fn main() void {
@@ -15,7 +14,9 @@ pub fn main() void {
         &[_][]const u8{""},
     };
     for (samples) |sample| {
-        print("{s} -> \"{s}\"\n", .{ sample, lcs(sample) });
+        print("{{", .{});
+        for (sample) |s| print("\"{s}\" ", .{s});
+        print("}} -> \"{s}\"\n", .{lcs(sample)});
     }
 }
 
@@ -28,7 +29,7 @@ fn lcs(a: []const []const u8) []const u8 {
 
     const le0 = a[0].len;
 
-    var min_len: usize = math.maxInt(usize);
+    var min_len: usize = std.math.maxInt(usize);
     for (a) |s|
         min_len = @min(min_len, s.len);
     if (min_len == 0)
@@ -39,7 +40,7 @@ fn lcs(a: []const []const u8) []const u8 {
     for (1..min_len + 1) |i| {
         const suffix = a[0][le0 - i ..];
         for (a1) |s|
-            if (!mem.endsWith(u8, s, suffix))
+            if (!std.mem.endsWith(u8, s, suffix))
                 return res;
         res = suffix;
     }

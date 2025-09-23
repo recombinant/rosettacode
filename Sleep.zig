@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Sleep
+// {{works with|Zig|0.14.1}}
 // Copied from rosettacode
 const std = @import("std");
 const time = std.time;
