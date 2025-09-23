@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Binary_digits
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 
 pub fn main() void {

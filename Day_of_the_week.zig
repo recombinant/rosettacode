@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Day_of_the_week
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 
 /// Calculate day of week in proleptic Gregorian calendar. Sunday == 0

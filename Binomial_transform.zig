@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Binomial_transform
-// Translation of C
+// {{works with|Zig|0.15.1}}
+// {{trans|C}}
 const std = @import("std");
 const assert = std.debug.assert;
 const print = std.debug.print;

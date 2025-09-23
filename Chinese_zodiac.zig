@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Chinese_zodiac
-// Translation of zkl
+// {{works with|Zig|0.15.1}}
+// {{trans|zkl}}
 const std = @import("std");
 const print = std.debug.print;
 

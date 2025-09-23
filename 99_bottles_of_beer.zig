@@ -1,6 +1,9 @@
 // https://rosettacode.org/wiki/99_bottles_of_beer
+// {{works with|Zig|0.15.1}}
+
 // Copied from rosettacode
 const print = @import("std").debug.print;
+
 pub fn main() void {
     var i: u8 = 99;
     while (i > 2) : (i -= 1) {

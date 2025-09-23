@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Extreme_floating_point_values
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
 const print = std.debug.print;
 

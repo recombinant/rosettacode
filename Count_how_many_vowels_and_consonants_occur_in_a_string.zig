@@ -1,6 +1,6 @@
 // https://rosettacode.org/wiki/Count_how_many_vowels_and_consonants_occur_in_a_string
+// {{works with|Zig|0.15.1}}
 const std = @import("std");
-const ascii = std.ascii;
 const testing = std.testing;
 const print = std.debug.print;
 
@@ -46,7 +46,7 @@ const LetterType = enum {
 };
 
 fn getLetterType(c: u8) LetterType {
-    if (!ascii.isAlphabetic(c)) return .other;
+    if (!std.ascii.isAlphabetic(c)) return .other;
     return switch (c) {
         'a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U' => .vowel,
         else => .consonant,

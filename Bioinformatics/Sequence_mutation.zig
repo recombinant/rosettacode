@@ -1,4 +1,5 @@
 // https://rosettacode.org/wiki/Bioinformatics/Sequence_mutation
+// {{works with|Zig|0.15.1}}
 // {{trans|C++}}
 const std = @import("std");
 
