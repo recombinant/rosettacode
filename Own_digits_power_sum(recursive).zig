@@ -8,7 +8,7 @@ const MAX_BASE = 10;
 pub fn main() !void {
     var t0 = try std.time.Timer.start();
 
-    var pd = PowerDgt.init();
+    var pd: PowerDgt = .init();
     pd.nextDigit(0, 0);
 
     const numbers = pd.getNumbers();

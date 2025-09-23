@@ -11,7 +11,7 @@ pub fn main() !void {
     for ([_]u16{ 1, 617 }) |n| {
         try stdout.print("Game #{}\n", .{n});
 
-        const rnd = RndGen.init(n);
+        const rnd: RndGen = .init(n);
         try printFreeCell(rnd, stdout);
         try stdout.writeByte('\n');
     }

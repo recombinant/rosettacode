@@ -12,7 +12,7 @@ const Element = struct {
 const NodePool = std.heap.MemoryPoolExtra(Element, .{});
 
 pub fn main() !void {
-    var node_pool = NodePool.init(std.heap.page_allocator);
+    var node_pool: NodePool = .init(std.heap.page_allocator);
     defer node_pool.deinit();
 
     var stdout_buffer: [1024]u8 = undefined;

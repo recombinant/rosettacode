@@ -8,7 +8,7 @@ pub fn main() void {
     {
         const RndGen = Microsoft.lcg;
 
-        var rnd = RndGen.init(0);
+        var rnd: RndGen = .init(0);
         print("\nMicrosoft random\n", .{});
         print("{}\n", .{rnd.random().int(i16)});
         print("{}\n", .{rnd.random().int(i16)});
@@ -19,7 +19,7 @@ pub fn main() void {
     {
         const RndGen = BSD.lcg;
 
-        var rnd = RndGen.init(0);
+        var rnd: RndGen = .init(0);
         print("\nBSD random\n", .{});
         print("random number is {}\n", .{rnd.random().int(u32)});
         print("random number is {}\n", .{rnd.random().int(u32)});
@@ -30,7 +30,7 @@ pub fn main() void {
     {
         const RndGen = Microsoft.lcg;
 
-        var rnd = RndGen.init(1);
+        var rnd: RndGen = .init(1);
         print("\nMicrosoft random (emulated)\n", .{});
         print("{}\n", .{rnd.random().int(usize)});
         print("{}\n", .{rnd.random().int(usize)});

@@ -35,7 +35,7 @@ pub fn main() !void {
 }
 
 fn multiBasePrimes(allocator: std.mem.Allocator, max_base: u6, max_length: u4, w: *std.Io.Writer) !void {
-    const sieve = try PrimeSieve.init(allocator, try std.math.powi(u64, max_base, max_length));
+    const sieve: PrimeSieve = try .init(allocator, try std.math.powi(u64, max_base, max_length));
     defer sieve.deinit(allocator);
     var length: u4 = 1;
     while (length <= max_length) : (length += 1) {
@@ -179,7 +179,7 @@ const PrimeSieve = struct {
 const testing = std.testing;
 test PrimeSieve {
     const allocator = testing.allocator;
-    const sieve = try PrimeSieve.init(allocator, try std.math.powi(u64, 36, 4));
+    const sieve: PrimeSieve = try .init(allocator, try std.math.powi(u64, 36, 4));
     defer sieve.deinit(allocator);
 
     const primes_list = [_]u64{ 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 1679609 };

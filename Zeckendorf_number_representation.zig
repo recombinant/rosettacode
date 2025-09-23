@@ -11,7 +11,7 @@ pub fn main() !void {
     var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var z = try Zeckendorf1.init(allocator);
+    var z: Zeckendorf1 = try .init(allocator);
     defer z.deinit();
 
     for (0..21) |i| {

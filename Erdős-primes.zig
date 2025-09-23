@@ -18,7 +18,7 @@ pub fn main() !void {
 
     // sieve for isPrime()
     const limit = 1_000_000;
-    const sieve = try PrimeSieve.init(allocator, limit);
+    const sieve: PrimeSieve = try .init(allocator, limit);
     defer sieve.deinit(allocator);
 
     var it: ps.primesieve_iterator = undefined;

@@ -61,7 +61,7 @@ fn getLudicNumbers(allocator: std.mem.Allocator, limit: usize) ![]usize {
     };
     const DataNodePool = std.heap.MemoryPoolExtra(DataNode, .{});
 
-    var data_node_pool = DataNodePool.init(std.heap.page_allocator);
+    var data_node_pool: DataNodePool = .init(std.heap.page_allocator);
     defer data_node_pool.deinit();
 
     var list = blk: {

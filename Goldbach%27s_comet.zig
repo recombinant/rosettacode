@@ -6,7 +6,7 @@ const std = @import("std");
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
 
-    var goldbach = try Goldbach.init(allocator, 2_000_000);
+    var goldbach: Goldbach = try .init(allocator, 2_000_000);
     defer goldbach.deinit();
 
     std.debug.print("The first 100 Goldbach numbers:\n", .{});
@@ -21,7 +21,7 @@ const Goldbach = struct {
     primes: std.DynamicBitSet,
 
     fn init(allocator: std.mem.Allocator, limit: u32) !Goldbach {
-        var primes = try std.DynamicBitSet.initFull(allocator, limit);
+        var primes: std.DynamicBitSet = try .initFull(allocator, limit);
         primes.setValue(0, false);
         primes.setValue(1, false);
         var n: u32 = 2;

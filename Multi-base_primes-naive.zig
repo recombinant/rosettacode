@@ -31,7 +31,7 @@ pub fn main() !void {
 
     std.log.info("primes calculated after elapsed {D}", .{t0.read()});
 
-    var characters_table = try CharactersTable.init(allocator, primes);
+    var characters_table: CharactersTable = try .init(allocator, primes);
     defer characters_table.deinit(allocator);
 
     std.log.info("characters calculated after elapsed {D}", .{t0.read()});

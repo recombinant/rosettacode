@@ -10,7 +10,7 @@ pub fn main() !void {
     std.debug.assert(ORDER != 0);
 
     const size = 500;
-    var turtle = Turtle.init(size / 2, size, 0);
+    var turtle: Turtle = .init(size / 2, size, 0);
 
     var stdout_buffer: [1024]u8 = undefined;
     var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
@@ -61,7 +61,7 @@ fn sierpinski(order: u16, turtle: *Turtle, size: f64, w: *std.Io.Writer) !void {
         for ([4]f64{ small, size, size, small }) |dist| {
             turtle.right(std.math.degreesToRadians(36));
 
-            var spawn = Turtle.init(turtle.pos.x, turtle.pos.y, turtle.theta);
+            var spawn: Turtle = .init(turtle.pos.x, turtle.pos.y, turtle.theta);
             try spawn.forward(dist, w);
 
             // recurse for each spawned turtle

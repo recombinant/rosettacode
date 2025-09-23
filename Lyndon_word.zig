@@ -11,7 +11,7 @@ pub fn main() !void {
     var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var lyndon_words = try LyndonWords.init(allocator, 5, "01");
+    var lyndon_words: LyndonWords = try .init(allocator, 5, "01");
     defer lyndon_words.deinit();
 
     while (try lyndon_words.next()) |word| {

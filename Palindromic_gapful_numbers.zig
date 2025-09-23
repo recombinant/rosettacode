@@ -31,7 +31,7 @@ pub fn main() void {
 
     var digit: u64 = 1;
     while (digit < 10) : (digit += 1) {
-        var pgen = PalindromicGenerator.init(digit);
+        var pgen: PalindromicGenerator = .init(digit);
         var i: usize = 0;
         while (i < m2) {
             const n = pgen.next();

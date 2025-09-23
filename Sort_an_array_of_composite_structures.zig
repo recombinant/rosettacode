@@ -17,8 +17,8 @@ const Entry = struct {
 
 pub fn main() void {
     var elements = [_]Entry{
-        Entry.init("Krypton", 83.798),   Entry.init("Beryllium", 9.012182), Entry.init("Silicon", 28.0855),
-        Entry.init("Cobalt", 58.933195), Entry.init("Selenium", 78.96),     Entry.init("Germanium", 72.64),
+        .init("Krypton", 83.798),   .init("Beryllium", 9.012182), .init("Silicon", 28.0855),
+        .init("Cobalt", 58.933195), .init("Selenium", 78.96),     .init("Germanium", 72.64),
     };
 
     // Several sort algorithms are also available in std.sort

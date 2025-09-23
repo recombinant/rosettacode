@@ -21,7 +21,7 @@ pub fn main() !void {
         &[_]u7{ 6, 7, 10, 7, 6 },
     };
     for (blocks) |block| {
-        var table = try Table.init(allocator, block);
+        var table: Table = try .init(allocator, block);
         defer table.deinit();
 
         const water = table.fill();

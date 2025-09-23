@@ -95,36 +95,36 @@ fn getSuffix(n: usize) []const u8 {
 /// Translation of Python
 /// Considerably more verbose than the Python.
 fn rootP(allocator: mem.Allocator, a_: u2, b_: []const u8) ![]const u8 {
-    var b = try Int.init(allocator);
+    var b: Int = try .init(allocator);
     defer b.deinit();
     try b.setString(10, b_);
 
-    var two = try Int.initSet(allocator, 2);
+    var two: Int = try .initSet(allocator, 2);
     defer two.deinit();
 
     // b < 2
     if (b.order(two) == .lt)
         return allocator.dupe(u8, "4321");
 
-    var a = try Int.initSet(allocator, a_);
+    var a: Int = try .initSet(allocator, a_);
     defer a.deinit();
 
     const a1_ = a_ - 1;
-    var a1 = try Int.initSet(allocator, a1_);
+    var a1: Int = try .initSet(allocator, a1_);
     defer a1.deinit();
 
-    var c = try Int.initSet(allocator, 1);
+    var c: Int = try .initSet(allocator, 1);
     defer c.deinit();
 
-    var d = try Int.init(allocator);
+    var d: Int = try .init(allocator);
     defer d.deinit();
     try calcP(allocator, &d, &a1, a1_, &c, &b, &a);
 
-    var e = try Int.init(allocator);
+    var e: Int = try .init(allocator);
     defer e.deinit();
     try calcP(allocator, &e, &a1, a1_, &d, &b, &a);
 
-    var result = try Int.init(allocator);
+    var result: Int = try .init(allocator);
     defer result.deinit();
 
     while (!c.eql(d) and !c.eql(d)) {
@@ -145,10 +145,10 @@ fn rootP(allocator: mem.Allocator, a_: u2, b_: []const u8) ![]const u8 {
 
 // Python: d = (a1 * c + b // (c ** a1)) // a
 fn calcP(allocator: mem.Allocator, result: *Int, a1: *const Int, a1_: u8, c: *const Int, b: *const Int, a: *const Int) !void {
-    var tmp1 = try Int.init(allocator);
-    var tmp2 = try Int.init(allocator);
-    var quotient = try Int.init(allocator);
-    var remainder = try Int.init(allocator);
+    var tmp1: Int = try .init(allocator);
+    var tmp2: Int = try .init(allocator);
+    var quotient: Int = try .init(allocator);
+    var remainder: Int = try .init(allocator);
     defer tmp1.deinit();
     defer tmp2.deinit();
     defer quotient.deinit();
@@ -168,32 +168,32 @@ fn calcP(allocator: mem.Allocator, result: *Int, a1: *const Int, a1_: u8, c: *co
 
 /// Translation of Go big.Int
 fn rootG(allocator: mem.Allocator, n_: u2, x_: []const u8) ![]const u8 {
-    var xx_ = try Int.init(allocator);
+    var xx_: Int = try .init(allocator);
     defer xx_.deinit();
     try xx_.setString(10, x_);
     const xx = xx_.toConst();
 
-    var nn = try Int.initSet(allocator, n_);
+    var nn: Int = try .initSet(allocator, n_);
     defer nn.deinit();
 
-    var x = try Int.init(allocator);
+    var x: Int = try .init(allocator);
     defer x.deinit();
 
-    var delta_r = try Int.init(allocator);
+    var delta_r: Int = try .init(allocator);
     defer delta_r.deinit();
 
-    var r = try Int.initSet(allocator, 1);
+    var r: Int = try .initSet(allocator, 1);
     defer r.deinit();
 
     // These four are temporary values to eliminate aliasing.
     // Swapping is quicker than having aliases.
-    var quotient = try Int.init(allocator);
+    var quotient: Int = try .init(allocator);
     defer quotient.deinit();
-    var remainder = try Int.init(allocator);
+    var remainder: Int = try .init(allocator);
     defer remainder.deinit();
-    var sum = try Int.init(allocator);
+    var sum: Int = try .init(allocator);
     defer sum.deinit();
-    var difference = try Int.init(allocator);
+    var difference: Int = try .init(allocator);
     defer difference.deinit();
 
     while (true) {

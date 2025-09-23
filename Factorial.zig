@@ -52,7 +52,7 @@ const Factorial = struct {
     }
 
     fn recursive(self: *const Factorial, n_: usize) !Int {
-        var n = try Int.initSet(self.allocator, n_);
+        var n: Int = try .initSet(self.allocator, n_);
         defer n.deinit();
         return self._recursive(&n);
     }
@@ -62,7 +62,7 @@ const Factorial = struct {
             return self.one.clone()
         else {
             // n_ - 1
-            var n = try Int.init(self.allocator);
+            var n: Int = try .init(self.allocator);
             try n.sub(n_, &self.one);
             // recursive(n_ - 1)
             var recurse = try self._recursive(&n);
@@ -76,8 +76,8 @@ const Factorial = struct {
     }
 
     fn iterative(self: *const Factorial, n_: usize) !Int {
-        var n = try Int.initSet(self.allocator, n_);
-        var i = try Int.initSet(self.allocator, 2);
+        var n: Int = try .initSet(self.allocator, n_);
+        var i: Int = try .initSet(self.allocator, 2);
         var result = try self.one.clone();
         defer n.deinit();
         defer i.deinit();
@@ -85,11 +85,11 @@ const Factorial = struct {
         if (n.order(i) == std.math.Order.lt)
             return result;
 
-        var tmp = try Int.init(self.allocator); // used to avoid aliasing
+        var tmp: Int = try .init(self.allocator); // used to avoid aliasing
         defer tmp.deinit();
 
         // n + 1
-        var n1 = try Int.init(self.allocator);
+        var n1: Int = try .init(self.allocator);
         defer n1.deinit();
         try n1.add(&n, &self.one);
 

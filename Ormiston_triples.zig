@@ -22,7 +22,7 @@ pub fn main() !void {
     const stdout = &stdout_writer.interface;
     try stdout.writeAll("Primesieve Ormiston triples\n\n");
     // ----------------------------------------------------------
-    var generator = try OrmistonTripleGenerator.init();
+    var generator: OrmistonTripleGenerator = try .init();
     defer generator.deinit();
     // --------------------------------------------------- task 1
     try stdout.writeAll("Smallest members of first 25 Ormiston triples:\n");

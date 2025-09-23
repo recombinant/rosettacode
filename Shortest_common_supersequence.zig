@@ -49,7 +49,7 @@ fn shortestCommonSupersequence(allocator: std.mem.Allocator, u: []const u8, v: [
 
 /// Caller owns returned slice memory.
 fn longestCommonSubsequence(allocator: std.mem.Allocator, a: []const u8, b: []const u8) ![]u8 {
-    var lengths = try Matrix.init(allocator, a.len + 1, b.len + 1);
+    var lengths: Matrix = try .init(allocator, a.len + 1, b.len + 1);
     defer lengths.deinit();
 
     for (a, 0..) |x, i| {

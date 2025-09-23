@@ -12,7 +12,7 @@ pub fn main() !void {
     var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var it = try UpsideDownIterator.init(allocator);
+    var it: UpsideDownIterator = try .init(allocator);
     defer it.deinit();
 
     try stdout.writeAll("First fifty upside-downs:\n");

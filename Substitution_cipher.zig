@@ -19,7 +19,7 @@ pub fn main() !void {
         ptr.* = @truncate(ch);
     rand.shuffle(u8, &key);
     //
-    var cypher = try SubstitutionCypher.init(allocator, &key);
+    var cypher: SubstitutionCypher = try .init(allocator, &key);
     defer cypher.deinit();
     //
     const message = "The quick brown fox jumps over the lazy dog, who barks VERY loudly!";

@@ -4,11 +4,11 @@ const std = @import("std");
 
 pub fn main() void {
     const line = &[_]Point{
-        Point.init(0, 0),    Point.init(1, 0.1),
-        Point.init(2, -0.1), Point.init(3, 5),
-        Point.init(4, 6),    Point.init(5, 7),
-        Point.init(6, 8.1),  Point.init(7, 9),
-        Point.init(8, 9),    Point.init(9, 9),
+        .init(0, 0),    .init(1, 0.1),
+        .init(2, -0.1), .init(3, 5),
+        .init(4, 6),    .init(5, 7),
+        .init(6, 8.1),  .init(7, 9),
+        .init(8, 9),    .init(9, 9),
     };
 
     var output: [line.len]Point = undefined;

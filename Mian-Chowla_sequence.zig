@@ -219,7 +219,7 @@ fn getMianChowla4(allocator: std.mem.Allocator, n: usize) ![]u64 {
 
     var mc = try allocator.alloc(u64, n);
     var nn = n * (n + 1) / 2;
-    var is_sum = try std.DynamicBitSet.initEmpty(allocator, nn);
+    var is_sum: std.DynamicBitSet = try .initEmpty(allocator, nn);
     defer is_sum.deinit();
 
     var c: usize = 0;
