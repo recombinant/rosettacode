@@ -1,4 +1,7 @@
 // https://rosettacode.org/wiki/Use_another_language_to_call_a_function
+
+// zig build-lib Use_another_language_to_call_a_function.zig
+// zig run Use_another_language_to_call_a_function.c Use_another_language_to_call_a_function.lib -lc
 #include <stdio.h>
 
 extern int Query (char * Data, size_t * Length);
