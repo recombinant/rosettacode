@@ -90,7 +90,7 @@ const testing = std.testing;
 
 test "sieve of pritchard" {
     var primes: std.ArrayList(usize) = .empty;
-    defer primes.deinit();
+    defer primes.deinit(testing.allocator);
     try pritchard(testing.allocator, &primes, 1_000_000);
 
     try testing.expectEqual(primes.items.len, 78498);
