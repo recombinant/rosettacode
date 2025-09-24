@@ -22,7 +22,7 @@ pub fn main() !void {
     const stdout = &stdout_writer.interface;
 
     for (x) |value|
-        try stdout.print("{d}\n", .{value});
+        try stdout.print("{d:8.5}\n", .{value});
 
     try stdout.flush();
 }
