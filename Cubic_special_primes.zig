@@ -44,7 +44,7 @@ pub fn main() error{WriteFailed}!void {
         }
     }
 
-    try stdout.print("\n{d} such primes found.", .{count + 1});
+    try stdout.print("\n{d} such primes found.\n", .{count + 1});
 
     try stdout.flush();
 }
