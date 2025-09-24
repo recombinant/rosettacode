@@ -37,7 +37,7 @@ pub fn main() !void {
         const nums = [_]u32{
             113, 173, 193, 2183, 11229, 15065, 15845, 30817,
             // TODO: when Zig bit integers are faster...
-            // // Zig 0.14 big integer implementation is too slow
+            // // Zig 0.15.1 big integer implementation is too slow
             // // to calculate these numbers compared to GMP.
             // 48443, 275485, 1267909, 2264915, 5812827, 7110201,
             // 56261531, 92502777, 172376627, 604398963,
