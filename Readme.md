@@ -2,9 +2,12 @@ If you are reading this on github then this is a mirror of another repository. P
 
 The code in this repository has [Zig](https://ziglang.org/) solutions to some of the many [rosettacode](https://rosettacode.org/) tasks.
 
-These solutions are currently being upgraded to work with Zig 0.15.1 (or not - if deprecated features are required e.g. std.math.big.Rational)
+All these solutions are with Zig 0.15.1 unless:
 
-Any questions ask on one of the Zig forums:
+- source comments stating running on Zig 0.14.1 - because deprecated features are required e.g. std.math.big.Rational
+- TODO in filename
+
+For any questions about Zig ask on one of the Zig forums:
 
 - [Ziggit](https://ziggit.dev/)
 - somewhere on Discord
