@@ -1,46 +1,69 @@
 // https://rosettacode.org/wiki/Cubic_special_primes
+// {{works with|Zig|0.15.1}}
+// {{trans|Wren}}
 
 // see also: https://rosettacode.org/wiki/Quadrat_special_primes
+
+// zig run Cubic_special_primes.zig -I ../primesieve-12.9/zig-out/include/ ../primesieve-12.9/zig-out/lib/primesieve.lib -lstdc++
 const std = @import("std");
-const print = std.debug.print;
+const ps = @cImport({
+    @cInclude("stdlib.h");
+    @cInclude("primesieve.h");
+});
 
-// TODO: change output to match the more informative output of Wren.
+pub fn main() error{WriteFailed}!void {
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-pub fn main() void {
-    const npl = 10; // numbers per line
-    const limit = 15_000;
-    var p: u32 = 2;
-    var j: u32 = 1;
-    var count: u16 = 1;
-    print("{d:5} ", .{p});
-    while (true) {
-        while (true) {
-            if (isPrime(p + j * j * j))
-                break;
-            j += 1;
+    const start: u64 = 0;
+    const stop: u64 = 15_000;
+    var size: usize = 0;
+
+    // Get an array with the primes inside [start, stop] */
+    var primes: [*]u32 = @ptrCast(@alignCast(ps.primesieve_generate_primes(start, stop, &size, ps.UINT32_PRIMES)));
+    // Check for error in primesieve_generate_primes?
+    defer ps.primesieve_free(primes);
+
+    try stdout.writeAll("Cubic special primes under 15,000:\n");
+    try stdout.writeAll(" Prime1  Prime2    Gap  Cbrt\n");
+
+    var lastCubicSpecial: u32 = 3;
+    var count: usize = 1;
+
+    const fmt = "{d:7} {d:7} {d:6} {d:4}\n";
+    try stdout.print(fmt, .{ 2, 3, 1, 1 });
+
+    for (primes[2..size]) |p| {
+        const gap = p - lastCubicSpecial;
+
+        if (isCube(gap)) |cbrt| {
+            try stdout.print(fmt, .{ lastCubicSpecial, p, gap, cbrt });
+            lastCubicSpecial = p;
+            count += 1;
         }
-        p += j * j * j;
-        if (p >= limit)
-            break;
-        count += 1;
-        const sep: u8 = if (count % npl != 0) ' ' else '\n';
-        print("{d:5}{c}", .{ p, sep });
-        j = 1;
     }
-    if (count % npl != 0) print("\n", .{});
-    print("\nThere are {d} Cubic Special Primes below {d}\n", .{ count, limit });
+
+    try stdout.print("\n{d} such primes found.", .{count + 1});
+
+    try stdout.flush();
 }
 
-fn isPrime(n: u32) bool {
-    if (n < 2) return false;
-    if (n % 2 == 0) return n == 2;
-    if (n % 3 == 0) return n == 3;
-    var d: u32 = 5;
-    while (d * d <= n) {
-        if (n % d == 0) return false;
-        d += 2;
-        if (n % d == 0) return false;
-        d += 4;
-    }
-    return true;
+fn isCube(x: u32) ?u32 {
+    const cbrt: u32 = @intFromFloat(@floor(std.math.cbrt(@as(f32, @floatFromInt(x)))));
+    return if (cbrt * cbrt * cbrt == x) cbrt else null;
+}
+
+test isCube {
+    try std.testing.expectEqual(1, isCube(1));
+    try std.testing.expectEqual(2, isCube(8));
+    try std.testing.expectEqual(3, isCube(27));
+    try std.testing.expectEqual(4, isCube(64));
+    try std.testing.expectEqual(5, isCube(125));
+    try std.testing.expectEqual(6, isCube(216));
+    try std.testing.expectEqual(18, isCube(5832));
+    try std.testing.expectEqual(null, isCube(6));
+    try std.testing.expectEqual(null, isCube(26));
+    try std.testing.expectEqual(null, isCube(63));
+    try std.testing.expectEqual(null, isCube(124));
 }
