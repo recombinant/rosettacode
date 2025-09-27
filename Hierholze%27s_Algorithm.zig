@@ -50,20 +50,17 @@ fn printGraph(vertices: []usize, w: *std.Io.Writer) !void {
     for (vertices, 1..) |vertex, i| {
         try w.print("{}", .{vertex});
         if (i != vertices.len)
-            try w.writeAll("->");
+            try w.writeAll(" -> ");
     }
 }
 
 const EulerGraph = struct {
     allocator: std.mem.Allocator,
     nodes: []Node,
-    arcs: ArcList,
+    arc_pool: ArcPool,
 
+    const ArcPool = std.heap.MemoryPool(Arc);
     const ArcPointerList = std.ArrayList(*Arc);
-
-    // Note: pointers to Arc structs within std.SegmentedList are
-    // not invalidated if the SegmentedList grows.
-    const ArcList = std.SegmentedList(Arc, 256);
 
     const Arc = struct {
         u: u16,
@@ -89,16 +86,17 @@ const EulerGraph = struct {
         return .{
             .allocator = allocator,
             .nodes = nodes,
-            .arcs = ArcList{},
+            .arc_pool = .init(std.heap.page_allocator),
         };
     }
     fn deinit(self: *EulerGraph) void {
         for (self.nodes) |*node|
             node.deinit(self.allocator);
         self.allocator.free(self.nodes);
+        self.arc_pool.deinit();
     }
     fn addArc(self: *EulerGraph, u: u16, v: u16) !void {
-        const arc_ptr = try self.arcs.addOne(self.allocator);
+        const arc_ptr = try self.arc_pool.create();
         arc_ptr.* = Arc{ .u = u, .v = v };
         try self.nodes[u].arcs.append(self.allocator, arc_ptr);
     }
