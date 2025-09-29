@@ -48,7 +48,7 @@ fn amb(allocator: std.mem.Allocator, wordsets: []const []const []const u8, array
     defer allocator.free(array_in);
 
     const len = array_in.len;
-    var s: []const u8 = if (len != 0) array_in[len - 1] else undefined;
+    const s: []const u8 = if (len != 0) array_in[len - 1] else undefined;
 
     var array_out = try allocator.alloc([]const u8, len + 1);
     defer allocator.free(array_out); // `array_out` is freed in this function.
