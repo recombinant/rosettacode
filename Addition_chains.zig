@@ -1,19 +1,24 @@
 // https://rosettacode.org/wiki/Addition_chains
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // Only handles Brauer addition chains.
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var t0: std.time.Timer = try .start();
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
 
+    // This arena is reset repeatedly.
     var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
+
+    var t0: Io.Timestamp = .now(io, .real);
 
     const nums = [_]u64{ 7, 13, 14, 21, 29, 32, 42, 64, 47, 79, 191, 382, 379 };
     // const nums = [_]u64{ 47, 79, 191, 382, 379, 12509 };
@@ -22,14 +27,14 @@ pub fn main() !void {
         _ = arena.reset(.retain_capacity);
     }
 
-    std.log.info("processed in {D}", .{t0.read()});
+    std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 }
 
 fn Brauer(comptime n: u64) type {
     return struct {
         const Self = @This();
 
-        allocator: std.mem.Allocator,
+        allocator: Allocator,
 
         chain: [n]u64 = undefined,
         in_chain: [n + 1]bool = undefined,
@@ -37,7 +42,7 @@ fn Brauer(comptime n: u64) type {
         best_len: usize = n,
         cnt: u64 = 0,
 
-        fn init(allocator: std.mem.Allocator) Self {
+        fn init(allocator: Allocator) Self {
             var b: Self = .{
                 .allocator = allocator,
                 .best = .empty,
@@ -139,7 +144,7 @@ fn isAdditionChain(a: []const u64) bool {
     return true;
 }
 
-fn brauer(allocator: std.mem.Allocator, comptime n: usize, w: *std.Io.Writer) !void {
+fn brauer(allocator: Allocator, comptime n: usize, w: *std.Io.Writer) !void {
     var b: Brauer(n) = .init(allocator);
     defer b.deinit();
 

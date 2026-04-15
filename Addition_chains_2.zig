@@ -1,8 +1,10 @@
 // https://rosettacode.org/wiki/Addition_chains
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 // Translation of the slower Go version.
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const max_len = 13;
 const max_non_brauer = 382;
@@ -12,18 +14,19 @@ var non_brauer_count: usize = 0;
 var brauer_example: []const u64 = undefined;
 var non_brauer_example: []const u64 = undefined;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
+    // This arena is reset repeatedly.
     var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
-    // var gpa: std.heap.DebugAllocator(.{}) = .init;
-    // defer _ = gpa.deinit();
-    // const allocator = gpa.allocator();
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var t0: std.time.Timer = try .start();
+    var t0: Io.Timestamp = .now(io, .real);
 
     const nums = [_]u64{ 7, 14, 21, 29, 32, 42, 64, 47, 79, 191, 382, 379 };
     // const nums = [_]u64{ 47, 79, 191, 382, 379, 12509 };
@@ -33,7 +36,7 @@ pub fn main() !void {
     for (nums) |num| {
         _ = arena.reset(.retain_capacity);
 
-        var t1: std.time.Timer = try .start();
+        var t1: Io.Timestamp = .now(io, .real);
 
         brauer_count = 0;
         non_brauer_count = 0;
@@ -56,10 +59,10 @@ pub fn main() !void {
             try stdout.print("Non-Brauer example: {any}\n", .{non_brauer_example});
         try stdout.flush();
 
-        std.log.info("processed in {D}", .{t1.read()});
+        std.log.info("processed in {f}", .{t1.untilNow(io, .real)});
     }
 
-    std.log.info("processed in {D}", .{t0.read()});
+    std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 }
 
 fn isBrauer(a: []const u64) bool {
@@ -75,7 +78,7 @@ fn isBrauer(a: []const u64) bool {
     return true;
 }
 
-fn additionChains(allocator: std.mem.Allocator, target: u64, length_: usize, chosen_: []const u64) !usize {
+fn additionChains(allocator: Allocator, target: u64, length_: usize, chosen_: []const u64) !usize {
     var le = chosen_.len;
     var last = chosen_[le - 1];
     if (last == target) {
