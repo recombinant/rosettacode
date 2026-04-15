@@ -1,19 +1,20 @@
 // https://rosettacode.org/wiki/Amb
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 
 // Translation of the alternative solution. Zig does not have
 // garbage collection or reference counting, so all memory
 // allocation/free activity must be implemented explicitly.
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    const allocator: Allocator = init.gpa;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     const a1 = [_][]const u8{ "the", "that", "a" };
@@ -41,7 +42,7 @@ pub fn main() !void {
 
 // Recursive function.
 // This function owns `array_in` slice memory. Caller owns returned slice memory.
-fn amb(allocator: std.mem.Allocator, wordsets: []const []const []const u8, array_in: [][]const u8) !?[][]const u8 {
+fn amb(allocator: Allocator, wordsets: []const []const []const u8, array_in: [][]const u8) !?[][]const u8 {
     if (wordsets.len == 0)
         return array_in;
 

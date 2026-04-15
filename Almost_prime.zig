@@ -1,7 +1,9 @@
 // https://www.rosettacode.org/wiki/Almost_prime
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 fn kprime(n0: u32, k: u32) bool {
     var n = n0;
@@ -16,9 +18,11 @@ fn kprime(n0: u32, k: u32) bool {
     return f + @intFromBool(n > 1) == k;
 }
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     var k: u32 = 1;

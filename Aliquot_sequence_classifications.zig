@@ -1,21 +1,23 @@
 // https://rosettacode.org/wiki/Aliquot_sequence_classifications
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 
-pub fn main() !void {
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    const gpa: Allocator = init.gpa;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
-    var t0: std.time.Timer = try .start();
+    var t0: Io.Timestamp = .now(io, .real);
 
     for (1..11) |n| {
-        const result = try classification(allocator, n);
-        defer allocator.free(result.sequence);
+        const result = try classification(gpa, n);
+        defer gpa.free(result.sequence);
         try stdout.print("{d:14}: {s:<15} {any}\n", .{ n, result.category.string(), result.sequence });
     }
 
@@ -26,14 +28,14 @@ pub fn main() !void {
         1264460, 790, 909, 562, 1064, 1488, 15355717786080,
     };
     for (numbers) |n| {
-        const result = try classification(allocator, n);
-        defer allocator.free(result.sequence);
+        const result = try classification(gpa, n);
+        defer gpa.free(result.sequence);
         try stdout.print("{d:14}: {s:<15} {any}\n", .{ n, result.category.string(), result.sequence });
     }
 
     try stdout.writeByte('\n');
     try stdout.flush();
-    std.log.info("processed in {D}", .{t0.read()});
+    std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 }
 
 //  Classification categories.
@@ -98,7 +100,7 @@ const AliquotSequenceIterator = struct {
 
 /// Return the category of the Aliquot Sequence of a number "n" and the sequence itself.
 /// Caller owns returned slice memory for "sequence".
-fn classification(allocator: std.mem.Allocator, n: u64) !struct { category: Category, sequence: []u64 } {
+fn classification(allocator: Allocator, n: u64) !struct { category: Category, sequence: []u64 } {
     var count: usize = 0;
     var previous = n;
     var category = Category.unknown;
