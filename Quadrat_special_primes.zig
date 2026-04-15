@@ -1,21 +1,25 @@
 // https://rosettacode.org/wiki/Quadrat_special_primes
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Wren}}
 
 // see also: https://rosettacode.org/wiki/Cubic_special_primes
 
-// zig run Quadrat_special_primes.zig -I ../primesieve-12.9/zig-out/include/ ../primesieve-12.9/zig-out/lib/primesieve.lib -lstdc++
+// zig run Quadrat_special_primes.zig -I ../primesieve-12.13/zig-out/include/ ../primesieve-12.13/zig-out/lib/primesieve.lib -lstdc++
 //   or
 // zig test Quadrat_special_primes.zig
 const std = @import("std");
+const Io = std.Io;
+
 const ps = @cImport({
     @cInclude("stdlib.h");
     @cInclude("primesieve.h");
 });
 
-pub fn main() error{WriteFailed}!void {
+pub fn main(init: std.process.Init) error{WriteFailed}!void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     const start: u64 = 0;
