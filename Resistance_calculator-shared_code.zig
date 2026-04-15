@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Resistance_calculator
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // Shared Infix/Postfix Code
 const std = @import("std");

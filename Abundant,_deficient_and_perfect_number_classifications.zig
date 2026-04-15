@@ -1,7 +1,6 @@
 // https://rosettacode.org/wiki/Abundant,_deficient_and_perfect_number_classifications
 // {{works with|Zig|0.16.0}}
 const std = @import("std");
-const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
 const assert = std.debug.assert;

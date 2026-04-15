@@ -1,26 +1,26 @@
 // https://rosettacode.org/wiki/Resistance_calculator
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // Infix
 const std = @import("std");
 const _shared_ = @import("Resistance_calculator-shared_code.zig");
 
 const Allocator = std.mem.Allocator;
+const Io = std.Io;
 const StackUnmanaged = _shared_.StackUnmanaged;
 const Node = _shared_.Node;
 const PostfixToken = _shared_.PostfixToken;
 const calculate = _shared_.calculate;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    const gpa: Allocator = init.gpa;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    const node = try infix(allocator, stdout, 18, "((((10+2)*6+8)*6+4)*8+4)*8+6");
+    const node = try infix(gpa, stdout, 18, "((((10+2)*6+8)*6+4)*8+4)*8+6");
 
     std.debug.assert(10 == node.res());
     std.debug.assert(18 == node.voltage);
@@ -28,8 +28,8 @@ pub fn main() !void {
     std.debug.assert(@abs(32.4 - node.effect()) < 0.05);
     std.debug.assert(.serial == node.node_type);
 
-    node.destroyDescendants(allocator);
-    allocator.destroy(node);
+    node.destroyDescendants(gpa);
+    gpa.destroy(node);
 }
 
 // Zig tagged union.
