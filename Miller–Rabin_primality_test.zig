@@ -1,14 +1,16 @@
 // https://rosettacode.org/wiki/Miller–Rabin_primality_test
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // Translation of
 // https://algoteka.com/samples/46/miller%25E2%2580%2593rabin-primality-test-c-plus-plus-simple-64-bit-implementation
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
     // -------------------------------------------- random number
     var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
+        Io.random(io, std.mem.asBytes(&seed));
         break :blk seed;
     });
     const random = prng.random();

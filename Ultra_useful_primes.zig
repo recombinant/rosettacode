@@ -1,16 +1,19 @@
 // https://rosettacode.org/wiki/Ultra_useful_primes
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // Uses Miller-Rabin primality test from https://rosettacode.org/wiki/Miller–Rabin_primality_test
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
+        Io.random(io, std.mem.asBytes(&seed));
         break :blk seed;
     });
     const random = prng.random();

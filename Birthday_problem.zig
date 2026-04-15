@@ -1,28 +1,31 @@
 // https://rosettacode.org/wiki/Birthday_problem
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io = init.io;
     // -------------------------------------------- random number
     var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
+        Io.random(io, std.mem.asBytes(&seed));
         break :blk seed;
     });
     const random = prng.random();
     // ----------------------------------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var bp: BirthdayProblem(.{}) = .init(random);
+    var bp: BirthdayProblem(.{ .debug = .some }) = .init(io, random);
     var n: usize = 2;
     while (n <= 5) : (n += 1) {
         const result = bp.findHalfChance(n);
+        const plural: []const u8 = if (n == 1) "" else "s";
         try stdout.print(
-            "{d} collision: {d} people, P = {d} +/- {d}\n",
-            .{ n, result.np, result.p, result.d },
+            "{d} collision{s}: {d} people, P = {d} +/- {d}\n",
+            .{ n, plural, result.np, result.p, result.d },
         );
         try stdout.flush();
     }
@@ -40,14 +43,15 @@ fn BirthdayProblem(comptime options: BirthdayProblemOptions) type {
     return struct {
         const Self = @This();
         const DAYS = 365;
+        const stderr_buffer: [0]u8 = undefined;
         days: [DAYS]usize = undefined,
         random: std.Random,
-        stderr: ?std.fs.File.Writer,
+        stderr: ?Io.File.Writer,
 
-        fn init(random: std.Random) Self {
+        fn init(io: Io, random: std.Random) Self {
             return .{
                 .random = random,
-                .stderr = if (options.debug == .none) null else std.io.getStdErr().writer(),
+                .stderr = if (options.debug == .none) null else Io.File.stderr().writer(io, &Self.stderr_buffer),
             };
         }
 
@@ -81,7 +85,7 @@ fn BirthdayProblem(comptime options: BirthdayProblemOptions) type {
                 p = @as(f64, @floatFromInt(yes)) / @as(f64, @floatFromInt(runs));
                 d = std.math.sqrt((p * (1 - p)) / @as(f64, @floatFromInt(runs)));
                 if (options.debug == .lots and yes % 50_000 == 0) {
-                    self.stderr.?.print("\t\t{d}: {d} {d} {d} {d}        \r", .{ np, yes, runs, p, d }) catch unreachable;
+                    self.stderr.?.interface.print("\t\t{d}: {d} {d} {d} {d}        \r", .{ np, yes, runs, p, d }) catch unreachable;
                     printed = true;
                 }
                 // C do{}while() translated to Zig
@@ -89,7 +93,7 @@ fn BirthdayProblem(comptime options: BirthdayProblemOptions) type {
                     break;
             }
             if (options.debug == .lots and printed)
-                self.stderr.?.print("\n", .{}) catch unreachable;
+                self.stderr.?.interface.print("\n", .{}) catch unreachable;
 
             return .{ p, d };
         }
@@ -113,7 +117,7 @@ fn BirthdayProblem(comptime options: BirthdayProblemOptions) type {
                     p, dev = self.prob(mid, n, 5, 0.5);
 
                     if (options.debug != .none)
-                        self.stderr.?.print("\t{d} {d} {d} {d} {d}\n", .{ lo, mid, hi, p, dev }) catch unreachable;
+                        self.stderr.?.interface.print("\t{d} {d} {d} {d} {d}\n", .{ lo, mid, hi, p, dev }) catch unreachable;
 
                     if (p < 0.5)
                         lo = mid + 1
@@ -124,7 +128,7 @@ fn BirthdayProblem(comptime options: BirthdayProblemOptions) type {
                         // this happens when previous precisions were too low;
                         // easiest fix: reset
                         if (options.debug != .none)
-                            self.stderr.?.print("\tMade a mess, will redo.", .{}) catch unreachable;
+                            self.stderr.?.interface.print("\tMade a mess, will redo.", .{}) catch unreachable;
                         continue :reset;
                     }
                     // C do{}while() translated to Zig

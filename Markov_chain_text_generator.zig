@@ -1,11 +1,15 @@
 // https://rosettacode.org/wiki/Markov_chain_text_generator
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
+        Io.random(io, std.mem.asBytes(&seed));
         break :blk seed;
     });
     const random = prng.random();
@@ -21,7 +25,7 @@ pub fn main() !void {
     std.debug.print("{s}\n", .{result});
 }
 
-fn markov(allocator: std.mem.Allocator, random: std.Random, text: []const u8, key_size: usize, output_size: usize) ![]const u8 {
+fn markov(allocator: Allocator, random: std.Random, text: []const u8, key_size: usize, output_size: usize) ![]const u8 {
     if (key_size < 1)
         return error.KeySizeInvalid;
     // -------------------------------------------- words in text

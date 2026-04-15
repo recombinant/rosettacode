@@ -1,14 +1,15 @@
 // https://rosettacode.org/wiki/Determine_if_a_string_is_collapsible
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     const data = [_][]const u8{
@@ -18,13 +19,13 @@ pub fn main() !void {
         "I never give 'em hell, I just tell the truth, and they think it's hell. ",
         "                                                    --- Harry S Truman  ",
     };
-    var collapser: CollapserContainer = .init();
+    var collapser: CollapserContainer = .empty;
     defer collapser.deinit();
     for (data) |line| {
         try stdout.print("original  : «««{s}»»»\n", .{line});
-        const collapsed = try collapser.collapse(allocator, line);
+        const collapsed = try collapser.collapse(gpa, line);
         try stdout.print("collapsed : «««{s}»»»\n\n", .{collapsed});
-        allocator.free(collapsed);
+        gpa.free(collapsed);
     }
 
     try stdout.flush();
@@ -39,15 +40,17 @@ const CollapserContainer = struct {
     const Self = @This();
     const NodePool = std.heap.MemoryPoolExtra(CollapserNode, .{});
 
-    node_pool: NodePool,
+    node_pool: NodePool = .empty,
+
+    const empty: Self = .{};
 
     fn init() Self {
         return .{
-            .node_pool = .init(std.heap.page_allocator),
+            .node_pool = .empty,
         };
     }
     fn deinit(self: *Self) void {
-        self.node_pool.deinit();
+        self.node_pool.deinit(std.heap.page_allocator);
         self.node_pool = undefined;
     }
 
@@ -55,9 +58,9 @@ const CollapserContainer = struct {
     /// a singly linked list and a memory pool.
     ///
     /// Allocates memory for the result, which must be freed by the caller.
-    fn collapse(self: *Self, allocator: std.mem.Allocator, text: []const u8) ![]const u8 {
+    fn collapse(self: *Self, gpa: Allocator, text: []const u8) ![]const u8 {
         if (text.len < 2)
-            return allocator.dupe(u8, text);
+            return gpa.dupe(u8, text);
 
         var first = try self.createListFromText(text);
         std.debug.assert(text.len == first.?.node.countChildren() + 1);
@@ -66,27 +69,27 @@ const CollapserContainer = struct {
         var result: std.ArrayList(u8) = .empty;
         var node: *std.SinglyLinkedList.Node = &first.?.node;
         var c1 = first.?.data;
-        try result.append(allocator, c1);
+        try result.append(gpa, c1);
         while (node.next) |next_node| : (node = next_node) {
             const c2 = @as(*CollapserNode, @fieldParentPtr("node", next_node)).data;
             // case insensitive comparison
             if (std.ascii.toLower(c1) != std.ascii.toLower(c2)) {
-                try result.append(allocator, c2);
+                try result.append(gpa, c2);
                 c1 = c2;
             }
         }
 
         // Nothing else is using the pool, so...
-        const ok = self.node_pool.reset(.retain_capacity);
+        const ok = self.node_pool.reset(std.heap.page_allocator, .retain_capacity);
         std.debug.assert(ok);
 
-        return result.toOwnedSlice(allocator);
+        return result.toOwnedSlice(gpa);
     }
     fn createListFromText(self: *Self, text: []const u8) !?*CollapserNode {
         var first: ?*CollapserNode = null;
         var last: *CollapserNode = undefined;
         for (text) |c| {
-            const new_node = try self.node_pool.create();
+            const new_node = try self.node_pool.create(std.heap.page_allocator);
             new_node.* = .{ .data = c };
             if (first == null)
                 first = new_node

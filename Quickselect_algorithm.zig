@@ -1,9 +1,10 @@
 // https://rosettacode.org/wiki/Quickselect_algorithm
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // Two available partition algorithm functions - Hoare's and Lomuto's.
 // A third, Alexandrescu's, is not here as it wouldn't work correctly
 // "out of the box" with duplicates in the supplied slice.
 const std = @import("std");
+const Io = std.Io;
 const print = std.debug.print;
 
 pub fn main() void {
@@ -103,22 +104,29 @@ fn partitionL(T: type, slice: []T) usize {
 const testing = std.testing;
 
 test "partition" {
-    const debug_timeit = false;
-    var t0: std.time.Timer = undefined;
-    var elapsed: u64 = undefined;
-    var total_elapsed: u64 = undefined;
+    const TIMEIT_FLAG = false;
+    var t0: Io.Timestamp = undefined;
+    var elapsed: i96 = undefined; // Io.Duration.nanoseconds
+    var total_elapsed: i96 = undefined;
     var buffer: [6]u8 = undefined;
 
     const T = u8;
     // test both Hoare's and Lomuto's partition functions
-    inline for ([_](*const fn (type, []T) usize){ partitionH, partitionL }) |partition| {
-        if (debug_timeit) total_elapsed = 0;
+    const Lookup = struct { name: []const u8, func: (*const fn (type, []T) usize) };
+    const lookup = [_]Lookup{
+        .{ .name = "Hoare's", .func = partitionH },
+        .{ .name = "Lomuto's", .func = partitionL },
+    };
+    inline for (lookup) |partition| {
+        if (TIMEIT_FLAG) {
+            std.debug.print("Testing {s} partitioning algorithm\n", .{partition.name});
+            total_elapsed = 0;
+        }
         // test different array sizes
         for (1..buffer.len + 1) |array_len| {
             const max = std.math.powi(u64, 10, array_len) catch unreachable;
-            if (debug_timeit) {
+            if (TIMEIT_FLAG) {
                 elapsed = 0;
-                t0 = try .start();
             }
             // test all possible combinations for array
             for (0..max) |n| {
@@ -131,9 +139,13 @@ test "partition" {
                         value.* = @intCast(i * multiplier);
 
                     // std.debug.print("len={}  {any}\n", .{ array.len, array });
-                    if (debug_timeit) t0.reset();
-                    const pivot_index = partition(T, array);
-                    if (debug_timeit) elapsed += t0.read();
+                    if (TIMEIT_FLAG) {
+                        t0 = Io.Timestamp.now(testing.io, .real);
+                    }
+                    const pivot_index = partition.func(T, array);
+                    if (TIMEIT_FLAG) {
+                        elapsed += t0.untilNow(testing.io, .real).nanoseconds;
+                    }
                     const pivot_value = array[pivot_index];
                     // std.debug.print("len={} pivot={} value={} {any}\n", .{ array.len, pivot_index, pivot_value, array });
 
@@ -150,12 +162,12 @@ test "partition" {
                         try std.testing.expect(value < pivot_value);
                 }
             }
-            if (debug_timeit) {
+            if (TIMEIT_FLAG) {
                 total_elapsed += elapsed;
-                print("{} {}\n", .{ array_len, elapsed });
+                print("{} {f}\n", .{ array_len, Io.Duration.fromNanoseconds(elapsed) });
             }
         }
-        if (debug_timeit) print("total elapsed {}\n", .{total_elapsed});
+        if (TIMEIT_FLAG) print("total elapsed {f}\n\n", .{Io.Duration.fromNanoseconds(total_elapsed)});
     }
 }
 
@@ -183,7 +195,7 @@ fn digitsFromNumber(output: []u8, n_: usize) []u8 {
 test kthElement {
     var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
+        Io.random(testing.io, std.mem.asBytes(&seed));
         break :blk seed;
     });
     const random = prng.random();

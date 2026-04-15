@@ -1,18 +1,18 @@
 // https://rosettacode.org/wiki/Ludic_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa = init.gpa;
+    const io = init.io;
 
-    const ludic_numbers = try getLudicNumbers(allocator, 30_000);
+    const ludic_numbers = try getLudicNumbers(gpa, 30_000);
 
-    defer allocator.free(ludic_numbers);
+    defer gpa.free(ludic_numbers);
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try stdout.writeAll("First 25 Ludic numbers:\n");
@@ -48,10 +48,10 @@ pub fn main() !void {
 
 /// Return all the Ludic numbers up to `limit` using brute force sieve.
 /// Allocates memory for the result, which must be freed by the caller.
-fn getLudicNumbers(allocator: std.mem.Allocator, limit: usize) ![]usize {
+fn getLudicNumbers(gpa: std.mem.Allocator, limit: usize) ![]usize {
     var ludic_list: std.ArrayList(usize) = .empty;
-    defer ludic_list.deinit(allocator);
-    try ludic_list.append(allocator, 1); // first ludic number
+    defer ludic_list.deinit(gpa);
+    try ludic_list.append(gpa, 1); // first ludic number
 
     // Not the most efficient, but a singly linked list in
     // conjunction with a memory pool does the job.
@@ -61,11 +61,11 @@ fn getLudicNumbers(allocator: std.mem.Allocator, limit: usize) ![]usize {
     };
     const DataNodePool = std.heap.MemoryPoolExtra(DataNode, .{});
 
-    var data_node_pool: DataNodePool = .init(std.heap.page_allocator);
-    defer data_node_pool.deinit();
+    var data_node_pool: DataNodePool = .empty;
+    defer data_node_pool.deinit(std.heap.page_allocator);
 
     var list = blk: {
-        var data = try data_node_pool.create();
+        var data = try data_node_pool.create(std.heap.page_allocator);
         data.* = .{ .data = 2 }; // the next ludic number
 
         break :blk std.SinglyLinkedList{ .first = &data.node };
@@ -74,7 +74,7 @@ fn getLudicNumbers(allocator: std.mem.Allocator, limit: usize) ![]usize {
 
     // all numbers from 3 up to limit
     for (3..limit) |i| {
-        const new_data = try data_node_pool.create();
+        const new_data = try data_node_pool.create(std.heap.page_allocator);
         new_data.* = .{ .data = i };
         const new_node = &new_data.node;
         tail.insertAfter(new_node);
@@ -84,14 +84,14 @@ fn getLudicNumbers(allocator: std.mem.Allocator, limit: usize) ![]usize {
     // harvest the ludic numbers, removing non-ludic
     while (list.first) |first| {
         const n = @as(*DataNode, @fieldParentPtr("node", first)).data;
-        try ludic_list.append(allocator, n); // harvest
+        try ludic_list.append(gpa, n); // harvest
         _ = list.popFirst();
         var node = list.first;
         var i: usize = 2;
         while (node) |possible| : (i += 1)
             node = if (i % n == 0) possible.removeNext() else possible.next;
     }
-    return ludic_list.toOwnedSlice(allocator);
+    return ludic_list.toOwnedSlice(gpa);
 }
 
 const testing = std.testing;

@@ -1,13 +1,16 @@
 // https://rosettacode.org/wiki/Loops/Nested
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 
 const print = std.debug.print;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
+        Io.random(io, std.mem.asBytes(&seed));
         break :blk seed;
     });
     const random = prng.random();

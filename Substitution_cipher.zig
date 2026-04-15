@@ -1,11 +1,15 @@
 // https://rosettacode.org/wiki/Substitution_cipher
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
+        Io.random(io, std.mem.asBytes(&seed));
         break :blk seed;
     });
     const rand = prng.random();
@@ -29,7 +33,7 @@ pub fn main() !void {
     defer allocator.free(decrypted);
     //
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try stdout.print("Key       = “{s}”\n", .{cypher.key});
@@ -42,9 +46,9 @@ pub fn main() !void {
 
 const SubstitutionCypher = struct {
     key: []const u8,
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
 
-    fn init(allocator: std.mem.Allocator, key: []const u8) !SubstitutionCypher {
+    fn init(allocator: Allocator, key: []const u8) !SubstitutionCypher {
         return .{
             .key = try allocator.dupe(u8, key),
             .allocator = allocator,

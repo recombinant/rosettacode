@@ -1,7 +1,8 @@
 // https://rosettacode.org/wiki/Evolutionary_algorithm
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Io = std.Io;
 
 // ASCII characters
 const table = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
@@ -9,19 +10,21 @@ const table = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
 const MUTATE = 15;
 const COPIES = 30;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     const target = "METHINKS IT IS LIKE A WEASEL";
 
     // -------------------------------------------- random number
     var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
+        Io.random(io, std.mem.asBytes(&seed));
         break :blk seed;
     });
     const random = prng.random();
     // ----------------------------------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // ----------------------------------------------------------
     var specimens: [COPIES][target.len]u8 = undefined;

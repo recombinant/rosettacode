@@ -1,41 +1,41 @@
 // https://rosettacode.org/wiki/ADFGVX_cipher
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 // Note: The C++ is/was missing the columnar transposition
 const std = @import("std");
+const Io = std.Io;
+const Allocator = std.mem.Allocator;
 
 const assert = std.debug.assert;
 const print = std.debug.print;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     // -------------------------------------------- random number
     var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
+        std.Io.random(io, std.mem.asBytes(&seed));
         break :blk seed;
     });
     const random = prng.random();
-    // ------------------------------------------------ allocator
-    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
     // ----------------------------------------------------------
     const polybius = initialisePolybiusSquare(random);
     printPolybius(polybius);
 
-    const key = try createKey(allocator, random, 9);
-    defer allocator.free(key);
+    const key = try createKey(gpa, random, 9);
+    defer gpa.free(key);
     print("The key is {s}\n\n", .{key});
 
     const plain_text = "ATTACKAT1200AM";
     print("Plain text: {s}\n\n", .{plain_text});
 
-    const encrypted_text = try encrypt(allocator, plain_text, polybius, key);
-    defer allocator.free(encrypted_text);
+    const encrypted_text = try encrypt(gpa, plain_text, polybius, key);
+    defer gpa.free(encrypted_text);
     print("Encrypted: {s}\n\n", .{encrypted_text});
 
-    const decrypted_text = try decrypt(allocator, encrypted_text, polybius, key);
-    defer allocator.free(decrypted_text);
+    const decrypted_text = try decrypt(gpa, encrypted_text, polybius, key);
+    defer gpa.free(decrypted_text);
     print("Decrypted: {s}\n", .{decrypted_text});
 }
 
@@ -76,7 +76,7 @@ fn printPolybius(polybius: PolybiusSquare) void {
 }
 
 /// Create a key using a word from the dictionary 'unixdict.txt'
-fn createKey(allocator: std.mem.Allocator, random: std.Random, size: usize) ![]const u8 {
+fn createKey(allocator: Allocator, random: std.Random, size: usize) ![]const u8 {
     if (size < 7 or size > 12)
         return error.INVALID_KEY_SIZE;
 
