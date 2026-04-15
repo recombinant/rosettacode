@@ -1,17 +1,20 @@
 // https://rosettacode.org/wiki/Brilliant_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
-    try main1(); // Brute force
-    try main2();
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
+    try main1(io); // Brute force
+    try main2(io);
 }
 
-fn main1() !void {
-    var t0 = std.time.Timer.start() catch unreachable;
+fn main1(io: Io) !void {
+    var t0 = Io.Timestamp.now(io, .real);
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try stdout.writeAll("First 100 brilliant numbers:\n");
@@ -48,7 +51,7 @@ fn main1() !void {
     }
     try stdout.flush();
 
-    std.log.info("processed in {D}", .{t0.read()});
+    std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 }
 
 /// Find all the prime factor(s)
@@ -139,11 +142,11 @@ fn FactorChecker(comptime T: type) type {
 const PrimeGen = @import("Extensible_prime_generator_alternate.zig").PrimeGen;
 const AutoSieveType = @import("Extensible_prime_generator_alternate.zig").AutoSieveType;
 
-fn main2() !void {
-    var t0: std.time.Timer = try .start();
+fn main2(io: Io) !void {
+    var t0: Io.Timestamp = .now(io, .real);
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     const max_prime = 1_000_000_000;
@@ -184,7 +187,7 @@ fn main2() !void {
     }
     try stdout.flush();
     // --------------------------------
-    std.log.info("processed in {D}", .{t0.read()});
+    std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 }
 
 /// In this instance the C++ and Nim solutions are faster and

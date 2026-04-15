@@ -1,15 +1,17 @@
 // https://rosettacode.org/wiki/Bifid_cipher
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 
-pub fn main() !void {
-    var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
-    const stdout = &stdout_writer.interface;
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    const gpa: Allocator = init.gpa;
+
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const poly1: *const [25:0]u8 = "ABCDEFGHIKLMNOPQRSTUVWXYZ";
     const poly2: *const [25:0]u8 = "BGWKZQPNDSIOAXEFCLUMTHYVR";
@@ -21,10 +23,10 @@ pub fn main() !void {
     const msgs = [_][]const u8{ msg1, msg2, msg1, msg3 };
     for (0..polys.len) |i| {
         const bifid = Bifid{ .polybius = polys[i] };
-        const encrypted = try bifid.encrypt(allocator, msgs[i]);
-        const decrypted = try bifid.decrypt(allocator, encrypted);
-        defer allocator.free(encrypted);
-        defer allocator.free(decrypted);
+        const encrypted = try bifid.encrypt(gpa, msgs[i]);
+        const decrypted = try bifid.decrypt(gpa, encrypted);
+        defer gpa.free(encrypted);
+        defer gpa.free(decrypted);
         try stdout.print("Message   : {s}\n", .{msgs[i]});
         try stdout.print("Encrypted : {s}\n", .{encrypted});
         try stdout.print("Decrypted : {s}\n", .{decrypted});

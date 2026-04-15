@@ -1,7 +1,10 @@
 // https://rosettacode.org/wiki/Bacon_cipher
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 // maps successively from 'a' to 'z' plus ' ' to denote any non-letter
 const codes = [27][]const u8{
@@ -90,14 +93,12 @@ fn baconDecode(allocator: std.mem.Allocator, cipher_text: []const u8) ![]u8 {
     return pt_list.toOwnedSlice(allocator);
 }
 
-pub fn main() !void {
-    // ---------------------------------------------------- allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    const gpa: Allocator = init.gpa;
     // --------------------------------------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     const plain_text: []const u8 = "the quick brown fox jumps over the lazy dog";
@@ -109,12 +110,12 @@ pub fn main() !void {
         "case characters individually and/or adding a few punctuation characters " ++
         "such as the space.";
 
-    const cipher_text = try baconEncode(allocator, plain_text, message);
-    defer allocator.free(cipher_text);
+    const cipher_text = try baconEncode(gpa, plain_text, message);
+    defer gpa.free(cipher_text);
     try stdout.print("Cipher text ->\n\n{s}\n", .{cipher_text});
 
-    const hidden_text = try baconDecode(allocator, cipher_text);
-    defer allocator.free(hidden_text);
+    const hidden_text = try baconDecode(gpa, cipher_text);
+    defer gpa.free(hidden_text);
     try stdout.print("\nHidden text ->\n\n{s}\n", .{hidden_text});
 
     try stdout.flush();

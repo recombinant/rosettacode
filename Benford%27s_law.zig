@@ -1,16 +1,19 @@
 // https://rosettacode.org/wiki/Benford%27s_law
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     const data = @embedFile("data/the_first_1001_fibonacci_numbers.txt");
 
     const actual = getActualDistribution(data);
     const benford = getBenfordDistribution();
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try stdout.writeAll("First 1000 Fibonacci numbers:\n");

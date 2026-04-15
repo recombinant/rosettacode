@@ -1,15 +1,23 @@
 // https://rosettacode.org/wiki/Blum_integer
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 // https://en.wikipedia.org/wiki/Magic_number_(programming)
+const std = @import("std");
+
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
+const assert = std.debug.assert;
 
 // this is at file scope so that it can be tested
 // without the 'pub' keyword it cannot be seen outside this file.
 const digits = [4]u32{ 1, 3, 7, 9 };
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     var blum: [50]u32 = undefined; // Only occurence of the magic value 50
@@ -90,6 +98,8 @@ fn firstPrimeFactor(n: u32) u32 {
     return n;
 }
 
+const testing = std.testing;
+
 test "modulo logic for counts" {
     var bits: std.StaticBitSet(4) = .initEmpty();
     var i: u32 = 0;
@@ -108,7 +118,3 @@ test "modulo logic for counts" {
     // all four bits should be set
     try testing.expectEqual(4, bits.count());
 }
-
-const std = @import("std");
-const testing = std.testing;
-const assert = std.debug.assert;

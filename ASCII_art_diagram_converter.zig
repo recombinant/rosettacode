@@ -1,9 +1,15 @@
 // https://rosettacode.org/wiki/ASCII_art_diagram_converter
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Wren}}
 const std = @import("std");
 
-pub fn main() !void {
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    const gpa: Allocator = init.gpa;
+
     const diagram =
         \\ +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
         \\ |                      ID                       |
@@ -20,26 +26,22 @@ pub fn main() !void {
         \\ +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
     ;
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    const lines = try validate(allocator, diagram);
-    defer allocator.free(lines);
+    const lines = try validate(gpa, diagram);
+    defer gpa.free(lines);
     try stdout.writeAll("Diagram after trimming whitespace and removal of blank lines:\n");
     for (lines) |line| {
         try stdout.writeAll(line);
         try stdout.writeByte('\n');
     }
     try stdout.writeAll("\nDecoded:\n\n");
-    const results = try decode(allocator, lines, stdout);
-    defer allocator.free(results);
+    const results = try decode(gpa, lines, stdout);
+    defer gpa.free(results);
     const hex = "78477bbf5496e12e1bf169a4"; // test string
-    try unpack(allocator, results, hex, stdout);
+    try unpack(gpa, results, hex, stdout);
 
     try stdout.flush();
 }
@@ -63,7 +65,7 @@ const Result = struct {
     end: usize,
 };
 
-fn validate(allocator: std.mem.Allocator, diagram: []const u8) ![][]const u8 {
+fn validate(allocator: Allocator, diagram: []const u8) ![][]const u8 {
     var line_list: std.ArrayList([]const u8) = .empty;
     defer line_list.deinit(allocator);
     var it = std.mem.tokenizeScalar(u8, diagram, '\n');
@@ -115,7 +117,7 @@ fn validate(allocator: std.mem.Allocator, diagram: []const u8) ![][]const u8 {
     return line_list.toOwnedSlice(allocator);
 }
 
-fn decode(allocator: std.mem.Allocator, lines: [][]const u8, w: *std.Io.Writer) ![]Result {
+fn decode(allocator: Allocator, lines: [][]const u8, w: *std.Io.Writer) ![]Result {
     try w.writeAll("Name     Bits  Start  End\n");
     try w.writeAll("=======  ====  =====  ===\n");
     var start: usize = 0;
@@ -144,7 +146,7 @@ fn decode(allocator: std.mem.Allocator, lines: [][]const u8, w: *std.Io.Writer) 
     return results.toOwnedSlice(allocator);
 }
 
-fn unpack(allocator: std.mem.Allocator, results: []Result, hex: []const u8, w: *std.Io.Writer) !void {
+fn unpack(allocator: Allocator, results: []Result, hex: []const u8, w: *std.Io.Writer) !void {
     try w.writeAll("\nTest string in hex:\n");
     try w.print("{s}\n", .{hex});
 
