@@ -1,26 +1,26 @@
 // https://rosettacode.org/wiki/Achilles_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
-    var t0: std.time.Timer = try .start();
+pub fn main(init: std.process.Init) !void {
+    const gpa = init.gpa;
+    const io = init.io;
+
+    var t0: Io.Timestamp = .now(io, .real);
     // ------------------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-    // ---------------------------------------------------- allocator
-    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
     // --------------------------------------------------------------
 
     const limit: u64 = 1_000_000_000_000_000;
 
-    const pps = try perfectPowers(allocator, limit);
-    defer allocator.free(pps);
-    const ach = try achilles(allocator, u64, 1, 1_000_000, pps);
-    defer allocator.free(ach);
+    const pps = try perfectPowers(gpa, limit);
+    defer gpa.free(pps);
+    const ach = try achilles(gpa, u64, 1, 1_000_000, pps);
+    defer gpa.free(ach);
 
     try stdout.writeAll("First 50 Achilles numbers:\n");
     for (ach[0..@min(50, ach.len)], 1..) |a, i|
@@ -45,35 +45,28 @@ pub fn main() !void {
         to *= 10;
         digits += 1;
     }) {
-        const ach2 = try achilles(allocator, u64, from, to, pps);
+        const ach2 = try achilles(gpa, u64, from, to, pps);
         try stdout.print("{d:2} digits: {d}\n", .{ digits, ach2.len });
         try stdout.flush();
-        allocator.free(ach2);
+        gpa.free(ach2);
         from = to;
     }
     try stdout.writeByte('\n');
     try stdout.flush();
 
-    std.log.info("processed in {D}", .{t0.read()});
+    std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 }
 
-/// The original C++ implementation removed duplicates.
-/// This implemenation is faster without the duplicate
-/// removal and only a sort to enable the binarySearch.
-fn uniqueSort(T: type, vector: *std.ArrayList(T)) void {
-    // // Plan A - translation of C++
-    // std.mem.sort(T, vector.items, {}, std.sort.asc(T));
-    // var i = vector.items.len;
-    // while (i > 1) {
-    //     i -= 1;
-    //     if (vector.items[i] == vector.items[i - 1])
-    //         _ = vector.swapRemove(i);
-    // }
-    // // to correct swapRemove artifacts
-    // std.mem.sort(T, vector.items, {}, std.sort.asc(T));
-
-    // Plan B - sort
+/// Return sorted slice of unique items. Caller owns returned slice.
+fn uniqueSort(T: type, allocator: std.mem.Allocator, vector: std.ArrayList(T)) ![]T {
+    var result: std.ArrayList(T) = try .initCapacity(allocator, vector.items.len);
     std.mem.sortUnstable(T, vector.items, {}, std.sort.asc(T));
+
+    for (vector.items[0 .. vector.items.len - 1], vector.items[1..]) |p0, p1|
+        if (p0 != p1) {
+            result.appendAssumeCapacity(p0);
+        };
+    return result.toOwnedSlice(allocator);
 }
 
 fn perfectPowers(allocator: std.mem.Allocator, n: anytype) ![]@TypeOf(n) {
@@ -85,6 +78,8 @@ fn perfectPowers(allocator: std.mem.Allocator, n: anytype) ![]@TypeOf(n) {
     const P = std.meta.Int(.unsigned, @typeInfo(T).int.bits * 2); // u128 in long-hand
 
     var result: std.ArrayList(T) = .empty;
+    defer result.deinit(allocator);
+
     const s = std.math.sqrt(n);
     var i: T = 2;
     while (i <= s) : (i += 1) {
@@ -92,8 +87,8 @@ fn perfectPowers(allocator: std.mem.Allocator, n: anytype) ![]@TypeOf(n) {
         while (p < n) : (p *= i)
             try result.append(allocator, @intCast(p));
     }
-    uniqueSort(T, &result);
-    return result.toOwnedSlice(allocator);
+
+    return uniqueSort(T, allocator, result);
 }
 
 fn orderU64(context: u64, item: u64) std.math.Order {
@@ -104,6 +99,8 @@ fn achilles(allocator: std.mem.Allocator, T: type, from: T, to: T, pps: []T) ![]
     if (@typeInfo(T) != .int or @typeInfo(T).int.signedness != .unsigned)
         @compileError("achilles() expected unsigned integer type argument, found " ++ @typeName(T));
     var result: std.ArrayList(T) = .empty;
+    defer result.deinit(allocator);
+
     const c: T = @intFromFloat(std.math.cbrt(@as(f64, @floatFromInt(to / 4))));
     const s = std.math.sqrt(to / 8);
     var b: T = 2;
@@ -118,8 +115,7 @@ fn achilles(allocator: std.mem.Allocator, T: type, from: T, to: T, pps: []T) ![]
                 try result.append(allocator, p);
         }
     }
-    uniqueSort(T, &result);
-    return result.toOwnedSlice(allocator);
+    return uniqueSort(T, allocator, result);
 }
 
 // /// Simple implementation of totient

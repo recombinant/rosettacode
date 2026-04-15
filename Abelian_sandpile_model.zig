@@ -1,23 +1,24 @@
 // https://rosettacode.org/wiki/Abelian_sandpile_model
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const PPM = enum { P3, P6 }; // NetPBM formats
 const ppm = PPM.P3;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    const gpa: Allocator = init.gpa;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
     // Initialize the sand pile.
-    const init_val = try askInitVal();
+    const init_val = try askInitVal(io);
 
-    var sand_pile: SandPile = try .init(allocator, init_val);
+    var sand_pile: SandPile = try .init(gpa, init_val);
     defer sand_pile.deinit();
 
     // Run the simulation.
@@ -25,9 +26,9 @@ pub fn main() !void {
 
     if (sand_pile.side_len <= 20) try sand_pile.display(stdout, init_val);
 
-    const name = try std.fmt.allocPrint(allocator, "abelian_sandpile_{d}.ppm", .{init_val});
-    defer allocator.free(name);
-    try sand_pile.writePpmFile(name);
+    const name = try std.fmt.allocPrint(gpa, "abelian_sandpile_{d}.ppm", .{init_val});
+    defer gpa.free(name);
+    try sand_pile.writePpmFile(io, name);
     try stdout.print("PPM image written in \"{s}\".\n", .{name});
 
     try stdout.flush();
@@ -35,12 +36,12 @@ pub fn main() !void {
 
 /// Abelian sandpile.
 const SandPile = struct {
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
     tiles: []u32,
     side_len: usize, // sand pile is square
     boundary: struct { x0: usize, y0: usize, xn: usize, yn: usize },
 
-    fn init(allocator: std.mem.Allocator, init_val: u32) !SandPile {
+    fn init(allocator: Allocator, init_val: u32) !SandPile {
         const side_len = sideLength(init_val);
 
         const tiles = try allocator.alloc(u32, side_len * side_len);
@@ -131,12 +132,12 @@ const SandPile = struct {
     };
 
     /// Write the tile grid representation in a PPM file.
-    fn writePpmFile(self: SandPile, name: []const u8) !void {
-        var file = try std.fs.cwd().createFile(name, .{});
-        defer file.close();
+    fn writePpmFile(self: SandPile, io: Io, name: []const u8) !void {
+        var file = try Io.Dir.cwd().createFile(io, name, .{});
+        defer file.close(io);
 
         var buffer: [4096]u8 = undefined;
-        var file_writer = file.writer(&buffer);
+        var file_writer = file.writer(io, &buffer);
         const w = &file_writer.interface;
 
         switch (ppm) {
@@ -165,17 +166,17 @@ const SandPile = struct {
 };
 
 /// Ask user for the number of sand particles.
-fn askInitVal() !u32 {
+fn askInitVal(io: Io) !u32 {
     var stderr_buffer: [1024]u8 = undefined;
-    var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
+    var stderr_writer = Io.File.stderr().writer(io, &stderr_buffer);
     const stderr = &stderr_writer.interface;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     var stdin_buffer: [512]u8 = undefined;
-    var stdin_reader = std.fs.File.stdin().reader(&stdin_buffer);
+    var stdin_reader = Io.File.stdin().reader(io, &stdin_buffer);
     const stdin = &stdin_reader.interface;
 
     const len = comptime std.math.log10_int(@as(u32, std.math.maxInt(u32))) + 2;

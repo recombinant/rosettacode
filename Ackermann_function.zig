@@ -1,6 +1,7 @@
 // https://rosettacode.org/wiki/Ackermann_function
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 
 // global variable not available at comptime
 var depth: usize = 0;
@@ -14,22 +15,24 @@ fn ackermann(m: u64, n: u64) u64 {
     return ackermann(m - 1, ackermann(m, n - 1));
 }
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     const m, const n = .{ 3, 9 };
 
     @setEvalBranchQuota(11_164_370);
-    var t1: std.time.Timer = try .start();
+    const t0: Io.Timestamp = .now(io, .real);
     const a1 = comptime ackermann(m, n);
-    try stdout.print("evaluated at comptime processed in {D} at runtime\n", .{t1.read()});
+    try stdout.print("evaluated at comptime processed in {f} at runtime\n", .{t0.untilNow(io, .real)});
     try stdout.print("A({}, {}) = {}\n\n", .{ m, n, a1 });
 
-    var t2: std.time.Timer = try .start();
+    const t1: Io.Timestamp = .now(io, .real);
     const a2 = ackermann(m, n);
-    try stdout.print("runtime processed in {D}\n", .{t2.read()});
+    try stdout.print("runtime processed in {f}\n", .{t1.untilNow(io, .real)});
     try stdout.print("A({}, {}) = {}\n\n", .{ m, n, a2 });
 
     // The calculated number used above in @setEvalBranchQuota()

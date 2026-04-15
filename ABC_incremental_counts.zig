@@ -1,14 +1,15 @@
 // https://rosettacode.org/wiki/ABC_incremental_counts
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    const gpa: Allocator = init.gpa;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     // Assumes all lower case ASCII.
@@ -29,8 +30,8 @@ pub fn main() !void {
             }
             try stdout.print("] --- Minimum count {d}\n", .{min_count});
 
-            const result = try abcIncrementalCounts(allocator, text, letters, min_count);
-            defer allocator.free(result);
+            const result = try abcIncrementalCounts(gpa, text, letters, min_count);
+            defer gpa.free(result);
 
             if (result.len == 0)
                 try stdout.writeAll("--- no words ---\n")
@@ -46,7 +47,7 @@ pub fn main() !void {
     try stdout.flush();
 }
 
-fn abcIncrementalCounts(allocator: std.mem.Allocator, text: []const u8, letters: []const u8, min_count: usize) ![][]const u8 {
+fn abcIncrementalCounts(allocator: Allocator, text: []const u8, letters: []const u8, min_count: usize) ![][]const u8 {
     if (text.len == 0 or letters.len == 0)
         return allocator.alloc([]const u8, 0);
 
@@ -81,5 +82,5 @@ fn abcIncrementalCounts(allocator: std.mem.Allocator, text: []const u8, letters:
         }
         try result.append(allocator, word);
     }
-    return try result.toOwnedSlice(allocator);
+    return result.toOwnedSlice(allocator);
 }

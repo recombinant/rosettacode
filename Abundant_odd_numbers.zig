@@ -1,9 +1,18 @@
 // https://www.rosettacode.org/wiki/Abundant_odd_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // based on C
-pub fn main() !void {
+const std = @import("std");
+const math = std.math;
+
+const Io = std.Io;
+
+const assert = std.debug.assert;
+
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     var n: u64 = 1;
@@ -44,7 +53,3 @@ fn sumProperDivisors(n: u64) u64 {
     }
     return sum;
 }
-
-const std = @import("std");
-const math = std.math;
-const assert = std.debug.assert;

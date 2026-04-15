@@ -1,11 +1,16 @@
 // https://rosettacode.org/wiki/Abundant,_deficient_and_perfect_number_classifications
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
 const assert = std.debug.assert;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     var deficient: u64 = 1; // 1 is deficient by default, add it to deficient

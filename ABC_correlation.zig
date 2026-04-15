@@ -1,6 +1,7 @@
 // https://rosettacode.org/wiki/ABC_correlation
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 
 // Assuming only lower case ASCII letters ('a' to 'z' inclusive)
 // other ASCII characters encountered will be ignored.
@@ -19,9 +20,11 @@ fn isAbcWord(word: []const u8) bool {
     return a != 0 and a == b and a == c;
 }
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     const words = "aluminium abc internet adb cda blank black mercury venus earth mars jupiter saturn uranus neptune pluto";
