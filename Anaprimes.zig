@@ -1,38 +1,39 @@
 // https://rosettacode.org/wiki/Anaprimes
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // https://rosettacode.org/wiki/Extensible_prime_generator
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const PrimeGen = @import("sieve.zig").PrimeGen;
 
 const AnaprimeLookup = std.AutoArrayHashMapUnmanaged(u40, std.ArrayList(u64));
 
-pub fn main() !void {
-    var t0: std.time.Timer = try .start();
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    const gpa: Allocator = init.gpa;
+
+    var t0: Io.Timestamp = .now(io, .real);
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     const max: u64 = 1_000_000_000;
     var limit: u64 = 1_000;
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
-    var primegen: PrimeGen(u64) = .init(allocator);
+    var primegen: PrimeGen(u64) = .init(gpa);
     defer primegen.deinit();
 
     var anaprimes: AnaprimeLookup = .empty;
     defer {
-        clear(allocator, &anaprimes);
-        anaprimes.deinit(allocator);
+        clear(gpa, &anaprimes);
+        anaprimes.deinit(gpa);
     }
 
     var longest: std.ArrayList([]const u64) = .empty;
-    defer longest.deinit(allocator);
+    defer longest.deinit(gpa);
 
     while (true) {
         const p = (try primegen.next()).?;
@@ -43,10 +44,10 @@ pub fn main() !void {
             // find the longest groups
             for (anaprimes.values()) |primes| {
                 if (longest.items.len == 0 or longest.items[0].len == primes.items.len)
-                    try longest.append(allocator, primes.items)
+                    try longest.append(gpa, primes.items)
                 else if (primes.items.len > longest.items[0].len) {
                     longest.clearRetainingCapacity();
-                    try longest.append(allocator, primes.items);
+                    try longest.append(gpa, primes.items);
                 }
             }
             // print the longest groups
@@ -67,20 +68,20 @@ pub fn main() !void {
             limit *= 10;
             if (limit >= max)
                 break; // finished
-            clear(allocator, &anaprimes);
+            clear(gpa, &anaprimes);
         }
         const key = calcSignature(@TypeOf(p), p);
-        const gop = try anaprimes.getOrPut(allocator, key);
+        const gop = try anaprimes.getOrPut(gpa, key);
         if (!gop.found_existing)
             gop.value_ptr.* = .empty;
 
-        try gop.value_ptr.append(allocator, p);
+        try gop.value_ptr.append(gpa, p);
     }
 
-    std.log.info("processed in {D}", .{t0.read()});
+    std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 }
 
-fn clear(allocator: std.mem.Allocator, anaprimes: *std.AutoArrayHashMapUnmanaged(u40, std.ArrayList(u64))) void {
+fn clear(allocator: Allocator, anaprimes: *std.AutoArrayHashMapUnmanaged(u40, std.ArrayList(u64))) void {
     for (anaprimes.values()) |*primes|
         primes.deinit(allocator);
     anaprimes.clearRetainingCapacity();

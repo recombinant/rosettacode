@@ -1,16 +1,17 @@
 // https://rosettacode.org/wiki/Anagrams
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    const gpa: Allocator = init.gpa;
+
     const text = @embedFile("data/unixdict.txt");
-    // ------------------------------------------ allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
     // --------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     // ------------------------ hash map for anagram lookup
@@ -19,10 +20,10 @@ pub fn main() !void {
     defer {
         var it = anagrams.iterator();
         while (it.next()) |anagram| {
-            allocator.free(anagram.key_ptr.*);
-            anagram.value_ptr.deinit(allocator);
+            gpa.free(anagram.key_ptr.*);
+            anagram.value_ptr.deinit(gpa);
         }
-        anagrams.deinit(allocator);
+        anagrams.deinit(gpa);
     }
 
     // fill anagram lookup --------------------------------
@@ -32,22 +33,22 @@ pub fn main() !void {
     {
         var it = std.mem.splitSequence(u8, text, "\n");
         while (it.next()) |word| {
-            const key = try allocator.dupe(u8, word);
+            const key = try gpa.dupe(u8, word);
             std.mem.sortUnstable(u8, key, {}, std.sort.asc(u8));
 
-            const gop = try anagrams.getOrPut(allocator, key);
+            const gop = try anagrams.getOrPut(gpa, key);
             if (gop.found_existing)
-                allocator.free(key)
+                gpa.free(key)
             else
                 gop.value_ptr.* = .empty;
 
-            try gop.value_ptr.append(allocator, word);
+            try gop.value_ptr.append(gpa, word);
         }
     }
 
     {
         var most_words_keys: std.ArrayList([]const u8) = .empty;
-        defer most_words_keys.deinit(allocator);
+        defer most_words_keys.deinit(gpa);
 
         var max_length: usize = 0;
         var it = anagrams.iterator();
@@ -58,7 +59,7 @@ pub fn main() !void {
                     max_length = len;
                     most_words_keys.clearRetainingCapacity();
                 }
-                try most_words_keys.append(allocator, kv.key_ptr.*);
+                try most_words_keys.append(gpa, kv.key_ptr.*);
             }
         }
 

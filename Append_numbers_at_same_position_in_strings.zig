@@ -1,15 +1,15 @@
 // https://rosettacode.org/wiki/Append_numbers_at_same_position_in_strings
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    // ---------------------------------------------------- allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    const gpa: Allocator = init.gpa;
     // --------------------------------------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // --------------------------------------------------------------
 
@@ -19,21 +19,21 @@ pub fn main() !void {
 
     const lists = [_][]const u32{ &list1, &list2, &list3 };
 
-    const result = try concatenateLists(allocator, lists[0..]);
+    const result = try concatenateLists(gpa, lists[0..]);
     defer {
-        for (result) |list| allocator.free(list);
-        allocator.free(result);
+        for (result) |list| gpa.free(list);
+        gpa.free(result);
     }
 
-    const s = try std.mem.join(allocator, ", ", result);
+    const s = try std.mem.join(gpa, ", ", result);
     try stdout.print("list = [ {s} ]\n", .{s});
-    allocator.free(s);
+    gpa.free(s);
 
     try stdout.flush();
 }
 
 /// Return result as slice of strings. Caller owns returned memory.
-fn concatenateLists(allocator: std.mem.Allocator, lists: []const []const u32) ![][]const u8 {
+fn concatenateLists(allocator: Allocator, lists: []const []const u32) ![][]const u8 {
     for (lists[1..]) |list| std.debug.assert(list.len == lists[0].len);
 
     var result: std.ArrayList([]const u8) = .empty;
@@ -42,10 +42,9 @@ fn concatenateLists(allocator: std.mem.Allocator, lists: []const []const u32) ![
     defer w.deinit();
 
     for (0..lists[0].len) |i| {
-        w.clearRetainingCapacity();
         for (lists) |list|
             try w.writer.printInt(list[i], 10, .lower, .{});
-        try result.append(allocator, try allocator.dupe(u8, w.written()));
+        try result.append(allocator, try w.toOwnedSlice());
     }
     return try result.toOwnedSlice(allocator);
 }

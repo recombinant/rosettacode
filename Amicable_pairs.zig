@@ -1,13 +1,16 @@
 // https://rosettacode.org/wiki/Amicable_pairs
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var t0: std.time.Timer = try .start();
+    var t0: Io.Timestamp = .now(io, .real);
 
     try stdout.writeAll("The amicable pairs below 20,000 are:\n");
     for (1..20_000 + 1) |n| {
@@ -18,7 +21,7 @@ pub fn main() !void {
 
     try stdout.writeByte('\n');
     try stdout.flush();
-    std.log.info("processed in {D}", .{t0.read()});
+    std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 }
 
 // Adapted from:
