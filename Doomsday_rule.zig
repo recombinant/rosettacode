@@ -1,11 +1,16 @@
 // https://rosettacode.org/wiki/Doomsday_rule
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 const c = @cImport({
     @cInclude("time.h");
 });
 
-pub fn main() anyerror!void {
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) anyerror!void {
+    const io: Io = init.io;
+
     const MonthsError = error{
         NoMonthZero, // there is no month at months[0]
     };
@@ -22,7 +27,7 @@ pub fn main() anyerror!void {
     };
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     const now = c.time(null);

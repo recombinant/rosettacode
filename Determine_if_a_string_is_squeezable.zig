@@ -1,13 +1,19 @@
 // https://rosettacode.org/wiki/Determine_if_a_string_is_squeezable
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const Data = struct {
     c: u8,
     s: []const u8,
 };
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     const data_array = [_]Data{
         .{ .c = 't', .s = "The better the 4-wheel drive, the further you'll be from help when ya get stuck!" },
         .{ .c = 'e', .s = "The better the 4-wheel drive, the further you'll be from help when ya get stuck!" },
@@ -21,22 +27,18 @@ pub fn main() !void {
         .{ .c = 'r', .s = "                                                   ---  Harry S Truman  " },
     };
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     for (data_array) |data| {
         try stdout.print("Character: '{c}'\n", .{data.c});
         try stdout.print("{d}: <<<{s}>>>\n", .{ data.s.len, data.s });
 
-        const squeezed = try squeeze(allocator, data.s, data.c);
+        const squeezed = try squeeze(gpa, data.s, data.c);
         try stdout.print("{d}: <<<{s}>>>\n\n", .{ squeezed.len, squeezed });
 
-        allocator.free(squeezed);
+        gpa.free(squeezed);
     }
 
     try stdout.flush();
