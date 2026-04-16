@@ -34,7 +34,7 @@ fn getChar(code: []const u8) !u8 {
 }
 
 /// Allocates memory for the result, which must be freed by the caller.
-fn baconEncode(allocator: std.mem.Allocator, plain_text: []const u8, message: []const u8) ![]u8 {
+fn baconEncode(allocator: Allocator, plain_text: []const u8, message: []const u8) ![]u8 {
     const et: []const u8 = blk: {
         var et_list: std.ArrayList(u8) = try .initCapacity(allocator, plain_text.len * 5);
         for (plain_text) |c|
@@ -65,7 +65,7 @@ fn baconEncode(allocator: std.mem.Allocator, plain_text: []const u8, message: []
 }
 
 /// Allocates memory for the result, which must be freed by the caller.
-fn baconDecode(allocator: std.mem.Allocator, cipher_text: []const u8) ![]u8 {
+fn baconDecode(allocator: Allocator, cipher_text: []const u8) ![]u8 {
     const ct = blk: {
         var ct_list: std.ArrayList(u8) = .empty;
 

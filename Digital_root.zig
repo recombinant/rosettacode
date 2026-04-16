@@ -1,11 +1,15 @@
 // https://rosettacode.org/wiki/Digital_root
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
 
-pub fn main() !void {
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     // try stdout.print("{}\n", .{@as(u64, 1) / @as(u64, 10)});

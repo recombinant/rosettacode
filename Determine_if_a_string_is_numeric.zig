@@ -1,4 +1,5 @@
 // https://www.rosettacode.org/wiki/Determine_if_a_string_is_numeric
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 const testing = std.testing;
 

@@ -1,6 +1,7 @@
 // https://rosettacode.org/wiki/Balanced_ternary
 // {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
 pub fn main(init: std.process.Init) !void {
@@ -176,10 +177,10 @@ const AddOptions = struct {
 
 const BalancedTernary = struct {
     trits: []Trit,
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
 
     /// Initialise BalancedTernary (to zero)
-    fn init(allocator: std.mem.Allocator) !BalancedTernary {
+    fn init(allocator: Allocator) !BalancedTernary {
         var trit = try allocator.alloc(Trit, 1);
         trit[0] = Trit{ .symbol = .tz };
         return BalancedTernary{
@@ -188,7 +189,7 @@ const BalancedTernary = struct {
         };
     }
     /// Build a BalancedTernary number from its string representation.
-    fn initString(allocator: std.mem.Allocator, string: []const u8) !BalancedTernary {
+    fn initString(allocator: Allocator, string: []const u8) !BalancedTernary {
         var trits = try allocator.alloc(Trit, string.len);
         for (string, 1..) |ch, i| {
             trits[string.len - i] = Trit.fromChar(ch);
@@ -199,7 +200,7 @@ const BalancedTernary = struct {
         };
     }
     /// Build a BalancedTernary number from a decimal integer.
-    fn initInt(allocator: std.mem.Allocator, integer: i32) !BalancedTernary {
+    fn initInt(allocator: Allocator, integer: i32) !BalancedTernary {
         var val = integer;
         var array: std.ArrayList(Trit) = .empty;
         while (true) {
@@ -246,7 +247,7 @@ const BalancedTernary = struct {
 
     /// Return the string representation of a BalancedTernary number.
     /// Caller owns returned memory slice.
-    fn toString(self: BalancedTernary, allocator: std.mem.Allocator) std.mem.Allocator.Error![]const u8 {
+    fn toString(self: BalancedTernary, allocator: Allocator) std.mem.Allocator.Error![]const u8 {
         var string = try allocator.alloc(u8, self.trits.len);
         for (self.trits, 1..) |trit, i| {
             string[self.trits.len - i] = trit.toChar();

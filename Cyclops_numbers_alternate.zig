@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Cyclops_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 
 // Using a prime sieve generator is slower than than using the
@@ -7,10 +7,13 @@
 // would improve speed.
 
 const std = @import("std");
+const Io = std.Io;
 const print = std.debug.print;
 
-pub fn main() !void {
-    var t0: std.time.Timer = try .start();
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
+    var t0: Io.Timestamp = .now(io, .real);
     // --------------
     const limit = 50;
     const limit_stretch = 10_000_000;
@@ -51,7 +54,7 @@ pub fn main() !void {
     cyclops_number = 0;
     while (cyclops_number < limit_stretch) cyclops_number, cyclops_count = it3.next();
     print("First palindromic prime cyclops after {} is {} at 1 based index {}\n\n", .{ limit_stretch, cyclops_number, cyclops_count });
-    print("Processed in {D}\n", .{t0.read()});
+    print("Processed in {f}\n", .{t0.untilNow(io, .real)});
 }
 
 fn printCyclops(count: usize, limit: usize, n: u64) void {

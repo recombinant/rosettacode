@@ -1,18 +1,23 @@
 // https://rosettacode.org/wiki/Distinct_palindromes_within_decimal_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 const std = @import("std");
 
-pub fn main() !void {
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     // ArenaAllocator with its facility to reset obviates the
     // requirement to individually free()/deinit() any allocated
-    // memory.
+    // memory. This arena is repeatedly reset.
     var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer _ = arena.deinit();
     const allocator = arena.allocator();
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // --------------------------------------------------- task 1
     try stdout.writeAll("Number  Palindromes\n");
@@ -49,7 +54,7 @@ pub fn main() !void {
 /// This function does not free any of its allocated memory.
 /// Freeing relies upon the allocator's parent being reset
 /// i.e. ArenaAllocator in this solution.
-fn allPalindromes(allocator: std.mem.Allocator, number: []const u8) ![][]const u8 {
+fn allPalindromes(allocator: Allocator, number: []const u8) ![][]const u8 {
     var substrings: std.ArrayList([]const u8) = .empty;
     for (0..number.len) |i|
         for (1..number.len - i + 1) |j|

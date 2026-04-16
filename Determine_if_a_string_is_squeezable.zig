@@ -44,7 +44,7 @@ pub fn main(init: std.process.Init) !void {
     try stdout.flush();
 }
 
-fn squeeze(allocator: std.mem.Allocator, s: []const u8, c: u8) ![]u8 {
+fn squeeze(allocator: Allocator, s: []const u8, c: u8) ![]u8 {
     if (s.len < 2) return try allocator.dupe(u8, s);
 
     var result: std.ArrayList(u8) = try .initCapacity(allocator, s.len);

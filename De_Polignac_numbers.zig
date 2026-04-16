@@ -1,8 +1,11 @@
 // https://rosettacode.org/wiki/De_Polignac_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     const pows2: [20]u64 = comptime calcPows(20);
 
     var dp1000: u64 = undefined;
@@ -30,7 +33,7 @@ pub fn main() !void {
     }
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try stdout.writeAll("First 50 De Polignac numbers:\n");

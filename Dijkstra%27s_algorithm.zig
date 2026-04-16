@@ -1,33 +1,32 @@
 // https://rosettacode.org/wiki/Dijkstra%27s_algorithm
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Nim}}
 const std = @import("std");
 
-pub fn main() !void {
-    // var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
-    // defer arena.deinit();
-    // const allocator = arena.allocator();
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    const allocator = gpa.allocator();
-    defer _ = gpa.deinit();
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var graph: Graph = try .init(allocator, &[_]Edge{
+    var graph: Graph = try .init(gpa, &[_]Edge{
         .{ "a", "b", 7 },  .{ "a", "c", 9 },  .{ "a", "f", 14 },
         .{ "b", "c", 10 }, .{ "b", "d", 15 }, .{ "c", "d", 11 },
         .{ "c", "f", 2 },  .{ "d", "e", 6 },  .{ "e", "f", 9 },
     });
-    defer graph.deinit(allocator);
+    defer graph.deinit(gpa);
 
-    const path1 = try graph.dijkstraPath(allocator, "a", "e");
-    defer allocator.free(path1);
+    const path1 = try graph.dijkstraPath(gpa, "a", "e");
+    defer gpa.free(path1);
     try printPath(stdout, path1);
 
-    const path2 = try graph.dijkstraPath(allocator, "a", "f");
-    defer allocator.free(path2);
+    const path2 = try graph.dijkstraPath(gpa, "a", "f");
+    defer gpa.free(path2);
     try printPath(stdout, path2);
 
     try stdout.flush();
@@ -56,7 +55,7 @@ const Graph = struct {
 
     /// Initialize a graph from an edge list.
     /// Use floats for costs in order to compare to Inf value.
-    fn init(allocator: std.mem.Allocator, edges: []const Edge) !Graph {
+    fn init(allocator: Allocator, edges: []const Edge) !Graph {
         var g: Graph = .{
             .vertices = .empty,
             .neighbours = .empty,
@@ -73,7 +72,7 @@ const Graph = struct {
         }
         return g;
     }
-    fn deinit(self: *Graph, allocator: std.mem.Allocator) void {
+    fn deinit(self: *Graph, allocator: Allocator) void {
         self.vertices.deinit(allocator);
         for (self.neighbours.values()) |*list|
             list.deinit(allocator);
@@ -81,7 +80,7 @@ const Graph = struct {
     }
     /// Find the path from "first" to "last" which minimizes the cost.
     /// Allocates memory for the result, which must be freed by the caller.
-    fn dijkstraPath(graph: *Graph, allocator: std.mem.Allocator, first: []const u8, last: []const u8) ![][]const u8 {
+    fn dijkstraPath(graph: *Graph, allocator: Allocator, first: []const u8, last: []const u8) ![][]const u8 {
         var dist: std.StringArrayHashMapUnmanaged(u64) = .empty;
         defer dist.deinit(allocator);
         var previous: std.StringArrayHashMapUnmanaged([]const u8) = .empty;

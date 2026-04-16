@@ -1,7 +1,8 @@
 // https://rosettacode.org/wiki/Duffinian_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 const std = @import("std");
+const Io = std.Io;
 
 fn isDuffinian(n_: anytype) bool {
     const T = @TypeOf(n_);
@@ -38,9 +39,11 @@ fn isDuffinian(n_: anytype) bool {
     return std.math.gcd(total, n_) == 1;
 }
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try stdout.writeAll("First 50 Duffinian numbers:\n");

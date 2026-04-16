@@ -1,37 +1,38 @@
 // https://rosettacode.org/wiki/Discrete_Fourier_transform
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Wren}}
 const std = @import("std");
+
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const Float = f64;
 const Complex = std.math.complex.Complex(Float);
 
-pub fn main() !void {
-    // ------------------------------------------ allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     // --------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     // ------------------------------------------- sequence
     const sequence = [_]Float{ 2, 3, 5, 7, 11 };
-    const x = try allocator.alloc(Complex, sequence.len);
-    defer allocator.free(x);
+    const x = try gpa.alloc(Complex, sequence.len);
+    defer gpa.free(x);
     for (sequence, x) |i, *xx|
         xx.* = Complex{ .re = i, .im = 0 };
     try printComplexSlice(x, "\nOriginal sequence:", stdout);
 
     // ------------------------------------------------ DFT
-    const y = try dft(allocator, x);
-    defer allocator.free(y);
+    const y = try dft(gpa, x);
+    defer gpa.free(y);
     try printComplexSlice(y, "\nAfter applying the Discrete Fourier Transform:", stdout);
 
     // ----------------------------------------------- IDFT
-    const inv = try idft(allocator, y);
-    defer allocator.free(inv);
+    const inv = try idft(gpa, y);
+    defer gpa.free(inv);
     try printComplexSlice(inv, "\nAfter applying the Inverse Discrete Fourier Transform to the above transform:", stdout);
 
     // --------------------------------------------- stdout
@@ -39,7 +40,7 @@ pub fn main() !void {
 }
 
 /// Caller owns returned memory
-fn dft(allocator: std.mem.Allocator, x: []Complex) ![]Complex {
+fn dft(allocator: Allocator, x: []Complex) ![]Complex {
     const N = x.len;
     const zero = Complex{ .re = 0, .im = 0 };
     const Nf: Float = @floatFromInt(N);
@@ -60,7 +61,7 @@ fn dft(allocator: std.mem.Allocator, x: []Complex) ![]Complex {
 }
 
 /// Caller owns returned memory
-fn idft(allocator: std.mem.Allocator, y: []Complex) ![]Complex {
+fn idft(allocator: Allocator, y: []Complex) ![]Complex {
     const N = y.len;
     const zero = Complex{ .re = 0, .im = 0 };
     const Nf: Float = @floatFromInt(N);
