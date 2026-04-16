@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Isograms_and_heterograms
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 //! This task has been designed to limit the number of dynamic (heap)
 //! allocations by performing lowercase string conversions just
@@ -7,15 +7,17 @@
 //! of any strings.
 const std = @import("std");
 
-pub fn main() !void {
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     const data = @embedFile("data/unixdict.txt");
-    // ---------------------------------------------------- allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
     // --------------------------------------------------------------
     var isogram_pairs_list: std.ArrayList(IsogramPair) = .empty;
-    defer isogram_pairs_list.deinit(allocator);
+    defer isogram_pairs_list.deinit(gpa);
 
     var it = std.mem.tokenizeScalar(u8, data, '\n');
     outer: while (it.next()) |word| {
@@ -24,10 +26,10 @@ pub fn main() !void {
             if (!std.ascii.isAlphabetic(c))
                 continue :outer;
         if (IsogramPair.init(word)) |isogram_pair|
-            try isogram_pairs_list.append(allocator, isogram_pair);
+            try isogram_pairs_list.append(gpa, isogram_pair);
     }
-    const isogram_pairs = try isogram_pairs_list.toOwnedSlice(allocator);
-    defer allocator.free(isogram_pairs);
+    const isogram_pairs = try isogram_pairs_list.toOwnedSlice(gpa);
+    defer gpa.free(isogram_pairs);
     // The pairs are already in lexicographical order as they
     // came out of the dictionary. So use a stable sort to sort
     // by:
@@ -39,7 +41,7 @@ pub fn main() !void {
     var buffer: [22]u8 = undefined;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     try stdout.writeAll("n-isograms with n > 1:\n");
 

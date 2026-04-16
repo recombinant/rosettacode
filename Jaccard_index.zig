@@ -1,6 +1,8 @@
 // https://rosettacode.org/wiki/Jaccard_index
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const JaccardIndex = struct { i: usize, u: usize };
 const JType = u16;
@@ -28,22 +30,23 @@ fn jaccardIndex(a: *const JSet, b: *const JSet) !JaccardIndex {
     return .{ .i = intersect_count, .u = union_count };
 }
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
+    // --------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-    // ------------------------------------------ Allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+
     // ----------------------------------------------- Data
-    var a: JSet = try .init(allocator, 'a', &[_]JType{});
-    var b: JSet = try .init(allocator, 'b', &[_]JType{ 1, 2, 3, 4, 5 });
-    var c: JSet = try .init(allocator, 'c', &[_]JType{ 1, 3, 5, 7, 9 });
-    var d: JSet = try .init(allocator, 'd', &[_]JType{ 2, 4, 6, 8, 10 });
-    var e: JSet = try .init(allocator, 'e', &[_]JType{ 2, 3, 5, 7 });
-    var f: JSet = try .init(allocator, 'f', &[_]JType{8});
-    defer for ([_]*JSet{ &a, &b, &c, &d, &e, &f }) |set| set.deinit(allocator);
+    var a: JSet = try .init(gpa, 'a', &[_]JType{});
+    var b: JSet = try .init(gpa, 'b', &[_]JType{ 1, 2, 3, 4, 5 });
+    var c: JSet = try .init(gpa, 'c', &[_]JType{ 1, 3, 5, 7, 9 });
+    var d: JSet = try .init(gpa, 'd', &[_]JType{ 2, 4, 6, 8, 10 });
+    var e: JSet = try .init(gpa, 'e', &[_]JType{ 2, 3, 5, 7 });
+    var f: JSet = try .init(gpa, 'f', &[_]JType{8});
+    defer for ([_]*JSet{ &a, &b, &c, &d, &e, &f }) |set| set.deinit(gpa);
     // -------------------------------- Print original data
     const isets = [_]JSet{ a, b, c, d, e, f };
     for (isets) |se|
@@ -71,7 +74,7 @@ const JSet = struct {
     id: u8,
     set: std.AutoArrayHashMapUnmanaged(JType, void),
 
-    fn init(allocator: std.mem.Allocator, id: u8, array: []const JType) !JSet {
+    fn init(allocator: Allocator, id: u8, array: []const JType) !JSet {
         var set: std.AutoArrayHashMapUnmanaged(JType, void) = .empty;
         for (array) |n|
             try set.put(allocator, n, {});
@@ -81,7 +84,7 @@ const JSet = struct {
             .set = set,
         };
     }
-    fn deinit(self: *JSet, allocator: std.mem.Allocator) void {
+    fn deinit(self: *JSet, allocator: Allocator) void {
         self.set.deinit(allocator);
     }
     fn values(self: *const JSet) []const JType {

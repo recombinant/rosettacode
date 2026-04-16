@@ -1,11 +1,13 @@
 // https://rosettacode.org/wiki/Iccanobif_primes
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
-const testing = std.testing;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try stdout.writeAll("The first 10 Iccanobif primes are:\n");
@@ -64,6 +66,8 @@ fn isPrime(n: u64) bool {
     }
     return true;
 }
+
+const testing = std.testing;
 
 test reverse {
     try testing.expectEqual(@as(u64, 123456), reverse(654321));

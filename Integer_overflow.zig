@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Integer_overflow
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 const assert = std.debug.assert;
 // To quote the Zig documentation:
@@ -11,9 +11,14 @@ const assert = std.debug.assert;
 // All of the tasks fail at compile time if implemented directly. By using Zig's overflow arithmetic those tasks that compile give the same results at the C solution.
 // It should also be noted that Zig has wraparound and saturation arithmetic too.
 
-pub fn main() !void {
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // ---------------------------------------------------------- i32
     try stdout.writeAll("For 32-bit signed integers:\n");
