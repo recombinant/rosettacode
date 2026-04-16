@@ -1,11 +1,16 @@
 // https://rosettacode.org/wiki/Burrows%E2%80%93Wheeler_transform
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // https://en.wikipedia.org/wiki/Burrows%E2%80%93Wheeler_transform
 // This code follows the wikipedia example and explanation,
 // it is not a translation of the wikipedia Python Sample.
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     const stx = std.ascii.control_code.stx;
     const etx = std.ascii.control_code.etx;
 
@@ -18,25 +23,21 @@ pub fn main() !void {
         "\x02ABC\x03",
     };
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
 
     for (strings) |s| {
         try printString(s, stx, etx, stdout);
         try stdout.writeByte('\n');
 
         try stdout.writeAll(" --> ");
-        if (try bwt(allocator, s, stx, etx)) |t| {
-            defer allocator.free(t);
+        if (try bwt(gpa, s, stx, etx)) |t| {
+            defer gpa.free(t);
             try printString(t, stx, etx, stdout);
             try stdout.writeAll("\n --> ");
 
-            const r = try ibwt(allocator, t, stx, etx);
-            defer allocator.free(r);
+            const r = try ibwt(gpa, t, stx, etx);
+            defer gpa.free(r);
             try printString(r, stx, etx, stdout);
             try stdout.writeByte('\n');
         }
@@ -47,7 +48,7 @@ pub fn main() !void {
 }
 
 /// Allocates memory for the result, which must be freed by the caller.
-fn bwt(allocator: std.mem.Allocator, s_: []const u8, stx: u8, etx: u8) !?[]const u8 {
+fn bwt(allocator: Allocator, s_: []const u8, stx: u8, etx: u8) !?[]const u8 {
     if (std.mem.indexOfAny(u8, s_, &[2]u8{ stx, etx }) != null) {
         std.log.err("string can't contain STX or ETX", .{});
         return null;
@@ -84,7 +85,7 @@ fn bwt(allocator: std.mem.Allocator, s_: []const u8, stx: u8, etx: u8) !?[]const
     return last_column;
 }
 
-fn ibwt(allocator: std.mem.Allocator, r: []const u8, stx: u8, etx: u8) ![]const u8 {
+fn ibwt(allocator: Allocator, r: []const u8, stx: u8, etx: u8) ![]const u8 {
     // create an empty table
     const table = try allocator.alloc([]u8, r.len);
     defer allocator.free(table);

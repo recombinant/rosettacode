@@ -1,27 +1,28 @@
 // https://rosettacode.org/wiki/Changeable_words
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Wren}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     const filename = "data/unixdict.txt";
     const data = @embedFile(filename);
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
     var stdout_buffer: [4096]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     var words: std.ArrayList([]const u8) = .empty;
-    defer words.deinit(allocator);
+    defer words.deinit(gpa);
 
     var it = std.mem.splitScalar(u8, data, '\n');
     while (it.next()) |word|
         if (word.len > 11)
-            try words.append(allocator, word);
+            try words.append(gpa, word);
 
     var n: usize = 0;
     try stdout.print("Changeable words in {s}:\n", .{filename});

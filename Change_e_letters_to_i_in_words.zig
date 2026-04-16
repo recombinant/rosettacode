@@ -1,30 +1,31 @@
 // https://rosettacode.org/wiki/Change_e_letters_to_i_in_words
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const WordList = std.ArrayList([]const u8);
 const WordSet = std.StringArrayHashMapUnmanaged(void);
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     // No uppercase in this.
     const text = @embedFile("data/unixdict.txt");
 
-    // ------------------------------------------------ allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
     // --------------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // ----------------------------------------------------------
 
-    const e_max_len, const e_words, var i_word_set = try populateWords(allocator, text);
-    defer i_word_set.deinit(allocator);
-    defer allocator.free(e_words);
+    const e_max_len, const e_words, var i_word_set = try populateWords(gpa, text);
+    defer i_word_set.deinit(gpa);
+    defer gpa.free(e_words);
 
-    var i_word_buffer = try allocator.alloc(u8, e_max_len);
-    defer allocator.free(i_word_buffer);
+    var i_word_buffer = try gpa.alloc(u8, e_max_len);
+    defer gpa.free(i_word_buffer);
 
     for (e_words) |e_word| {
         const i_word = i_word_buffer[0..e_word.len];
@@ -40,7 +41,7 @@ pub fn main() !void {
     try stdout.flush();
 }
 
-fn populateWords(allocator: std.mem.Allocator, text: []const u8) !struct { usize, []const []const u8, WordSet } {
+fn populateWords(allocator: Allocator, text: []const u8) !struct { usize, []const []const u8, WordSet } {
     var word_list_e: WordList = .empty;
     var word_set_i: WordSet = .empty;
     var longest_e: usize = 0;
