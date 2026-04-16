@@ -1,6 +1,7 @@
 // https://rosettacode.org/wiki/Filter
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 
 /// Returns slice of `output`
 fn filter(comptime T: type, context: anytype, output: []T, unfiltered: []const T, predicate: fn (@TypeOf(context), item: T) bool) []T {
@@ -14,7 +15,7 @@ fn filter(comptime T: type, context: anytype, output: []T, unfiltered: []const T
 }
 
 /// Caller owns returned slice and must free with `allocator`.
-fn allocFilter(comptime T: type, allocator: std.mem.Allocator, context: anytype, unfiltered: []const T, predicate: fn (@TypeOf(context), item: T) bool) ![]T {
+fn allocFilter(comptime T: type, allocator: Allocator, context: anytype, unfiltered: []const T, predicate: fn (@TypeOf(context), item: T) bool) ![]T {
     var result: std.ArrayList(T) = .empty;
     for (unfiltered) |v|
         if (predicate(context, v))
@@ -22,7 +23,9 @@ fn allocFilter(comptime T: type, allocator: std.mem.Allocator, context: anytype,
     return result.toOwnedSlice(allocator);
 }
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+
     var input = [_]u16{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
     var output: [input.len]u16 = undefined;
 
@@ -32,17 +35,13 @@ pub fn main() !void {
     const result_odd = filter(u16, false, &input, &input, isOddOrEven);
     std.debug.print("Odd numbers:  {any}\n", .{result_odd});
 
-    // ---------------------------------------------------- allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
     // --------------------------------------------------------------
     const numbers = [_]u32{
         34884, 34724, 30941, 30382, 31813,
         33777, 32849, 31747, 30822, 31826,
     };
-    const result_three = try allocFilter(u32, allocator, {}, &numbers, isDivisibleBy3);
-    defer allocator.free(result_three);
+    const result_three = try allocFilter(u32, gpa, {}, &numbers, isDivisibleBy3);
+    defer gpa.free(result_three);
     std.debug.print("Divisible by three:      {any}\n", .{result_three});
 
     const words = [_][]const u8{
@@ -50,10 +49,10 @@ pub fn main() !void {
         "lynx", "myth", "wry", "no",  "us",  "hymn", "shy",
         "try",
     };
-    const result_words = try allocFilter([]const u8, allocator, @as([]const u8, "aeiou"), &words, containsLetters);
-    defer allocator.free(result_words);
-    const printable = try std.mem.join(allocator, ", ", result_words);
-    defer allocator.free(printable);
+    const result_words = try allocFilter([]const u8, gpa, @as([]const u8, "aeiou"), &words, containsLetters);
+    defer gpa.free(result_words);
+    const printable = try std.mem.join(gpa, ", ", result_words);
+    defer gpa.free(printable);
     std.debug.print("Contains any of \"aeiou\": {s}", .{printable});
 }
 

@@ -1,14 +1,13 @@
 // https://rosettacode.org/wiki/Gradient_descent
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const print = std.debug.print;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
 
     const tolerance: f64 = 0.0000006;
     const alpha: f64 = 0.1;
@@ -16,7 +15,7 @@ pub fn main() !void {
     // Initial guesses of location of minimums
     var x = [2]f64{ 0.1, -1 };
 
-    try steepestDescent(allocator, &x, alpha, tolerance);
+    try steepestDescent(gpa, &x, alpha, tolerance);
 
     print("Testing steepest descent method\n", .{});
     print("The minimum is at x = {d:.6}, y = {d:.6} for which f(x, y) = {d:.6}\n", .{ x[0], x[1], g(&x) });
@@ -24,7 +23,7 @@ pub fn main() !void {
 
 /// Using the steepest-descent method to search
 /// for minimum values of a multi-variable function
-fn steepestDescent(allocator: std.mem.Allocator, x: []f64, alpha_: f64, tolerance: f64) !void {
+fn steepestDescent(allocator: Allocator, x: []f64, alpha_: f64, tolerance: f64) !void {
     var alpha = alpha_;
     var g0 = g(x); // Initial estimate of result.
 
@@ -70,7 +69,7 @@ fn steepestDescent(allocator: std.mem.Allocator, x: []f64, alpha_: f64, toleranc
 }
 
 /// Provides a rough calculation of gradient g(p).
-fn gradG(allocator: std.mem.Allocator, p: []const f64) ![]const f64 {
+fn gradG(allocator: Allocator, p: []const f64) ![]const f64 {
     const z: []f64 = try allocator.alloc(f64, p.len);
     const x = p[0];
     const y = p[1];

@@ -1,7 +1,8 @@
 // https://rosettacode.org/wiki/Bernstein_basis_polynomials
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 
 const print = std.debug.print;
 
@@ -56,22 +57,20 @@ fn evalMono3(a: []const f64, t: f64) f64 {
     return a[0] + (t * (a[1] + (t * (a[2] + (t * a[3])))));
 }
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
 
     var pm: std.ArrayList(f64) = .empty;
-    defer pm.deinit(allocator);
-    try pm.appendSlice(allocator, &[_]f64{ 1, 0, 0 });
+    defer pm.deinit(gpa);
+    try pm.appendSlice(gpa, &[_]f64{ 1, 0, 0 });
 
     var qm: std.ArrayList(f64) = .empty;
-    defer qm.deinit(allocator);
-    try qm.appendSlice(allocator, &[_]f64{ 1, 2, 3 });
+    defer qm.deinit(gpa);
+    try qm.appendSlice(gpa, &[_]f64{ 1, 2, 3 });
 
     var rm: std.ArrayList(f64) = .empty;
-    defer rm.deinit(allocator);
-    try rm.appendSlice(allocator, &[_]f64{ 1, 2, 3, 4 });
+    defer rm.deinit(gpa);
+    try rm.appendSlice(gpa, &[_]f64{ 1, 2, 3, 4 });
 
     var x: f64 = undefined;
     var y: f64 = undefined;
@@ -101,8 +100,8 @@ pub fn main() !void {
     print("q({d:.2}) = {d:6.2} (mono {d:6.2})\n", .{ x, y, m });
 
     print("\nSubprogram(3) examples:\n", .{});
-    try pm.append(allocator, 0);
-    try qm.append(allocator, 0);
+    try pm.append(gpa, 0);
+    try qm.append(gpa, 0);
     const pb3 = toBern3(pm.items);
     const qb3 = toBern3(qm.items);
     const rb3 = toBern3(rm.items);

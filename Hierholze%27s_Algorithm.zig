@@ -1,31 +1,31 @@
 // https://rosettacode.org/wiki/Hierholze%27s_Algorithm
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // translated from
 // https://algoteka.com/samples/41/hierholzer%2527s-eulerian-cycle-algorithm-c-plus-plus-o%2528m%2529-readable-solution
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    // ---------------------------------------------------- allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     // --------------------------------------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // --------------------------------------------------------------
-    var graph1: EulerGraph = try .init(allocator, 3);
+    var graph1: EulerGraph = try .init(gpa, 3);
     defer graph1.deinit();
     try graph1.addArc(0, 1);
     try graph1.addArc(1, 2);
     try graph1.addArc(2, 0);
 
     const result1 = try graph1.getEulerianPath(0);
-    defer allocator.free(result1);
+    defer gpa.free(result1);
     try printGraph(result1, stdout);
     try stdout.writeByte('\n');
 
-    var graph2: EulerGraph = try .init(allocator, 7);
+    var graph2: EulerGraph = try .init(gpa, 7);
     defer graph2.deinit();
     try graph2.addArc(0, 1);
     try graph2.addArc(0, 6);
@@ -39,14 +39,14 @@ pub fn main() !void {
     try graph2.addArc(6, 4);
 
     const result2 = try graph2.getEulerianPath(0);
-    defer allocator.free(result2);
+    defer gpa.free(result2);
     try printGraph(result2, stdout);
     try stdout.writeByte('\n');
     //
     try stdout.flush();
 }
 
-fn printGraph(vertices: []usize, w: *std.Io.Writer) !void {
+fn printGraph(vertices: []usize, w: *Io.Writer) !void {
     for (vertices, 1..) |vertex, i| {
         try w.print("{}", .{vertex});
         if (i != vertices.len)
@@ -55,7 +55,7 @@ fn printGraph(vertices: []usize, w: *std.Io.Writer) !void {
 }
 
 const EulerGraph = struct {
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
     nodes: []Node,
     arc_pool: ArcPool,
 
@@ -75,28 +75,28 @@ const EulerGraph = struct {
                 .arcs = .empty,
             };
         }
-        fn deinit(self: *Node, allocator: std.mem.Allocator) void {
+        fn deinit(self: *Node, allocator: Allocator) void {
             self.arcs.deinit(allocator);
         }
     };
-    fn init(allocator: std.mem.Allocator, num_nodes: usize) !EulerGraph {
+    fn init(allocator: Allocator, num_nodes: usize) !EulerGraph {
         const nodes = try allocator.alloc(Node, num_nodes);
         for (nodes, 0..) |*node, i|
             node.* = .init(i);
         return .{
             .allocator = allocator,
             .nodes = nodes,
-            .arc_pool = .init(std.heap.page_allocator),
+            .arc_pool = .empty,
         };
     }
     fn deinit(self: *EulerGraph) void {
         for (self.nodes) |*node|
             node.deinit(self.allocator);
         self.allocator.free(self.nodes);
-        self.arc_pool.deinit();
+        self.arc_pool.deinit(std.heap.page_allocator);
     }
     fn addArc(self: *EulerGraph, u: u16, v: u16) !void {
-        const arc_ptr = try self.arc_pool.create();
+        const arc_ptr = try self.arc_pool.create(std.heap.page_allocator);
         arc_ptr.* = Arc{ .u = u, .v = v };
         try self.nodes[u].arcs.append(self.allocator, arc_ptr);
     }
@@ -135,20 +135,20 @@ const EulerGraph = struct {
 const NodeStackUnmanaged = struct {
     stack: std.ArrayList(usize),
 
-    fn init(allocator: std.mem.Allocator, start: usize) !NodeStackUnmanaged {
+    fn init(allocator: Allocator, start: usize) !NodeStackUnmanaged {
         var stack: std.ArrayList(usize) = .empty;
         try stack.append(allocator, start);
         return NodeStackUnmanaged{
             .stack = stack,
         };
     }
-    fn deinit(self: *NodeStackUnmanaged, allocator: std.mem.Allocator) void {
+    fn deinit(self: *NodeStackUnmanaged, allocator: Allocator) void {
         self.stack.deinit(allocator);
     }
     fn size(self: *const NodeStackUnmanaged) usize {
         return self.stack.items.len;
     }
-    fn push(self: *NodeStackUnmanaged, allocator: std.mem.Allocator, node: usize) !void {
+    fn push(self: *NodeStackUnmanaged, allocator: Allocator, node: usize) !void {
         try self.stack.append(allocator, node);
     }
     fn pop(self: *NodeStackUnmanaged) void {

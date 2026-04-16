@@ -1,22 +1,21 @@
 // https://rosettacode.org/wiki/Gamma_function
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 
 const print = std.debug.print;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
 
     // estimate the gamma function with 1, 4, and 10 coefficients
-    const coeff1 = try calculateCoefficients(allocator, 1);
-    const coeff4 = try calculateCoefficients(allocator, 4);
-    const coeff10 = try calculateCoefficients(allocator, 10);
-    defer allocator.free(coeff1);
-    defer allocator.free(coeff4);
-    defer allocator.free(coeff10);
+    const coeff1 = try calculateCoefficients(gpa, 1);
+    const coeff4 = try calculateCoefficients(gpa, 4);
+    const coeff10 = try calculateCoefficients(gpa, 10);
+    defer gpa.free(coeff1);
+    defer gpa.free(coeff4);
+    defer gpa.free(coeff10);
 
     const inputs = [_]f64{
         0.001, 0.01, 0.1, 0.5, 1.0, //
@@ -52,7 +51,7 @@ pub fn main() !void {
 
 /// Calculate the coefficients used by Spouge's approximation (based on the C implementation)
 /// Caller owns returned memory.
-fn calculateCoefficients(allocator: std.mem.Allocator, num_coeff: usize) ![]f64 {
+fn calculateCoefficients(allocator: Allocator, num_coeff: usize) ![]f64 {
     const f_num_coeff: f64 = @floatFromInt(num_coeff);
     var c = try allocator.alloc(f64, num_coeff);
     var k1_factrl: f64 = 1.0;

@@ -1,20 +1,21 @@
 // https://rosettacode.org/wiki/Hamming_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 const Int = std.math.big.int.Managed;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     // ----------------------------------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // ----------------------------------------------------------
 
     for (1..21) |i| {
-        var h = try hamming(allocator, i);
+        var h = try hamming(gpa, i);
         _ = try h.format(stdout);
         try stdout.writeByte(' ');
         h.deinit();
@@ -22,20 +23,20 @@ pub fn main() !void {
     try stdout.writeByte('\n');
     try stdout.flush();
 
-    var h2 = try hamming(allocator, 1691);
+    var h2 = try hamming(gpa, 1691);
     _ = try h2.format(stdout);
     try stdout.writeByte('\n');
     h2.deinit();
     try stdout.flush();
 
-    var h3 = try hamming(allocator, 1_000_000);
+    var h3 = try hamming(gpa, 1_000_000);
     _ = try h3.format(stdout);
     try stdout.writeByte('\n');
     h3.deinit();
     try stdout.flush();
 }
 
-fn hamming(allocator: std.mem.Allocator, limit: usize) !Int {
+fn hamming(allocator: Allocator, limit: usize) !Int {
     var _2: Int = try .initSet(allocator, 2);
     var _3: Int = try .initSet(allocator, 3);
     var _5: Int = try .initSet(allocator, 5);

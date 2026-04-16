@@ -1,14 +1,13 @@
 // https://rosettacode.org/wiki/Hofstadter_Figure-Figure_sequences
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
 
-    var figure_sequence = try FigureSequence(u16).init(allocator);
+    var figure_sequence = try FigureSequence(u16).init(gpa);
     defer figure_sequence.deinit();
 
     // task 3
@@ -29,13 +28,13 @@ pub fn main() !void {
 
 fn FigureSequence(T: type) type {
     return struct {
-        allocator: std.mem.Allocator,
+        allocator: Allocator,
         // task 1, 2
         r: std.ArrayList(T),
         s: std.ArrayList(T),
 
         const Self = @This();
-        fn init(allocator: std.mem.Allocator) !Self {
+        fn init(allocator: Allocator) !Self {
             var r: std.ArrayList(T) = .empty;
             var s: std.ArrayList(T) = .empty;
             try r.appendSlice(allocator, &[2]T{ 0, 1 });

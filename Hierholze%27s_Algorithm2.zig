@@ -1,33 +1,34 @@
 // https://rosettacode.org/wiki/Hierholze%27s_Algorithm
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 
 // Copied and refactored from rosettacode
 const std = @import("std");
 
-pub fn main() !void {
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     // --------------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-    // ------------------------------------------------ allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
     // ----------------------------------------------------------
 
     // First adjacency list
-    var adj1 = try allocator.alloc([]const u16, 3);
-    defer allocator.free(adj1);
+    var adj1 = try gpa.alloc([]const u16, 3);
+    defer gpa.free(adj1);
 
     adj1[0] = &[_]u16{1};
     adj1[1] = &[_]u16{2};
     adj1[2] = &[_]u16{0};
-    try printCircuit(allocator, adj1, stdout);
+    try printCircuit(gpa, adj1, stdout);
 
     // Second adjacency list
-    var adj2 = try allocator.alloc([]const u16, 7);
-    defer allocator.free(adj2);
+    var adj2 = try gpa.alloc([]const u16, 7);
+    defer gpa.free(adj2);
 
     adj2[0] = &[_]u16{ 1, 6 };
     adj2[1] = &[_]u16{2};
@@ -36,12 +37,12 @@ pub fn main() !void {
     adj2[4] = &[_]u16{ 2, 5 };
     adj2[5] = &[_]u16{0};
     adj2[6] = &[_]u16{4};
-    try printCircuit(allocator, adj2, stdout);
+    try printCircuit(gpa, adj2, stdout);
 
     try stdout.flush();
 }
 
-fn printCircuit(allocator: std.mem.Allocator, adj: []const []const u16, w: *std.Io.Writer) !void {
+fn printCircuit(allocator: Allocator, adj: []const []const u16, w: *Io.Writer) !void {
     // adj represents the adjacency list of the directed graph
     // edge_count represents the number of edges emerging from a vertex
     var edge_count: std.AutoHashMapUnmanaged(u16, u16) = .empty;
