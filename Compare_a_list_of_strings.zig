@@ -1,8 +1,10 @@
 // https://rosettacode.org/wiki/Compare_a_list_of_strings
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // from https://github.com/tiehuis/zig-rosetta
 const std = @import("std");
+
+const Io = std.Io;
 
 fn stringsAreEqual(list: []const []const u8) bool {
     for (list) |s|
@@ -20,7 +22,9 @@ fn stringsAreInAscendingOrder(list: []const []const u8) bool {
     return true;
 }
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     const lists = &[_][]const []const u8{
         &[_][]const u8{ "AA", "BB", "CC" },
         &[_][]const u8{ "AA", "AA", "AA" },
@@ -30,7 +34,7 @@ pub fn main() !void {
     };
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     for (lists) |list| {

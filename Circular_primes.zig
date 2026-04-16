@@ -1,30 +1,32 @@
 // https://rosettacode.org/wiki/Circular_primes
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
+
+// TODO: second task not implemented
 
 // Copied from rosettacode
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-// todo: second task not implemented
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
 
-pub fn main() !void {
-    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
+    const arena: *std.heap.ArenaAllocator = init.arena;
+    const allocator: Allocator = arena.allocator();
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var candidates: std.PriorityQueue(u32, void, orderU32) = .init(allocator, {});
-    defer candidates.deinit();
+    var candidates: std.PriorityQueue(u32, void, orderU32) = .empty;
+    defer candidates.deinit(allocator);
 
     try stdout.writeAll("The circular primes are:\n");
     try stdout.print("{:10}" ** 4, .{ 2, 3, 5, 7 });
 
     var c: u32 = 4;
-    try candidates.add(0);
-    while (true) {
-        const n = candidates.remove();
+    try candidates.push(allocator, 0);
+    while (candidates.pop()) |n| {
         if (n > 1_000_000)
             break;
         if (n > 10 and circular(n)) {
@@ -33,10 +35,10 @@ pub fn main() !void {
             if (c % 10 == 0)
                 try stdout.writeByte('\n');
         }
-        try candidates.add(10 * n + 1);
-        try candidates.add(10 * n + 3);
-        try candidates.add(10 * n + 7);
-        try candidates.add(10 * n + 9);
+        try candidates.push(allocator, 10 * n + 1);
+        try candidates.push(allocator, 10 * n + 3);
+        try candidates.push(allocator, 10 * n + 7);
+        try candidates.push(allocator, 10 * n + 9);
     }
     try stdout.writeByte('\n');
 

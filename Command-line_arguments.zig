@@ -1,22 +1,23 @@
 // https://rosettacode.org/wiki/Command-line_arguments
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    const gpa: Allocator = init.gpa;
+    const args = init.minimal.args;
     // ------------------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-    // ---------------------------------------------------- allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
     // ---------------------------------------------------
-    var args = try std.process.argsWithAllocator(allocator);
-    defer args.deinit();
+    var it = try args.iterateAllocator(gpa);
+    defer it.deinit();
     //
     var i: usize = 0;
-    while (args.next()) |arg| {
+    while (it.next()) |arg| {
         try stdout.print("arg {}: {s}\n", .{ i, arg });
         i += 1;
     }
