@@ -1,13 +1,19 @@
 // https://rosettacode.org/wiki/Anagrams/Deranged_anagrams
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
+const std = @import("std");
+const Io = std.Io;
+const Allocator = std.mem.Allocator;
 
-pub fn main() !void {
+const mem = std.mem;
+const sort = std.sort;
+
+const assert = std.debug.assert;
+
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     const text = @embedFile("unixdict.txt");
-
-    // allocator ------------------------------------------
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
 
     // anagram table --------------------------------------
     const Anagrams = std.ArrayList([]const u8);
@@ -17,41 +23,41 @@ pub fn main() !void {
     defer {
         var it = anagram_table.iterator();
         while (it.next()) |entry| {
-            allocator.free(entry.key_ptr.*);
-            entry.value_ptr.deinit(allocator);
+            gpa.free(entry.key_ptr.*);
+            entry.value_ptr.deinit(gpa);
         }
-        anagram_table.deinit(allocator);
+        anagram_table.deinit(gpa);
     }
 
     // Populate anagram table -----------------------------
     {
         var it = mem.splitScalar(u8, text, '\n');
         while (it.next()) |word| {
-            const key = try allocator.dupe(u8, word);
+            const key = try gpa.dupe(u8, word);
             // word letters are sorted to create key
             std.mem.sortUnstable(u8, key, {}, sort.asc(u8));
 
-            const gop = try anagram_table.getOrPut(allocator, key);
+            const gop = try anagram_table.getOrPut(gpa, key);
             if (gop.found_existing)
-                allocator.free(key)
+                gpa.free(key)
             else
                 gop.value_ptr.* = .empty;
 
-            try gop.value_ptr.append(allocator, word);
+            try gop.value_ptr.append(gpa, word);
         }
     }
 
     // Eliminate solo words -------------------------------
     {
         var remove_keys: Anagrams = .empty;
-        defer remove_keys.deinit(allocator);
+        defer remove_keys.deinit(gpa);
 
         // Find the keys to delete.
         var it = anagram_table.iterator();
         while (it.next()) |kv| {
             const len = kv.value_ptr.items.len;
             if (len < 2)
-                try remove_keys.append(allocator, kv.key_ptr.*);
+                try remove_keys.append(gpa, kv.key_ptr.*);
         }
 
         // Remove the key/value pairs where there is only one word.
@@ -61,14 +67,14 @@ pub fn main() !void {
             assert(mem.eql(u8, kv.key_ptr.*, key));
             const b = anagram_table.remove(key);
             assert(b);
-            array_list.deinit(allocator);
-            allocator.free(key);
+            array_list.deinit(gpa);
+            gpa.free(key);
         }
     }
 
     const Pairs = std.ArrayList([2][]const u8);
     var deranged_pairs: Pairs = .empty;
-    defer deranged_pairs.deinit(allocator);
+    defer deranged_pairs.deinit(gpa);
 
     // Find deranged anagrams -----------------------------
     {
@@ -85,7 +91,7 @@ pub fn main() !void {
                             max_word_length = wlen;
                             deranged_pairs.clearRetainingCapacity();
                         }
-                        try deranged_pairs.append(allocator, .{ a, b });
+                        try deranged_pairs.append(gpa, .{ a, b });
                     };
             }
         }
@@ -93,7 +99,7 @@ pub fn main() !void {
 
     // Output deranged pairs to buffered stdout -----------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     for (deranged_pairs.items) |pair|
@@ -108,8 +114,3 @@ fn isDeranged(a: []const u8, b: []const u8) bool {
             return false;
     return true;
 }
-
-const std = @import("std");
-const assert = std.debug.assert;
-const mem = std.mem;
-const sort = std.sort;
