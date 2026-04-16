@@ -150,11 +150,11 @@ const PostfixTokenArray = struct {
     const empty: PostfixTokenArray = .{
         .result = .empty,
     };
-    fn deinit(self: *PostfixTokenArray, allocator: std.mem.Allocator) void {
+    fn deinit(self: *PostfixTokenArray, allocator: Allocator) void {
         self.result.deinit(allocator);
     }
     /// Convert InfixToken to PostfixToken.
-    fn append(self: *PostfixTokenArray, allocator: std.mem.Allocator, infix_token: InfixToken) !void {
+    fn append(self: *PostfixTokenArray, allocator: Allocator, infix_token: InfixToken) !void {
         const postfix_token: PostfixToken = switch (infix_token) {
             .serial => PostfixToken.serial,
             .parallel => PostfixToken.parallel,

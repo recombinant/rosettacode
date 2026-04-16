@@ -1,6 +1,7 @@
 // https://rosettacode.org/wiki/Ludic_numbers
 // {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
 pub fn main(init: std.process.Init) !void {
@@ -48,7 +49,7 @@ pub fn main(init: std.process.Init) !void {
 
 /// Return all the Ludic numbers up to `limit` using brute force sieve.
 /// Allocates memory for the result, which must be freed by the caller.
-fn getLudicNumbers(gpa: std.mem.Allocator, limit: usize) ![]usize {
+fn getLudicNumbers(gpa: Allocator, limit: usize) ![]usize {
     var ludic_list: std.ArrayList(usize) = .empty;
     defer ludic_list.deinit(gpa);
     try ludic_list.append(gpa, 1); // first ludic number

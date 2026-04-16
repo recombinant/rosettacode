@@ -110,7 +110,7 @@ fn createKey(allocator: Allocator, random: std.Random, size: usize) ![]const u8 
     return candidates.swapRemove(idx);
 }
 
-fn encrypt(allocator: std.mem.Allocator, plain_text: []const u8, polybius: PolybiusSquare, key: []const u8) ![]const u8 {
+fn encrypt(allocator: Allocator, plain_text: []const u8, polybius: PolybiusSquare, key: []const u8) ![]const u8 {
     // Create the fractionated text.
     var code_array: std.ArrayList(u8) = .empty;
     for (plain_text) |letter|
@@ -146,7 +146,7 @@ fn encrypt(allocator: std.mem.Allocator, plain_text: []const u8, polybius: Polyb
 }
 
 fn decrypt(
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
     encrypted_text: []const u8,
     polybius: PolybiusSquare,
     key: []const u8,

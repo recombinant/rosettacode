@@ -28,7 +28,7 @@ pub fn main(init: std.process.Init) !void {
     try stdout.flush();
 }
 
-fn count(allocator: std.mem.Allocator, amount: u32, coins: []const u8) !u128 {
+fn count(allocator: Allocator, amount: u32, coins: []const u8) !u128 {
     const ways = try allocator.alloc(u128, amount + 1);
     defer allocator.free(ways);
     @memset(ways, 0);
@@ -50,7 +50,7 @@ fn countRecursive(sum: u32, coins: []const u8) u32 {
 }
 
 /// This is apparently the faster method in Python.
-fn countFast(allocator: std.mem.Allocator, amount: u32, coins_: []const u8) !u128 {
+fn countFast(allocator: Allocator, amount: u32, coins_: []const u8) !u128 {
     const coins = blk: {
         var array: std.ArrayList(u8) = .empty;
         for (coins_) |coin|

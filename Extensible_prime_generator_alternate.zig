@@ -29,6 +29,7 @@
 // than using an indirection (e.g. linked list of integer cells)
 //
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 
 pub fn PrimeGen(comptime T: type) type {
     assertInt(T);
@@ -37,7 +38,7 @@ pub fn PrimeGen(comptime T: type) type {
         const Sieve = std.ArrayList(ArrayList(T));
 
         sieve: Sieve,
-        allocator: std.mem.Allocator,
+        allocator: Allocator,
         count: usize,
         candidate: T,
         rt: SqrtType(T),
@@ -62,7 +63,7 @@ pub fn PrimeGen(comptime T: type) type {
             unreachable;
         }
 
-        pub fn init(alloc: std.mem.Allocator) Self {
+        pub fn init(alloc: Allocator) Self {
             return Self{
                 .count = 0,
                 .sieve = .empty,

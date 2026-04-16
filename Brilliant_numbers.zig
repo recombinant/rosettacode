@@ -1,13 +1,15 @@
 // https://rosettacode.org/wiki/Brilliant_numbers
 // {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
 pub fn main(init: std.process.Init) !void {
     const io: Io = init.io;
+    const gpa: Allocator = init.gpa;
 
     try main1(io); // Brute force
-    try main2(io);
+    try main2(io, gpa); // Using a prime generator
 }
 
 fn main1(io: Io) !void {
@@ -142,7 +144,7 @@ fn FactorChecker(comptime T: type) type {
 const PrimeGen = @import("Extensible_prime_generator_alternate.zig").PrimeGen;
 const AutoSieveType = @import("Extensible_prime_generator_alternate.zig").AutoSieveType;
 
-fn main2(io: Io) !void {
+fn main2(io: Io, gpa: Allocator) !void {
     var t0: Io.Timestamp = .now(io, .real);
 
     var stdout_buffer: [1024]u8 = undefined;
@@ -152,23 +154,19 @@ fn main2(io: Io) !void {
     const max_prime = 1_000_000_000;
     // var maximum = math.powi(u64, 10, 12);
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
-    const primes_by_digits: []const []const u64 = try getPrimesByDigits(allocator, max_prime);
+    const primes_by_digits: []const []const u64 = try getPrimesByDigits(gpa, max_prime);
     defer {
-        for (primes_by_digits) |primes| allocator.free(primes);
-        allocator.free(primes_by_digits);
+        for (primes_by_digits) |primes| gpa.free(primes);
+        gpa.free(primes_by_digits);
     }
     // --------------------------------
     try stdout.print("\nFirst 100 brilliant numbers:\n", .{});
     var brilliant_numbers: std.ArrayList(u64) = .empty;
-    defer brilliant_numbers.deinit(allocator);
+    defer brilliant_numbers.deinit(gpa);
     for (primes_by_digits) |primes| {
         for (primes, 0..) |p1, i|
             for (primes[i..]) |p2|
-                try brilliant_numbers.append(allocator, p1 * p2);
+                try brilliant_numbers.append(gpa, p1 * p2);
         if (brilliant_numbers.items.len >= 100)
             break;
     }
@@ -221,7 +219,7 @@ fn getBrilliant(primes_by_digits: []const []const u64, digits: usize) !struct { 
 }
 
 /// Load all the necessary primes using a prime generator.
-fn getPrimesByDigits(allocator: std.mem.Allocator, comptime max_prime: u64) ![]const []const u64 {
+fn getPrimesByDigits(allocator: Allocator, comptime max_prime: u64) ![]const []const u64 {
     const T = AutoSieveType(max_prime);
     var primegen: PrimeGen(T) = .init(allocator);
     defer primegen.deinit();

@@ -38,7 +38,7 @@ pub fn main(init: std.process.Init) !void {
 
 /// Caller owns returned slice memory.
 /// `points` may be reordered.
-fn grahamScan(allocator: std.mem.Allocator, points: []Point) ![]Point {
+fn grahamScan(allocator: Allocator, points: []Point) ![]Point {
     if (points.len < 3) return try allocator.dupe(Point, points);
 
     const first_point = blk: {

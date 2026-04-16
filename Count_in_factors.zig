@@ -11,9 +11,9 @@ fn Primes(comptime T: type) type {
         const Self = @This();
 
         primes: std.ArrayList(T),
-        allocator: std.mem.Allocator,
+        allocator: Allocator,
 
-        fn init(allocator: std.mem.Allocator) !Self {
+        fn init(allocator: Allocator) !Self {
             var primes: std.ArrayList(T) = try .initCapacity(allocator, 2);
             try primes.append(allocator, 2);
             try primes.append(allocator, 3);

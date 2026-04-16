@@ -146,10 +146,10 @@ pub fn StackUnmanaged(comptime T: type) type {
         pub const empty: Self = .{
             .stack = .empty,
         };
-        pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
+        pub fn deinit(self: *Self, allocator: Allocator) void {
             self.stack.deinit(allocator);
         }
-        pub fn push(self: *Self, allocator: std.mem.Allocator, node: T) !void {
+        pub fn push(self: *Self, allocator: Allocator, node: T) !void {
             return try self.stack.append(allocator, node);
         }
         pub fn pop(self: *Self) T {

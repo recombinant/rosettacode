@@ -38,7 +38,7 @@ pub fn main(init: std.process.Init) !void {
 const Bifid = struct {
     polybius: *const [25:0]u8,
 
-    fn encrypt(self: *const Bifid, allocator: std.mem.Allocator, message: []const u8) ![]const u8 {
+    fn encrypt(self: *const Bifid, allocator: Allocator, message: []const u8) ![]const u8 {
         var encrypted: std.ArrayList(u8) = try .initCapacity(allocator, message.len);
 
         var converted = blk: {
@@ -68,7 +68,7 @@ const Bifid = struct {
         return try encrypted.toOwnedSlice(allocator);
     }
 
-    fn decrypt(self: *const Bifid, allocator: std.mem.Allocator, message: []const u8) ![]const u8 {
+    fn decrypt(self: *const Bifid, allocator: Allocator, message: []const u8) ![]const u8 {
         var decrypted: std.ArrayList(u8) = try .initCapacity(allocator, message.len);
 
         var collected: std.ArrayList(u5) = try .initCapacity(allocator, 2 * message.len);
