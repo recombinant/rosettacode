@@ -1,7 +1,9 @@
 // https://rosettacode.org/wiki/Jaro-Winkler_distance
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const WD = struct {
     word: []const u8,
@@ -21,16 +23,12 @@ const WD = struct {
     }
 };
 
-pub fn main() !void {
-    // var gpa: std.heap.DebugAllocator(.{}) = .init;
-    // defer _ = gpa.deinit();
-    // const allocator = gpa.allocator();
-    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
+pub fn main(init: std.process.Init) !void {
+    const allocator: Allocator = init.arena.allocator();
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     var jw: JaroWinkler = try .init(allocator);
@@ -53,10 +51,10 @@ pub fn main() !void {
 }
 
 const JaroWinkler = struct {
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
     words: [][]const u8,
 
-    fn init(allocator: std.mem.Allocator) !JaroWinkler {
+    fn init(allocator: Allocator) !JaroWinkler {
         return JaroWinkler{
             .allocator = allocator,
             .words = try loadDictionary(allocator),
@@ -138,7 +136,7 @@ const JaroWinkler = struct {
     }
 };
 
-fn loadDictionary(allocator: std.mem.Allocator) ![][]const u8 {
+fn loadDictionary(allocator: Allocator) ![][]const u8 {
     const lw = @embedFile("data/linuxwords.txt");
 
     var words_array: std.ArrayList([]const u8) = .empty;

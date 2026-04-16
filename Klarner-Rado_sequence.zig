@@ -1,18 +1,21 @@
 // https://rosettacode.org/wiki/Klarner-Rado_sequence
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stderr_buffer: [1024]u8 = undefined;
-    var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
+    var stderr_writer = Io.File.stderr().writer(io, &stderr_buffer);
     const stderr = &stderr_writer.interface;
 
     var stdout_buffer: [128]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var t0: std.time.Timer = try .start();
+    var t0: Io.Timestamp = .now(io, .real);
 
     const kr = klarnerRado(1_000_000);
 
@@ -30,7 +33,7 @@ pub fn main() !void {
         try stdout.print("The {}{s} element: {d}\n", .{ limit, if (limit == 1) "st" else "th", kr[limit - 1] });
     try stdout.flush();
 
-    try stderr.print("\nprocessed in {D}\n", .{t0.read()});
+    try stderr.print("\nprocessed in {f}\n", .{t0.untilNow(io, .real)});
     try stderr.flush();
 }
 

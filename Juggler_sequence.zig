@@ -1,22 +1,23 @@
 // https://rosettacode.org/wiki/Juggler_sequence
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const Int = std.math.big.int.Managed;
 
-pub fn main() !void {
-    // --------------------------------------------------- allocators
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     // --------------------------------------------------------------
     var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
     const arena_allocator = arena.allocator();
     // --------------------------------------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     {
@@ -24,7 +25,7 @@ pub fn main() !void {
         try stdout.writeAll("-----------------------------------\n");
         var n: u8 = 20;
         while (n < 40) : (n += 1) {
-            const count, const max_count, var max = try juggler(allocator, n);
+            const count, const max_count, var max = try juggler(gpa, n);
             const s = try max.toString(arena_allocator, 10, .lower);
             try stdout.print("{d}    {d:2}   {d:2}    {s}\n", .{ n, count, max_count, s });
             try stdout.flush();
@@ -45,7 +46,7 @@ pub fn main() !void {
         try stdout.writeAll("      n        l[n]   i[n]   d[n]\n");
         try stdout.writeAll("-------------------------------------\n");
         for (nums) |n| {
-            const count, const max_count, var max = try juggler(allocator, n);
+            const count, const max_count, var max = try juggler(gpa, n);
             const s = try max.toString(arena_allocator, 10, .lower);
             try stdout.print("{d:11}    {d:3}    {d:3}    {d}\n", .{ n, count, max_count, s.len });
             try stdout.flush();
@@ -55,7 +56,7 @@ pub fn main() !void {
     }
     try stdout.flush();
 }
-fn juggler(allocator: std.mem.Allocator, n: anytype) !struct { usize, usize, Int } {
+fn juggler(allocator: Allocator, n: anytype) !struct { usize, usize, Int } {
     const T = @TypeOf(n);
     if (@typeInfo(T) != .int or @typeInfo(T).int.signedness != .unsigned)
         @compileError("juggler() expected unsigned integer argument, found " ++ @typeName(T));

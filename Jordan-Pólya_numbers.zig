@@ -1,18 +1,20 @@
 // https://rosettacode.org/wiki/Jordan-Pólya_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 
-pub fn main() !void {
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
-    const v = try jordanPolya(allocator, 1 << 53);
-    defer allocator.free(v);
+    const v = try jordanPolya(gpa, 1 << 53);
+    defer gpa.free(v);
 
     try stdout.writeAll("First 50 Jordan-Pólya numbers:\n");
     for (v[0..50], 1..) |jp, i| {
@@ -28,8 +30,8 @@ pub fn main() !void {
     for (targets) |target| {
         const t1 = v[target - 1];
         try stdout.print("The {d}th Jordan-Pólya number is : {d}\n", .{ target, t1 });
-        const w = try decompose(allocator, t1, 0);
-        defer allocator.free(w);
+        const w = try decompose(gpa, t1, 0);
+        defer gpa.free(w);
         var x_print = false;
         var count: usize = 1;
         var t = w[0];
@@ -96,7 +98,7 @@ fn findNearestInArray(a: []u64, n: u64) usize {
     return r;
 }
 
-fn jordanPolya(allocator: std.mem.Allocator, limit: u64) ![]u64 {
+fn jordanPolya(allocator: Allocator, limit: u64) ![]u64 {
     var res: std.ArrayList(u64) = .empty;
     const ix = findNearestFact(limit);
 
@@ -127,7 +129,7 @@ fn jordanPolya(allocator: std.mem.Allocator, limit: u64) ![]u64 {
     return res.toOwnedSlice(allocator);
 }
 
-fn decompose(allocator: std.mem.Allocator, n: u64, start_: usize) ![]usize {
+fn decompose(allocator: Allocator, n: u64, start_: usize) ![]usize {
     var start = if (start_ == 0)
         factorials.len
     else
