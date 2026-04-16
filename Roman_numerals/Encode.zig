@@ -1,15 +1,15 @@
 // https://rosettacode.org/wiki/Roman_numerals/Encode
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    // ------------------------------------------ allocator
-    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     // --------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // ----------------------------------------------------
 
@@ -23,8 +23,8 @@ pub fn main() !void {
     };
 
     for (sample_numbers) |number| {
-        const r = try encode(allocator, number);
-        defer allocator.free(r);
+        const r = try encode(gpa, number);
+        defer gpa.free(r);
         try stdout.print("{d:4}: {s}\n", .{ number, r });
     }
 
@@ -32,7 +32,7 @@ pub fn main() !void {
 }
 
 // Caller owns returned memory slice.
-fn encode(allocator: std.mem.Allocator, n_: u16) ![]const u8 {
+fn encode(allocator: Allocator, n_: u16) ![]const u8 {
     const pairs = comptime [_]struct { roman: []const u8, arabic: u16 }{
         .{ .roman = "M", .arabic = 1000 }, .{ .roman = "CM", .arabic = 900 },
         .{ .roman = "D", .arabic = 500 },  .{ .roman = "CD", .arabic = 400 },
@@ -58,7 +58,7 @@ fn encode(allocator: std.mem.Allocator, n_: u16) ![]const u8 {
 
 const testing = std.testing;
 
-fn testEncode(allocator: std.mem.Allocator, roman: u16, arabic: []const u8) !void {
+fn testEncode(allocator: Allocator, roman: u16, arabic: []const u8) !void {
     const actual = try encode(allocator, roman);
     try testing.expectEqualStrings(arabic, actual);
     allocator.free(actual);
