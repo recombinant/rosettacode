@@ -1,15 +1,18 @@
 // https://rosettacode.org/wiki/Horizontal_sundial_calculations
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    const lat = try getNumber("Enter latitude       => ", stdout);
-    const lon = try getNumber("Enter longitude      => ", stdout);
-    const ref = try getNumber("Enter legal meridian => ", stdout);
+    const lat = try getNumber(io, "Enter latitude       => ", stdout);
+    const lon = try getNumber(io, "Enter longitude      => ", stdout);
+    const ref = try getNumber(io, "Enter legal meridian => ", stdout);
     const slat = @sin(std.math.degreesToRadians(lat));
     const diff = lon - ref;
 
@@ -31,15 +34,15 @@ pub fn main() !void {
     try stdout.flush();
 }
 
-fn getNumber(prompt: []const u8, stdout: *std.Io.Writer) !f64 {
+fn getNumber(io: Io, prompt: []const u8, stdout: *Io.Writer) !f64 {
     var stdin_buffer: [512]u8 = undefined;
-    var stdin_reader = std.fs.File.stdin().reader(&stdin_buffer);
+    var stdin_reader = Io.File.stdin().reader(io, &stdin_buffer);
     const stdin = &stdin_reader.interface;
 
     const len = 7 + 2; // max -360.00 with CRLF
 
     var buf: [len]u8 = undefined;
-    var w: std.Io.Writer = .fixed(&buf);
+    var w: Io.Writer = .fixed(&buf);
 
     while (true) {
         _ = w.consumeAll();

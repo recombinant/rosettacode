@@ -1,21 +1,22 @@
 // https://rosettacode.org/wiki/Hofstadter-Conway_$10,000_sequence
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     var a: std.ArrayList(u32) = .empty;
-    defer a.deinit(allocator);
+    defer a.deinit(gpa);
 
-    try a.appendSlice(allocator, &[3]u32{ 0, 1, 1 }); // ignore 0 element. work 1 based.
+    try a.appendSlice(gpa, &[3]u32{ 0, 1, 1 }); // ignore 0 element. work 1 based.
     var x: u32 = 1; // last number in list
     var n: usize = 2; // index of last number in list = a.len - 1
     var mallows: usize = 0;
@@ -25,7 +26,7 @@ pub fn main() !void {
         while (n < next_pot) {
             n = a.items.len; // advance n
             x = a.items[x] + a.items[n - x];
-            try a.append(allocator, x);
+            try a.append(gpa, x);
             const f = @as(f64, @floatFromInt(x)) / @as(f64, @floatFromInt(n));
             if (f > max) max = f;
             if (f >= 0.55) mallows = n;

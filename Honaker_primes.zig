@@ -1,22 +1,23 @@
 // https://rosettacode.org/wiki/Honaker_primes
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 // https://rosettacode.org/wiki/Extensible_prime_generator
 const PrimeGen = @import("sieve.zig").PrimeGen;
 
-pub fn main() !void {
-    var t0: std.time.Timer = try .start();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+    var t0: Io.Timestamp = .now(io, .real);
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var it: HonakerPrimeIterator = .init(allocator);
+    var it: HonakerPrimeIterator = .init(gpa);
     defer it.deinit();
 
     const task1 = 50;
@@ -43,7 +44,7 @@ pub fn main() !void {
     try stdout.writeByte('\n');
     try stdout.flush();
 
-    std.log.info("processed in {D}", .{t0.read()});
+    std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 }
 
 fn sumDigits(n_: u64) u64 {
@@ -61,7 +62,7 @@ const HonakerPrimeIterator = struct {
     primegen: PrimeGen(u64),
     index: u64 = 1,
 
-    fn init(allocator: std.mem.Allocator) HonakerPrimeIterator {
+    fn init(allocator: Allocator) HonakerPrimeIterator {
         return HonakerPrimeIterator{
             .primegen = .init(allocator),
         };
