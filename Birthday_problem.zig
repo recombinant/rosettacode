@@ -43,7 +43,6 @@ fn BirthdayProblem(comptime options: BirthdayProblemOptions) type {
     return struct {
         const Self = @This();
         const DAYS = 365;
-        const stderr_buffer: [0]u8 = undefined;
         days: [DAYS]usize = undefined,
         random: std.Random,
         stderr: ?Io.File.Writer,
@@ -51,7 +50,8 @@ fn BirthdayProblem(comptime options: BirthdayProblemOptions) type {
         fn init(io: Io, random: std.Random) Self {
             return .{
                 .random = random,
-                .stderr = if (options.debug == .none) null else Io.File.stderr().writer(io, &Self.stderr_buffer),
+                // null or unbuffered
+                .stderr = if (options.debug == .none) null else Io.File.stderr().writer(io, &.{}),
             };
         }
 
