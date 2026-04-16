@@ -1,23 +1,27 @@
 // https://www.rosettacode.org/wiki/Sisyphus_sequence
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // Using cpp primesieve from https://github.com/kimwalisch/primesieve/
-// zig run Sisyphus_sequence.zig -I ../primesieve-12.9/zig-out/include/ ../primesieve-12.9/zig-out/lib/primesieve.lib -lstdc++
+// zig run Sisyphus_sequence.zig -I ../primesieve-12.13/zig-out/include/ ../primesieve-12.13/zig-out/lib/primesieve.lib -lstdc++
+const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
 const primesieve = @cImport({
     @cInclude("primesieve.h");
 });
-const std = @import("std");
 
-pub fn main() !void {
-    var t0: std.time.Timer = try .start();
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
+    var t0: Io.Timestamp = .now(io, .real);
+    // ---------------------------------------------------- allocator
+    var arena: *std.heap.ArenaAllocator = init.arena;
+    const allocator = arena.allocator();
     // ------------------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-    // ---------------------------------------------------- allocator
-    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
     // --------------------------------------------------------------
     var counter: Counter = try .init(allocator);
     defer counter.deinit(allocator);
@@ -91,7 +95,7 @@ pub fn main() !void {
     try stdout.writeByte('\n');
     try stdout.flush();
 
-    std.log.info("processed in {D}", .{t0.read()});
+    std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 }
 
 const SisyphusSequenceGeneratorError = error{
@@ -129,14 +133,14 @@ const Counter = struct {
     found: std.AutoHashMapUnmanaged(u64, usize),
     count: usize = 0,
 
-    fn init(allocator: std.mem.Allocator) !Counter {
+    fn init(allocator: Allocator) !Counter {
         var found: std.AutoHashMapUnmanaged(u64, usize) = .empty;
         try found.ensureTotalCapacity(allocator, 250);
         for (1..250) |n|
             try found.put(allocator, @as(u64, n), 0);
         return Counter{ .found = found };
     }
-    fn deinit(self: *Counter, allocator: std.mem.Allocator) void {
+    fn deinit(self: *Counter, allocator: Allocator) void {
         self.found.deinit(allocator);
     }
     fn add(self: *Counter, n: u64) !void {
@@ -145,7 +149,7 @@ const Counter = struct {
             self.found.getEntry(n).?.value_ptr.* += 1;
     }
     /// Caller owns returned slice memory.
-    fn getMissing(self: *const Counter, allocator: std.mem.Allocator) ![]u64 {
+    fn getMissing(self: *const Counter, allocator: Allocator) ![]u64 {
         var missing_array: std.ArrayList(u64) = .empty;
         var it = self.found.iterator();
         while (it.next()) |entry| {
@@ -157,7 +161,7 @@ const Counter = struct {
         return missing;
     }
     /// Caller owns returned 'numbers' slice memory.
-    fn getMost(self: *const Counter, allocator: std.mem.Allocator) !struct { numbers: []u64, max: usize } {
+    fn getMost(self: *const Counter, allocator: Allocator) !struct { numbers: []u64, max: usize } {
         // Find the maximum count (there may be more than one at this value)
         var value_it = self.found.valueIterator();
         var max: usize = 0;

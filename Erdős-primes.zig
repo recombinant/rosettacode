@@ -1,25 +1,27 @@
 // https://rosettacode.org/wiki/Erdős-primes
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
-// zig run Erdős-primes.zig -I ../primesieve-12.9/zig-out/include/ ../primesieve-12.9/zig-out/lib/primesieve.lib -lstdc++
+// zig run Erdős-primes.zig -I ../primesieve-12.13/zig-out/include/ ../primesieve-12.13/zig-out/lib/primesieve.lib -lstdc++
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
 const ps = @cImport({
     @cInclude("primesieve.h");
 });
 
-pub fn main() !void {
-    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .{};
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     // sieve for isPrime()
     const limit = 1_000_000;
-    const sieve: PrimeSieve = try .init(allocator, limit);
-    defer sieve.deinit(allocator);
+    const sieve: PrimeSieve = try .init(gpa, limit);
+    defer sieve.deinit(gpa);
 
     var it: ps.primesieve_iterator = undefined;
     ps.primesieve_init(&it);
@@ -66,7 +68,7 @@ fn isErdos(prime: u64, sieve: *const PrimeSieve) bool {
 const PrimeSieve = struct {
     sieve: []const bool,
 
-    fn init(allocator: std.mem.Allocator, limit: usize) !PrimeSieve {
+    fn init(allocator: Allocator, limit: usize) !PrimeSieve {
         var primes = try allocator.alloc(bool, limit);
         @memset(primes, false);
         var it: ps.primesieve_iterator = undefined;
@@ -89,7 +91,7 @@ const PrimeSieve = struct {
             .sieve = primes,
         };
     }
-    fn deinit(self: *const PrimeSieve, allocator: std.mem.Allocator) void {
+    fn deinit(self: *const PrimeSieve, allocator: Allocator) void {
         allocator.free(self.sieve);
     }
     fn isPrime(self: PrimeSieve, n: u64) bool {

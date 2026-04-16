@@ -2,11 +2,12 @@
 // {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
 pub fn main(init: std.process.Init) !void {
-    const gpa = init.gpa;
-    const io = init.io;
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var t0: Io.Timestamp = .now(io, .real);
     // ------------------------------------------------------- stdout
@@ -58,7 +59,7 @@ pub fn main(init: std.process.Init) !void {
 }
 
 /// Return sorted slice of unique items. Caller owns returned slice.
-fn uniqueSort(T: type, allocator: std.mem.Allocator, vector: std.ArrayList(T)) ![]T {
+fn uniqueSort(T: type, allocator: Allocator, vector: std.ArrayList(T)) ![]T {
     var result: std.ArrayList(T) = try .initCapacity(allocator, vector.items.len);
     std.mem.sortUnstable(T, vector.items, {}, std.sort.asc(T));
 
@@ -69,7 +70,7 @@ fn uniqueSort(T: type, allocator: std.mem.Allocator, vector: std.ArrayList(T)) !
     return result.toOwnedSlice(allocator);
 }
 
-fn perfectPowers(allocator: std.mem.Allocator, n: anytype) ![]@TypeOf(n) {
+fn perfectPowers(allocator: Allocator, n: anytype) ![]@TypeOf(n) {
     const T = @TypeOf(n);
     if (@typeInfo(T) != .int or @typeInfo(T).int.signedness != .unsigned)
         @compileError("perfectPowers() expected unsigned integer argument, found " ++ @typeName(T));
@@ -95,7 +96,7 @@ fn orderU64(context: u64, item: u64) std.math.Order {
     return std.math.order(context, item);
 }
 
-fn achilles(allocator: std.mem.Allocator, T: type, from: T, to: T, pps: []T) ![]T {
+fn achilles(allocator: Allocator, T: type, from: T, to: T, pps: []T) ![]T {
     if (@typeInfo(T) != .int or @typeInfo(T).int.signedness != .unsigned)
         @compileError("achilles() expected unsigned integer type argument, found " ++ @typeName(T));
     var result: std.ArrayList(T) = .empty;

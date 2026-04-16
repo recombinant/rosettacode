@@ -1,24 +1,25 @@
 // https://rosettacode.org/wiki/Odd_words
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var word_set: std.StringHashMapUnmanaged(void) = .empty;
     defer {
         var it = word_set.keyIterator();
-        while (it.next()) |key| allocator.free(key.*);
-        word_set.deinit(allocator);
+        while (it.next()) |key| gpa.free(key.*);
+        word_set.deinit(gpa);
     }
 
-    var file: std.fs.File = try std.fs.cwd().openFile("data/unixdict.txt", .{});
-    defer file.close();
+    var file: Io.File = try Io.Dir.cwd().openFile(io, "data/unixdict.txt", .{});
+    defer file.close(io);
 
     var buffer1: [4096]u8 = undefined;
-    var file_reader = file.reader(&buffer1);
+    var file_reader = file.reader(io, &buffer1);
     var r = &file_reader.interface;
 
     // assume words are <= 64 bytes in length
@@ -29,7 +30,7 @@ pub fn main() !void {
     // count the words for `word_set` capacity
     const count = try getWordCount(r, &w);
     // with the exact count no realloc will be necessary
-    try word_set.ensureTotalCapacity(allocator, count);
+    try word_set.ensureTotalCapacity(gpa, count);
     std.debug.print("dictionary usable word count = {}\n", .{count});
 
     try file_reader.seekTo(0); // rewind
@@ -46,8 +47,8 @@ pub fn main() !void {
         };
 
         if (word.len > 4) {
-            const m = try allocator.dupe(u8, word);
-            try word_set.putNoClobber(allocator, m, {});
+            const m = try gpa.dupe(u8, word);
+            try word_set.putNoClobber(gpa, m, {});
             max_len = @max(max_len, word.len / 2 + 1);
         }
     }
@@ -55,12 +56,12 @@ pub fn main() !void {
     var odd_word_set: std.StringHashMapUnmanaged(void) = .empty;
     defer {
         var it = odd_word_set.keyIterator();
-        while (it.next()) |key| allocator.free(key.*);
-        odd_word_set.deinit(allocator);
+        while (it.next()) |key| gpa.free(key.*);
+        odd_word_set.deinit(gpa);
     }
 
-    var buffer3 = try allocator.alloc(u8, max_len);
-    defer allocator.free(buffer3);
+    var buffer3 = try gpa.alloc(u8, max_len);
+    defer gpa.free(buffer3);
 
     var it1 = word_set.keyIterator();
     while (it1.next()) |word| {
@@ -73,13 +74,13 @@ pub fn main() !void {
             const odd_word = buffer3[0..len];
             if (word_set.contains(odd_word)) {
                 if (!odd_word_set.contains(odd_word))
-                    try odd_word_set.putNoClobber(allocator, try allocator.dupe(u8, odd_word), {});
+                    try odd_word_set.putNoClobber(gpa, try gpa.dupe(u8, odd_word), {});
             }
         }
     }
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     it1 = odd_word_set.keyIterator();

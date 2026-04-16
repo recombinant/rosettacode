@@ -1,27 +1,28 @@
 // https://rosettacode.org/wiki/Nonoblock
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    try writeBlock(allocator, "21", 5, stdout);
-    try writeBlock(allocator, "", 5, stdout);
-    try writeBlock(allocator, "8", 10, stdout);
-    try writeBlock(allocator, "2323", 15, stdout);
-    try writeBlock(allocator, "23", 5, stdout);
+    try writeBlock(gpa, "21", 5, stdout);
+    try writeBlock(gpa, "", 5, stdout);
+    try writeBlock(gpa, "8", 10, stdout);
+    try writeBlock(gpa, "2323", 15, stdout);
+    try writeBlock(gpa, "23", 5, stdout);
 
     try stdout.flush();
 }
 
-fn writeBlock(allocator: std.mem.Allocator, data: []const u8, len: usize, w: *std.Io.Writer) !void {
+fn writeBlock(allocator: Allocator, data: []const u8, len: usize, w: *std.Io.Writer) !void {
     const a = try allocator.dupe(u8, data);
     defer allocator.free(a);
 
@@ -68,7 +69,7 @@ fn writeBlock(allocator: std.mem.Allocator, data: []const u8, len: usize, w: *st
     }
 }
 
-fn genSequence(allocator: std.mem.Allocator, ones: []const []const u8, num_zeros: usize) ![]const []const u8 {
+fn genSequence(allocator: Allocator, ones: []const []const u8, num_zeros: usize) ![]const []const u8 {
     if (ones.len == 0) {
         const s = try allocator.alloc(u8, num_zeros);
         @memset(s, '0');

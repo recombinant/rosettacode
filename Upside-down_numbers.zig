@@ -1,18 +1,19 @@
 // https://rosettacode.org/wiki/Upside-down_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Wren}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var it: UpsideDownIterator = try .init(allocator);
+    var it: UpsideDownIterator = try .init(gpa);
     defer it.deinit();
 
     try stdout.writeAll("First fifty upside-downs:\n");
@@ -44,7 +45,7 @@ const UpsideDownIterator = struct {
         .{ 6, 4 }, .{ 7, 3 }, .{ 8, 2 }, .{ 9, 1 },
     };
 
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
     evens: std.ArrayList(u64),
     odds: std.ArrayList(u64),
     tmp: std.ArrayList(u64),
@@ -57,7 +58,7 @@ const UpsideDownIterator = struct {
 
     count: usize = 0,
 
-    fn init(allocator: std.mem.Allocator) !UpsideDownIterator {
+    fn init(allocator: Allocator) !UpsideDownIterator {
         var odds: std.ArrayList(u64) = .empty;
         try odds.append(allocator, 5);
         var evens: std.ArrayList(u64) = .empty;

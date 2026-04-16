@@ -1,15 +1,16 @@
 // https://rosettacode.org/wiki/Find_first_missing_positive
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-
-    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
 
     const numbers = [_][]const i64{
         &[_]i64{ 1, 2, 0 },
@@ -17,12 +18,12 @@ pub fn main() !void {
         &[_]i64{ 7, 8, 9, 11, 12 },
     };
     for (numbers) |slice|
-        try stdout.print("{} ", .{try findFirstMissingPositive(allocator, slice)});
+        try stdout.print("{} ", .{try findFirstMissingPositive(gpa, slice)});
 
     try stdout.flush();
 }
 
-fn findFirstMissingPositive(allocator: std.mem.Allocator, slice: []const i64) !i64 {
+fn findFirstMissingPositive(allocator: Allocator, slice: []const i64) !i64 {
     var set: std.AutoArrayHashMapUnmanaged(i64, void) = .empty;
     defer set.deinit(allocator);
     try set.ensureTotalCapacity(allocator, slice.len);

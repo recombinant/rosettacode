@@ -1,24 +1,28 @@
 // https://rosettacode.org/wiki/Ormiston_triples
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 
 const std = @import("std");
 
 // Using cpp primesieve from https://github.com/kimwalisch/primesieve/
-// zig run Ormiston_triples.zig -I ../primesieve-12.9/zig-out/include/ ../primesieve-12.9/zig-out/lib/primesieve.lib -lstdc++
+// zig run Ormiston_triples.zig -I ../primesieve-12.13/zig-out/include/ ../primesieve-12.13/zig-out/lib/primesieve.lib -lstdc++
 const ps = @cImport({
     @cInclude("primesieve.h");
 });
 
-pub fn main() !void {
-    var t0: std.time.Timer = try .start();
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
+    var t0: Io.Timestamp = .now(io, .real);
     // ----------------------------------------------------------
     const task1_limit = 25;
     const task2_limit = 1_000_000_000;
     const task3_limit = 10_000_000_000;
     // ----------------------------------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     try stdout.writeAll("Primesieve Ormiston triples\n\n");
     // ----------------------------------------------------------
@@ -43,7 +47,7 @@ pub fn main() !void {
         }
     }
     // ----------------------------------------------------------
-    std.log.info("Processed in {D}\n", .{t0.read()});
+    std.log.info("Processed in {f}\n", .{t0.untilNow(io, .real)});
 }
 
 const OrmistonTripleGeneratorError = error{

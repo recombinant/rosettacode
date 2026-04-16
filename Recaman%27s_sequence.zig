@@ -1,32 +1,33 @@
 // https://rosettacode.org/wiki/Recaman%27s_sequence
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
     // arraylist can be initialised with capacity as the answers are known...
-    var a: std.ArrayList(isize) = try .initCapacity(allocator, 400_000);
-    defer a.deinit(allocator);
+    var a: std.ArrayList(isize) = try .initCapacity(gpa, 400_000);
+    defer a.deinit(gpa);
 
     var used: std.AutoHashMapUnmanaged(isize, void) = .empty;
-    defer used.deinit(allocator);
-    try used.ensureTotalCapacity(allocator, 1001);
+    defer used.deinit(gpa);
+    try used.ensureTotalCapacity(gpa, 1001);
 
     var used1000: std.AutoHashMapUnmanaged(isize, void) = .empty;
-    defer used1000.deinit(allocator);
-    try used1000.ensureTotalCapacity(allocator, 1001);
+    defer used1000.deinit(gpa);
+    try used1000.ensureTotalCapacity(gpa, 1001);
 
-    try a.append(allocator, 0);
-    try used.put(allocator, 0, {});
-    try used1000.put(allocator, 0, {});
+    try a.append(gpa, 0);
+    try used.put(gpa, 0, {});
+    try used1000.put(gpa, 0, {});
 
     var n: usize = 1;
     var found_dup = false;
@@ -37,11 +38,11 @@ pub fn main() !void {
             next += 2 * @as(isize, @intCast(n));
 
         const already_used = used.contains(next);
-        try a.append(allocator, next);
+        try a.append(gpa, next);
         if (!already_used) {
-            try used.put(allocator, next, {});
+            try used.put(gpa, next, {});
             if (next <= 1000)
-                try used1000.put(allocator, next, {});
+                try used1000.put(gpa, next, {});
         }
 
         if (n == 14)

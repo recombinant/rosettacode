@@ -1,24 +1,23 @@
 // https://rosettacode.org/wiki/10001th_prime
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+
     const n = 10001;
     const f: f32 = @floatFromInt(n);
     // ----------------------------- estimate maximum prime plus some
     const limit: usize = @intFromFloat(@floor(@log(f) * f * 1.2));
-    // ---------------------------------------------------- allocator
-    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
     // --------------------------------------------------------------
-    const primes = try pritchard(allocator, u32, limit);
-    defer allocator.free(primes);
+    const primes = try pritchard(gpa, u32, limit);
+    defer gpa.free(primes);
     std.debug.print("The {}th prime is: {}\n", .{ n, primes[n - 1] });
 }
 
 /// Pritchard's sieve of primes up to limit with a StaticBitSet.
-pub fn pritchard(allocator: std.mem.Allocator, T: type, comptime limit: usize) ![]T {
+pub fn pritchard(allocator: Allocator, T: type, comptime limit: usize) ![]T {
     var members: std.bit_set.ArrayBitSet(usize, limit) = .initEmpty();
     var mcopy: std.bit_set.ArrayBitSet(usize, limit) = .initEmpty();
     members.set(1);

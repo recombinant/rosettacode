@@ -1,25 +1,26 @@
 // https://rosettacode.org/wiki/Magnanimous_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    try listMags(allocator, 1, 45, 15, stdout);
-    try listMags(allocator, 241, 250, 10, stdout);
-    try listMags(allocator, 391, 400, 10, stdout);
+    try listMags(gpa, 1, 45, 15, stdout);
+    try listMags(gpa, 241, 250, 10, stdout);
+    try listMags(gpa, 391, 400, 10, stdout);
 
     try stdout.flush();
 }
 
-fn listMags(allocator: std.mem.Allocator, from: u32, thru: u32, perLine: u8, writer: *std.Io.Writer) !void {
+fn listMags(allocator: Allocator, from: u32, thru: u32, perLine: u8, writer: *std.Io.Writer) !void {
     if (from < 2)
         try writer.print("\nFirst {} magnanimous numbers:\n", .{thru})
     else {
@@ -43,7 +44,7 @@ fn listMags(allocator: std.mem.Allocator, from: u32, thru: u32, perLine: u8, wri
     }
 }
 
-fn ordinal(allocator: std.mem.Allocator, n: anytype) ![]const u8 {
+fn ordinal(allocator: Allocator, n: anytype) ![]const u8 {
     const T = @TypeOf(n);
     if (@typeInfo(T) != .int or @typeInfo(T).int.signedness != .unsigned)
         @compileError("ordinal() expected unsigned integer argument, found " ++ @typeName(T));

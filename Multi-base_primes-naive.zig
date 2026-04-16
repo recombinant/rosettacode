@@ -1,10 +1,13 @@
 // https://rosettacode.org/wiki/Multi-base_primes
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // Using cpp primesieve from https://github.com/kimwalisch/primesieve/
-// zig run Multi-base_primes-naive.zig -I ../primesieve-12.9/zig-out/include/ ../primesieve-12.9/zig-out/lib/primesieve.lib -lstdc++
+// zig run Multi-base_primes-naive.zig -I ../primesieve-12.13/zig-out/include/ ../primesieve-12.13/zig-out/lib/primesieve.lib -lstdc++
 
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
 const ps = @cImport({
     @cInclude("primesieve.h");
 });
@@ -16,33 +19,32 @@ const MAX_BASE = 36;
 const BaseFlags = std.StaticBitSet(MAX_BASE + 1);
 const Lookup = std.StringArrayHashMapUnmanaged(BaseFlags);
 
-pub fn main() !void {
-    var t0: std.time.Timer = try .start();
+pub fn main(init: std.process.Init) !void {
+    // ArenaAllocator is faster but Debug gpa checks for leaks.
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
+    var t0: Io.Timestamp = .now(io, .real);
 
     const limit: u64 = try std.math.powi(u64, MAX_BASE, DIGITS);
 
-    // ArenaAllocator is faster but DebugAllocator checks for leaks.
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+    const primes = try getPrimes(gpa, limit);
+    defer gpa.free(primes);
 
-    const primes = try getPrimes(allocator, limit);
-    defer allocator.free(primes);
+    std.log.info("primes calculated after elapsed {f}", .{t0.untilNow(io, .real)});
 
-    std.log.info("primes calculated after elapsed {D}", .{t0.read()});
+    var characters_table: CharactersTable = try .init(gpa, primes);
+    defer characters_table.deinit(gpa);
 
-    var characters_table: CharactersTable = try .init(allocator, primes);
-    defer characters_table.deinit(allocator);
-
-    std.log.info("characters calculated after elapsed {D}", .{t0.read()});
+    std.log.info("characters calculated after elapsed {f}", .{t0.untilNow(io, .real)});
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     var digits: u8 = 1;
     while (digits <= DIGITS) : (digits += 1) {
-        const count, const numbers = try characters_table.max(allocator, digits);
+        const count, const numbers = try characters_table.max(gpa, digits);
         try stdout.print("{}-character strings which are prime in most bases: {}\n", .{ digits, count });
         for (numbers) |number| {
             try stdout.print(" {s} ->", .{number});
@@ -54,15 +56,15 @@ pub fn main() !void {
         }
         try stdout.writeByte('\n');
         try stdout.flush();
-        allocator.free(numbers);
+        gpa.free(numbers);
     }
 
-    std.log.info("elapsed time {D}", .{t0.read()});
+    std.log.info("elapsed time {f}", .{t0.untilNow(io, .real)});
     std.log.warn("DebugAllocator.deinit() is now checking for leaks (slow)", .{});
 }
 
 /// Return an array of prime numbers up to and including limit
-fn getPrimes(allocator: std.mem.Allocator, limit: u64) ![]u64 {
+fn getPrimes(allocator: Allocator, limit: u64) ![]u64 {
     var prime_list: std.ArrayList(u64) = .empty;
     defer prime_list.deinit(allocator);
 
@@ -82,9 +84,9 @@ fn getPrimes(allocator: std.mem.Allocator, limit: u64) ![]u64 {
 
 const CharactersTable = struct {
     characters: [DIGITS + 1]Lookup,
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
 
-    fn init(allocator: std.mem.Allocator, primes: []u64) !CharactersTable {
+    fn init(allocator: Allocator, primes: []u64) !CharactersTable {
         var result: CharactersTable = .{
             .characters = undefined,
             .allocator = allocator,
@@ -116,14 +118,14 @@ const CharactersTable = struct {
         }
         return result;
     }
-    fn deinit(self: *CharactersTable, allocator: std.mem.Allocator) void {
+    fn deinit(self: *CharactersTable, allocator: Allocator) void {
         for (&self.characters) |*lookup| {
             for (lookup.keys()) |s|
                 self.allocator.free(s);
             lookup.deinit(allocator);
         }
     }
-    fn max(self: *const CharactersTable, allocator: std.mem.Allocator, digits: u8) !struct { usize, []const []const u8 } {
+    fn max(self: *const CharactersTable, allocator: Allocator, digits: u8) !struct { usize, []const []const u8 } {
         var max_count: usize = 0;
         var max_numbers: std.ArrayList([]const u8) = .empty;
         defer max_numbers.deinit(allocator);

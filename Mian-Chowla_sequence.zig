@@ -1,35 +1,36 @@
 // https://rosettacode.org/wiki/Mian-Chowla_sequence
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 // {{trans|Go}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     const n = 100;
 
-    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    try run1(allocator, n, stdout); // translation of C
+    try run1(gpa, io, n, stdout); // translation of C
 
-    try run2(allocator, n, stdout); // translation of Go
+    try run2(gpa, io, n, stdout); // translation of Go
 
-    try run3(n, stdout); // naive brute force
+    try run3(io, n, stdout); // naive brute force
 
-    try run4(allocator, n, stdout); // tweaked translation of C
+    try run4(gpa, io, n, stdout); // tweaked translation of C
 }
 
-fn run1(allocator: std.mem.Allocator, n: usize, w: *std.Io.Writer) !void {
+fn run1(allocator: Allocator, io: Io, n: usize, w: *std.Io.Writer) !void {
     try w.writeAll("\n\n" ++ "-" ** 66 ++ "\n");
     try w.print("Calculating {d} terms of Mian-Chowla sequence (translation of C)...\n", .{n});
     try w.flush();
 
-    const mc = try getMianChowla1(allocator, n);
+    const mc = try getMianChowla1(allocator, io, n);
     defer allocator.free(mc);
 
     try w.writeAll("\nThe first 30 terms of the Mian-Chowla sequence are:\n");
@@ -44,8 +45,8 @@ fn run1(allocator: std.mem.Allocator, n: usize, w: *std.Io.Writer) !void {
 
 // Translation of C Quick, but...
 // Caller owns returned slice memory.
-fn getMianChowla1(allocator: std.mem.Allocator, n: usize) ![]u64 {
-    var t0: std.time.Timer = try .start();
+fn getMianChowla1(allocator: Allocator, io: Io, n: usize) ![]u64 {
+    var t0: Io.Timestamp = .now(io, .real);
 
     var mc = try allocator.alloc(u64, n);
     var nn = n * (n + 1) / 2;
@@ -81,17 +82,17 @@ fn getMianChowla1(allocator: std.mem.Allocator, n: usize) ![]u64 {
             c += 1;
         }
     }
-    std.log.info("Mian-Chowla sequence (translation of C) processed in {D}", .{t0.read()});
+    std.log.info("Mian-Chowla sequence (translation of C) processed in {f}", .{t0.untilNow(io, .real)});
 
     return mc;
 }
 
-fn run2(allocator: std.mem.Allocator, n: usize, w: *std.Io.Writer) !void {
+fn run2(allocator: Allocator, io: Io, n: usize, w: *std.Io.Writer) !void {
     try w.writeAll("\n\n" ++ "-" ** 66 ++ "\n");
     try w.print("Calculating {d} terms of Mian-Chowla sequence (translation of Go)...\n", .{n});
     try w.flush();
 
-    const mc = try getMianChowla2(allocator, n);
+    const mc = try getMianChowla2(allocator, io, n);
     defer allocator.free(mc);
 
     try w.writeAll("\nThe first 30 terms of the Mian-Chowla sequence are:\n");
@@ -106,8 +107,8 @@ fn run2(allocator: std.mem.Allocator, n: usize, w: *std.Io.Writer) !void {
 
 /// Translation of Go
 /// Caller owns returned slice memory.
-fn getMianChowla2(allocator: std.mem.Allocator, n: usize) ![]u64 {
-    var t0: std.time.Timer = try .start();
+fn getMianChowla2(allocator: Allocator, io: Io, n: usize) ![]u64 {
+    var t0: Io.Timestamp = .now(io, .real);
 
     var mc = try allocator.alloc(u64, n);
     mc[0] = 1;
@@ -137,17 +138,17 @@ fn getMianChowla2(allocator: std.mem.Allocator, n: usize) ![]u64 {
             break;
         }
     }
-    std.log.info("Mian-Chowla sequence (translation of Go) processed in {D}", .{t0.read()});
+    std.log.info("Mian-Chowla sequence (translation of Go) processed in {f}", .{t0.untilNow(io, .real)});
 
     return mc;
 }
 
-fn run3(comptime n: usize, w: *std.Io.Writer) !void {
+fn run3(io: Io, comptime n: usize, w: *std.Io.Writer) !void {
     try w.writeAll("\n\n" ++ "-" ** 66 ++ "\n");
     try w.print("Calculating {d} terms of Mian-Chowla sequence (naive)...\n", .{n});
     try w.flush();
 
-    const mc = try getMianChowla3(n);
+    const mc = try getMianChowla3(io, n);
 
     try w.writeAll("\nThe first 30 terms of the Mian-Chowla sequence are:\n");
     for (mc[0..30]) |number|
@@ -160,8 +161,8 @@ fn run3(comptime n: usize, w: *std.Io.Writer) !void {
 }
 
 /// Simple brute force.
-fn getMianChowla3(comptime n: usize) ![n]u64 {
-    var t0: std.time.Timer = try .start();
+fn getMianChowla3(io: Io, comptime n: usize) ![n]u64 {
+    var t0: Io.Timestamp = .now(io, .real);
 
     const nn = (n * (n + 1)) * 2;
 
@@ -189,17 +190,17 @@ fn getMianChowla3(comptime n: usize) ![n]u64 {
             break;
         }
     }
-    std.log.info("Mian-Chowla sequence processed in {D}", .{t0.read()});
+    std.log.info("Mian-Chowla sequence processed in {f}", .{t0.untilNow(io, .real)});
 
     return mc;
 }
 
-fn run4(allocator: std.mem.Allocator, n: usize, w: *std.Io.Writer) !void {
+fn run4(allocator: Allocator, io: Io, n: usize, w: *std.Io.Writer) !void {
     try w.writeAll("\n\n" ++ "-" ** 66 ++ "\n");
     try w.print("Calculating {d} terms of Mian-Chowla sequence (tweaked translation of C)...\n", .{n});
     try w.flush();
 
-    const mc = try getMianChowla1(allocator, n);
+    const mc = try getMianChowla1(allocator, io, n);
     defer allocator.free(mc);
 
     try w.writeAll("\nThe first 30 terms of the Mian-Chowla sequence are:\n");
@@ -214,8 +215,8 @@ fn run4(allocator: std.mem.Allocator, n: usize, w: *std.Io.Writer) !void {
 
 // Tweaked version of C using std.DynamicBitSet instead of slice of bool.
 // Caller owns returned slice memory.
-fn getMianChowla4(allocator: std.mem.Allocator, n: usize) ![]u64 {
-    var t0: std.time.Timer = try .start();
+fn getMianChowla4(allocator: Allocator, io: Io, n: usize) ![]u64 {
+    var t0: Io.Timestamp = .now(io, .real);
 
     var mc = try allocator.alloc(u64, n);
     var nn = n * (n + 1) / 2;
@@ -244,7 +245,7 @@ fn getMianChowla4(allocator: std.mem.Allocator, n: usize) ![]u64 {
             c += 1;
         }
     }
-    std.log.info("Mian-Chowla sequence (tweaked translation of C) processed in {D}", .{t0.read()});
+    std.log.info("Mian-Chowla sequence (tweaked translation of C) processed in {f}", .{t0.untilNow(io, .real)});
 
     return mc;
 }

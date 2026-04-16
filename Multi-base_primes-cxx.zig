@@ -1,40 +1,42 @@
 // https://rosettacode.org/wiki/Multi-base_primes
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 
 // Using cpp primesieve from https://github.com/kimwalisch/primesieve/
-// zig run Multi-base_primes-cxx.zig -I ../primesieve-12.9/zig-out/include/ ../primesieve-12.9/zig-out/lib/primesieve.lib -lstdc++
+// zig run Multi-base_primes-cxx.zig -I ../primesieve-12.13/zig-out/include/ ../primesieve-12.13/zig-out/lib/primesieve.lib -lstdc++
 const std = @import("std");
 const ps = @cImport({
     @cInclude("primesieve.h");
 });
 
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
 // pub const std_options = std.Options{
 //     .log_level = .info,
 // };
 
-pub fn main() !void {
-    var t0: std.time.Timer = try .start();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
+    var t0: Io.Timestamp = .now(io, .real);
 
     const max_base = 36;
     const max_length = 5;
 
-    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    try multiBasePrimes(allocator, max_base, max_length, stdout);
+    try multiBasePrimes(gpa, max_base, max_length, stdout);
 
     try stdout.flush();
 
-    std.log.info("processed in {D}", .{t0.read()});
+    std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 }
 
-fn multiBasePrimes(allocator: std.mem.Allocator, max_base: u6, max_length: u4, w: *std.Io.Writer) !void {
+fn multiBasePrimes(allocator: Allocator, max_base: u6, max_length: u4, w: *std.Io.Writer) !void {
     const sieve: PrimeSieve = try .init(allocator, try std.math.powi(u64, max_base, max_length));
     defer sieve.deinit(allocator);
     var length: u4 = 1;
@@ -130,13 +132,13 @@ fn toString(output: []u8, v: []const u6) []const u8 {
 const Pair = struct {
     digits: []const u6,
     bases: []const u6,
-    fn init(allocator: std.mem.Allocator, digits: []const u6, bases: []const u6) !Pair {
+    fn init(allocator: Allocator, digits: []const u6, bases: []const u6) !Pair {
         return Pair{
             .digits = try allocator.dupe(u6, digits),
             .bases = try allocator.dupe(u6, bases),
         };
     }
-    fn deinit(self: *const Pair, allocator: std.mem.Allocator) void {
+    fn deinit(self: *const Pair, allocator: Allocator) void {
         allocator.free(self.digits);
         allocator.free(self.bases);
     }
@@ -145,7 +147,7 @@ const Pair = struct {
 const PrimeSieve = struct {
     sieve: []const bool,
 
-    fn init(allocator: std.mem.Allocator, limit: usize) !PrimeSieve {
+    fn init(allocator: Allocator, limit: usize) !PrimeSieve {
         var primes = try allocator.alloc(bool, limit);
         @memset(primes, false);
         var it: ps.primesieve_iterator = undefined;
@@ -168,7 +170,7 @@ const PrimeSieve = struct {
             .sieve = primes,
         };
     }
-    fn deinit(self: *const PrimeSieve, allocator: std.mem.Allocator) void {
+    fn deinit(self: *const PrimeSieve, allocator: Allocator) void {
         allocator.free(self.sieve);
     }
     fn isPrime(self: PrimeSieve, n: u64) bool {

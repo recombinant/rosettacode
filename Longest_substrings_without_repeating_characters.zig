@@ -1,25 +1,26 @@
 // https://rosettacode.org/wiki/Longest_substrings_without_repeating_characters
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     const examples = [_][]const u8{
         "xyzyabcybdfd", "xyzyab",            "zzzzz",
         "a",            "thisisastringtest", "",
     };
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-
-    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
 
     for (examples) |example| {
         try stdout.print("Original string: \"{s}\"\n", .{example});
-        const ls = try lswr(allocator, example);
+        const ls = try lswr(gpa, example);
         if (ls.len == 0)
             try stdout.writeAll("Empty string - no substrings\n\n")
         else {
@@ -28,14 +29,14 @@ pub fn main() !void {
                 try stdout.print("  {s}\n", .{s});
             try stdout.writeByte('\n');
         }
-        allocator.free(ls);
+        gpa.free(ls);
     }
     try stdout.flush();
 }
 
 /// Return longest substrings without repeats.
 /// Allocates memory for the result, which must be freed by the caller.
-fn lswr(allocator: std.mem.Allocator, str: []const u8) ![]const []const u8 {
+fn lswr(allocator: Allocator, str: []const u8) ![]const []const u8 {
     var characters: std.AutoArrayHashMapUnmanaged(u8, void) = .empty;
     defer characters.deinit(allocator);
 

@@ -1,25 +1,26 @@
 // https://rosettacode.org/wiki/Odd_words
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     var stdout = &stdout_writer.interface;
 
-    var file: std.fs.File = try std.fs.cwd().openFile("data/unixdict.txt", .{});
-    defer file.close();
+    var file: Io.File = try Io.Dir.cwd().openFile(io, "data/unixdict.txt", .{});
+    defer file.close(io);
 
-    const file_size = (try file.stat()).size;
-    const unixdict_txt = try allocator.alloc(u8, file_size);
-    defer allocator.free(unixdict_txt);
+    const file_size = (try file.stat(io)).size;
+    const unixdict_txt = try gpa.alloc(u8, file_size);
+    defer gpa.free(unixdict_txt);
 
     var buffer: [4096]u8 = undefined;
-    var file_reader = file.reader(&buffer);
+    var file_reader = file.reader(io, &buffer);
     const r = &file_reader.interface;
     try r.readSliceAll(unixdict_txt);
 
@@ -36,21 +37,21 @@ pub fn main() !void {
 
     // StringArrayHashMap as insertion order is maintained.
     var word_set: std.StringArrayHashMapUnmanaged(void) = .empty;
-    defer word_set.deinit(allocator);
-    try word_set.ensureTotalCapacity(allocator, lf_count);
+    defer word_set.deinit(gpa);
+    try word_set.ensureTotalCapacity(gpa, lf_count);
     var longest_word: usize = 0;
 
     // fill word_set with contents of "unixdict.txt"
     var it = std.mem.splitScalar(u8, unixdict_txt, '\n');
     while (it.next()) |word| {
         if (word.len != 0) {
-            try word_set.putNoClobber(allocator, word, {});
+            try word_set.putNoClobber(gpa, word, {});
             longest_word = @max(longest_word, word.len);
         }
     }
 
-    var odd_word_buffer = try allocator.alloc(u8, longest_word / 2);
-    defer allocator.free(odd_word_buffer);
+    var odd_word_buffer = try gpa.alloc(u8, longest_word / 2);
+    defer gpa.free(odd_word_buffer);
 
     for (word_set.keys()) |word| {
         if (word.len > 8) {
