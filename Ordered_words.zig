@@ -1,18 +1,19 @@
 // https://rosettacode.org/wiki/Ordered_words
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 
-pub fn main() !void {
-    const text = @embedFile("data/unixdict.txt");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-    // allocator ------------------------------------------
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
+    const text = @embedFile("data/unixdict.txt");
 
     // ordered word list ----------------------------------
     var words: std.ArrayList([]const u8) = .empty;
-    defer words.deinit(allocator);
+    defer words.deinit(gpa);
 
     // find ordered words of longest length ---------------
     var maxlen: usize = 0;
@@ -24,14 +25,14 @@ pub fn main() !void {
                 maxlen = len;
                 words.clearRetainingCapacity();
             }
-            try words.append(allocator, word);
+            try words.append(gpa, word);
         }
     }
 
-    const list = try words.toOwnedSlice(allocator);
-    defer allocator.free(list);
+    const list = try words.toOwnedSlice(gpa);
+    defer gpa.free(list);
 
-    try printWords(list);
+    try printWords(list, io);
 }
 
 fn isOrdered(word: []const u8) bool {
@@ -43,10 +44,10 @@ fn isOrdered(word: []const u8) bool {
     return true;
 }
 
-fn printWords(words: [][]const u8) !void {
+fn printWords(words: [][]const u8, io: Io) !void {
     // buffered stdout ------------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // ----------------------------------------------------
 

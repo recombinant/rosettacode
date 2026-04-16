@@ -1,10 +1,12 @@
 // https://rosettacode.org/wiki/Ukkonen%E2%80%99s_suffix_tree_construction
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // Translation of https://www.geeksforgeeks.org/suffix-tree-application-3-longest-repeated-substring/
 // also https://www.geeksforgeeks.org/ukkonens-suffix-tree-construction-part-6/
 // complete with mostly original comments
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const Ukkonen = struct {
     const MAX_CHAR = 256;
@@ -28,7 +30,7 @@ const Ukkonen = struct {
         suffix_index: ?usize = null,
     };
     const Node = SuffixTreeNode;
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
     text: []const u8, // input string
     root: ?*Node = null, // pointer to the root node
 
@@ -55,7 +57,7 @@ const Ukkonen = struct {
     root_end: *usize,
     split_end: *usize,
 
-    fn init(allocator: std.mem.Allocator, text: []const u8) Ukkonen {
+    fn init(allocator: Allocator, text: []const u8) Ukkonen {
         return Ukkonen{
             .allocator = allocator,
             .text = text,
@@ -223,7 +225,7 @@ const Ukkonen = struct {
         }
     }
 
-    fn print(self: *const Ukkonen, i: usize, j: usize, w: *std.Io.Writer) !void {
+    fn print(self: *const Ukkonen, i: usize, j: usize, w: *Io.Writer) !void {
         for (self.text[i .. j + 1]) |c|
             _ = try w.writeByte(c);
         try w.writeByte('\n');
@@ -293,7 +295,7 @@ const Ukkonen = struct {
             }
         }
     }
-    fn getLongestRepeatedSubstring(self: *const Ukkonen, w: *std.Io.Writer) !void {
+    fn getLongestRepeatedSubstring(self: *const Ukkonen, w: *Io.Writer) !void {
         var max_height: usize = 0;
         var substring_start_index: usize = 0;
         self.doTraversal(self.root, 0, &max_height, &substring_start_index);
@@ -309,60 +311,58 @@ const Ukkonen = struct {
     }
 };
 
-pub fn main() !void {
-    // ---------------------------------------------------- allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     // --------------------------------------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // --------------------------------------------------------------
     {
-        var u: Ukkonen = .init(allocator, "GEEKSFORGEEKS$");
+        var u: Ukkonen = .init(gpa, "GEEKSFORGEEKS$");
         u.buildSuffixTree();
         try u.getLongestRepeatedSubstring(stdout);
         u.freeSuffixTreeByPostOrder(u.root);
     }
     {
-        var u: Ukkonen = .init(allocator, "AAAAAAAAAA$");
+        var u: Ukkonen = .init(gpa, "AAAAAAAAAA$");
         u.buildSuffixTree();
         try u.getLongestRepeatedSubstring(stdout);
         u.freeSuffixTreeByPostOrder(u.root);
     }
     {
-        var u: Ukkonen = .init(allocator, "ABCDEFG$");
+        var u: Ukkonen = .init(gpa, "ABCDEFG$");
         u.buildSuffixTree();
         try u.getLongestRepeatedSubstring(stdout);
         u.freeSuffixTreeByPostOrder(u.root);
     }
     {
-        var u: Ukkonen = .init(allocator, "ABABABA$");
+        var u: Ukkonen = .init(gpa, "ABABABA$");
         u.buildSuffixTree();
         try u.getLongestRepeatedSubstring(stdout);
         u.freeSuffixTreeByPostOrder(u.root);
     }
     {
-        var u: Ukkonen = .init(allocator, "ATCGATCGA$");
+        var u: Ukkonen = .init(gpa, "ATCGATCGA$");
         u.buildSuffixTree();
         try u.getLongestRepeatedSubstring(stdout);
         u.freeSuffixTreeByPostOrder(u.root);
     }
     {
-        var u: Ukkonen = .init(allocator, "banana$");
+        var u: Ukkonen = .init(gpa, "banana$");
         u.buildSuffixTree();
         try u.getLongestRepeatedSubstring(stdout);
         u.freeSuffixTreeByPostOrder(u.root);
     }
     {
-        var u: Ukkonen = .init(allocator, "abcpqrabpqpq$");
+        var u: Ukkonen = .init(gpa, "abcpqrabpqpq$");
         u.buildSuffixTree();
         try u.getLongestRepeatedSubstring(stdout);
         u.freeSuffixTreeByPostOrder(u.root);
     }
     {
-        var u: Ukkonen = .init(allocator, "pqrpqpqabab$");
+        var u: Ukkonen = .init(gpa, "pqrpqpqabab$");
         u.buildSuffixTree();
         try u.getLongestRepeatedSubstring(stdout);
         u.freeSuffixTreeByPostOrder(u.root);

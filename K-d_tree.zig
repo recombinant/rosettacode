@@ -116,7 +116,7 @@ fn selectContext(left: usize, right: usize, k: usize, context: anytype) usize {
 }
 
 /// Create an array of KDNode from an array Point.
-fn createKDNodesFromPoints(allocator: std.mem.Allocator, comptime dim: u16, pts: []const Point(dim)) ![]KDNode(dim) {
+fn createKDNodesFromPoints(allocator: Allocator, comptime dim: u16, pts: []const Point(dim)) ![]KDNode(dim) {
     const nodes = try allocator.alloc(KDNode(dim), pts.len);
     for (pts, nodes) |pt, *node| node.* = KDNode(dim){ .pt = pt };
     return nodes;
