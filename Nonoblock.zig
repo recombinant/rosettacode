@@ -22,11 +22,11 @@ pub fn main(init: std.process.Init) !void {
     try stdout.flush();
 }
 
-fn writeBlock(allocator: Allocator, data: []const u8, len: usize, w: *std.Io.Writer) !void {
+fn writeBlock(allocator: Allocator, data: []const u8, len: usize, w: *Io.Writer) !void {
     const a = try allocator.dupe(u8, data);
     defer allocator.free(a);
 
-    var alloc_writer: std.Io.Writer.Allocating = .init(allocator);
+    var alloc_writer: Io.Writer.Allocating = .init(allocator);
     var start: bool = false;
     for (a) |c| {
         if (start)

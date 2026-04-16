@@ -15,7 +15,7 @@ pub fn main(init: std.process.Init) !void {
     const stdin = &stdin_reader.interface;
     // for the stdin input text
     var buffer1: [1024]u8 = undefined;
-    var w: std.Io.Writer = .fixed(&buffer1);
+    var w: Io.Writer = .fixed(&buffer1);
     // for the tokenized input
     var buffer2: [2][]const u8 = undefined;
     var values: std.ArrayList([]const u8) = .initBuffer(&buffer2);

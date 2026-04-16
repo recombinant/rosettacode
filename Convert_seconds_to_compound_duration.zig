@@ -39,7 +39,7 @@ fn duration(allocator: Allocator, seconds: u32) ![]const u8 {
 
     const units = [_][]const u8{ "wk", "d", "hr", "min", "sec" };
 
-    var a: std.Io.Writer.Allocating = .init(allocator);
+    var a: Io.Writer.Allocating = .init(allocator);
     defer a.deinit();
 
     var sep: []const u8 = "";

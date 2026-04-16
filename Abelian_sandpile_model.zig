@@ -113,7 +113,7 @@ const SandPile = struct {
     }
 
     /// Display the tile grid as a 2D array of tile values.
-    fn display(self: *SandPile, w: *std.Io.Writer, init_val: u32) !void {
+    fn display(self: *SandPile, w: *Io.Writer, init_val: u32) !void {
         try w.print("Starting with {d} particles.\n\n", .{init_val});
 
         for (0..self.side_len) |y| {
@@ -181,7 +181,7 @@ fn askInitVal(io: Io) !u32 {
 
     const len = comptime std.math.log10_int(@as(u32, std.math.maxInt(u32))) + 2;
     var buf: [len]u8 = undefined;
-    var w: std.Io.Writer = .fixed(&buf);
+    var w: Io.Writer = .fixed(&buf);
 
     while (true) {
         _ = w.consumeAll();

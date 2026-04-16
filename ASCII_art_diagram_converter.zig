@@ -117,7 +117,7 @@ fn validate(allocator: Allocator, diagram: []const u8) ![][]const u8 {
     return line_list.toOwnedSlice(allocator);
 }
 
-fn decode(allocator: Allocator, lines: [][]const u8, w: *std.Io.Writer) ![]Result {
+fn decode(allocator: Allocator, lines: [][]const u8, w: *Io.Writer) ![]Result {
     try w.writeAll("Name     Bits  Start  End\n");
     try w.writeAll("=======  ====  =====  ===\n");
     var start: usize = 0;
@@ -146,12 +146,12 @@ fn decode(allocator: Allocator, lines: [][]const u8, w: *std.Io.Writer) ![]Resul
     return results.toOwnedSlice(allocator);
 }
 
-fn unpack(allocator: Allocator, results: []Result, hex: []const u8, w: *std.Io.Writer) !void {
+fn unpack(allocator: Allocator, results: []Result, hex: []const u8, w: *Io.Writer) !void {
     try w.writeAll("\nTest string in hex:\n");
     try w.print("{s}\n", .{hex});
 
     // write hex string as binary to allocating writer
-    var a: std.Io.Writer.Allocating = .init(allocator);
+    var a: Io.Writer.Allocating = .init(allocator);
     defer a.deinit();
     for (hex) |c|
         switch (c) {

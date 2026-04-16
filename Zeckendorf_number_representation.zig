@@ -70,7 +70,7 @@ const Zeckendorf1 = struct {
         while (self.fib.items[0] < number)
             try self.fib.insert(self.allocator, 0, self.fib.items[0] + self.fib.items[1]);
 
-        var a: std.Io.Writer.Allocating = .init(self.allocator);
+        var a: Io.Writer.Allocating = .init(self.allocator);
         var n = number;
         for (self.fib.items) |f| {
             if (f <= n) {

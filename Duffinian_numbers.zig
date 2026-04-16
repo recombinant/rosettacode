@@ -68,7 +68,7 @@ pub fn main(init: std.process.Init) !void {
             if (m == 3) {
                 count += 1;
                 var buffer: [80]u8 = undefined;
-                var bw: std.Io.Writer = .fixed(&buffer);
+                var bw: Io.Writer = .fixed(&buffer);
                 try bw.print("({d}, {d}, {d})", .{ n - 2, n - 1, n });
                 const sep: u8 = if (count % 3 == 0) '\n' else ' ';
                 try stdout.print("{s:<24}{c}", .{ bw.buffered(), sep });

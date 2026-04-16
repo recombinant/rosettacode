@@ -38,7 +38,7 @@ fn concatenateLists(allocator: Allocator, lists: []const []const u32) ![][]const
 
     var result: std.ArrayList([]const u8) = .empty;
 
-    var w: std.Io.Writer.Allocating = .init(allocator);
+    var w: Io.Writer.Allocating = .init(allocator);
     defer w.deinit();
 
     for (0..lists[0].len) |i| {
