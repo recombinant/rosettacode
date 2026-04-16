@@ -25,7 +25,7 @@ const AlignError = error{
     MaxColsExceeded,
 };
 
-fn alignColumns(w: *std.Io.Writer, lines: []const u8, alignment: Alignment) !void {
+fn alignColumns(w: *Io.Writer, lines: []const u8, alignment: Alignment) !void {
     var widths: [MaxCols]usize = @splat(0);
     // Determine the required width of each column using maximum field lengths
     {

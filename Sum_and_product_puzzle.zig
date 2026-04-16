@@ -43,7 +43,7 @@ pub fn main(init: std.process.Init) !void {
     try stdout.flush();
 }
 
-fn printList(list: List, w: *std.Io.Writer) !void {
+fn printList(list: List, w: *Io.Writer) !void {
     var it = list.first;
     while (it) |node| : (it = node.next) {
         const item: *Item = @fieldParentPtr("node", node);
@@ -53,7 +53,7 @@ fn printList(list: List, w: *std.Io.Writer) !void {
     }
 }
 
-fn printCount(list: List, w: *std.Io.Writer) !void {
+fn printCount(list: List, w: *Io.Writer) !void {
     const len = list.len();
     try switch (len) {
         0 => w.writeAll("no candidates\n"),
@@ -116,7 +116,7 @@ fn removeByProduct(pool: *Pool, list: *List, product: u64) void {
     }
 }
 
-fn statement1(allocator: std.mem.Allocator, pool: *Pool, list: *List) !void {
+fn statement1(allocator: Allocator, pool: *Pool, list: *List) !void {
     var pair_counts: std.AutoArrayHashMapUnmanaged(u64, u8) = .empty;
     defer pair_counts.deinit(allocator);
 
@@ -142,7 +142,7 @@ fn statement1(allocator: std.mem.Allocator, pool: *Pool, list: *List) !void {
     }
 }
 
-fn statement2(allocator: std.mem.Allocator, pool: *Pool, list: *List) !void {
+fn statement2(allocator: Allocator, pool: *Pool, list: *List) !void {
     var pair_counts: std.AutoArrayHashMapUnmanaged(u64, u8) = .empty;
     defer pair_counts.deinit(allocator);
 
@@ -170,7 +170,7 @@ fn statement2(allocator: std.mem.Allocator, pool: *Pool, list: *List) !void {
     }
 }
 
-fn statement3(allocator: std.mem.Allocator, pool: *Pool, list: *List) !void {
+fn statement3(allocator: Allocator, pool: *Pool, list: *List) !void {
     var unique = try allocator.alloc(u8, 100);
     defer allocator.free(unique);
     @memset(unique, 0);

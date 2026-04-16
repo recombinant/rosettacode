@@ -15,7 +15,7 @@ pub fn main(init: std.process.Init) !void {
     // -------------------------------------------- random number
     var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        std.Io.random(io, std.mem.asBytes(&seed));
+        Io.random(io, std.mem.asBytes(&seed));
         break :blk seed;
     });
     const random = prng.random();

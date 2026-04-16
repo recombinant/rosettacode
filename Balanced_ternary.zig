@@ -233,7 +233,7 @@ const BalancedTernary = struct {
     }
 
     /// custom formatter for BalancedTernary
-    pub fn format(self: BalancedTernary, w: *std.Io.Writer) std.Io.Writer.Error!void {
+    pub fn format(self: BalancedTernary, w: *Io.Writer) Io.Writer.Error!void {
         const trits = self.trits;
         var i = self.trits.len;
         while (i != 0) {
@@ -244,7 +244,7 @@ const BalancedTernary = struct {
 
     /// Return the string representation of a BalancedTernary number.
     /// Caller owns returned memory slice.
-    fn toString(self: BalancedTernary, allocator: Allocator) std.mem.Allocator.Error![]const u8 {
+    fn toString(self: BalancedTernary, allocator: Allocator) Allocator.Error![]const u8 {
         var string = try allocator.alloc(u8, self.trits.len);
         for (self.trits, 1..) |trit, i| {
             string[self.trits.len - i] = trit.toChar();

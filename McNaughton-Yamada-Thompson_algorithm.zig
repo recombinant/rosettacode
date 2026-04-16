@@ -221,10 +221,10 @@ fn StackUnmanaged(comptime T: type) type {
         const empty = Self{
             .stack = .empty,
         };
-        fn deinit(self: *Self, allocator: std.mem.Allocator) void {
+        fn deinit(self: *Self, allocator: Allocator) void {
             self.stack.deinit(allocator);
         }
-        fn push(self: *Self, allocator: std.mem.Allocator, node: T) !void {
+        fn push(self: *Self, allocator: Allocator, node: T) !void {
             return try self.stack.append(allocator, node);
         }
         fn pop(self: *Self) T {

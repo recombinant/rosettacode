@@ -3,6 +3,7 @@
 
 // from https://github.com/tiehuis/zig-rosetta
 const std = @import("std");
+const Io = std.Io;
 const assert = std.debug.assert;
 
 pub fn main(init: std.process.Init) void {
@@ -11,7 +12,7 @@ pub fn main(init: std.process.Init) void {
     comptime assert(a == 42);
 
     var b: [2]u8 = undefined;
-    std.Io.random(init.io, &b);
+    Io.random(init.io, &b);
     // Run-time assertion
     assert(b[0] == 42);
 }

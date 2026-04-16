@@ -144,7 +144,7 @@ fn isAdditionChain(a: []const u64) bool {
     return true;
 }
 
-fn brauer(allocator: Allocator, comptime n: usize, w: *std.Io.Writer) !void {
+fn brauer(allocator: Allocator, comptime n: usize, w: *Io.Writer) !void {
     var b: Brauer(n) = .init(allocator);
     defer b.deinit();
 
