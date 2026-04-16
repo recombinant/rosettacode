@@ -1,6 +1,9 @@
 // https://rosettacode.org/wiki/Execute_Brain****
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const IrNode = union(enum) {
     Addp: usize,
@@ -15,7 +18,7 @@ const IrNode = union(enum) {
 
 // - Precomputes branch jump points.
 // - Fuses adjacent instructions of same type.
-fn compileBrainfuck(allocator: std.mem.Allocator, program: []const u8) ![]IrNode {
+fn compileBrainfuck(allocator: Allocator, program: []const u8) ![]IrNode {
     var jump_stack: std.ArrayList(usize) = .empty;
     defer jump_stack.deinit(allocator);
 
@@ -72,8 +75,8 @@ fn compileBrainfuck(allocator: std.mem.Allocator, program: []const u8) ![]IrNode
 
 fn executeBrainfuck(
     comptime tape_length: usize,
-    allocator: std.mem.Allocator,
-    writer: *std.Io.Writer,
+    allocator: Allocator,
+    writer: *Io.Writer,
     program: []const u8,
 ) !void {
     var memory: [tape_length]u8 = @splat(0);
@@ -109,13 +112,12 @@ fn executeBrainfuck(
     }
 }
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     const hello_world_program =
@@ -123,7 +125,7 @@ pub fn main() !void {
         \\>+++++++.<<<[[-]<[-]>]<+++++++++++++++.>>.+++.------.--------.>>+.>++++.
     ;
 
-    try executeBrainfuck(30000, allocator, stdout, hello_world_program);
+    try executeBrainfuck(30000, gpa, stdout, hello_world_program);
 
     try stdout.flush();
 }

@@ -1,12 +1,17 @@
 // https://rosettacode.org/wiki/Esthetic_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 // https://oeis.org/A033075
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     var base: u8 = 2;
@@ -27,16 +32,12 @@ pub fn main() !void {
         try stdout.writeByte('\n');
     }
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
     // the following all use the obvious range limitations for the numbers in question
-    try listEsths(allocator, 1000, 1010, 9999, 9898, 16, true, stdout);
-    try listEsths(allocator, 1e8, 101_010_101, 13 * 1e7, 123_456_789, 9, true, stdout);
-    try listEsths(allocator, 1e11, 101_010_101_010, 13 * 1e10, 123_456_789_898, 7, false, stdout);
-    try listEsths(allocator, 1e14, 101_010_101_010_101, 13 * 1e13, 123_456_789_898_989, 5, false, stdout);
-    try listEsths(allocator, 1e17, 101_010_101_010_101_010, 13 * 1e16, 123_456_789_898_989_898, 4, false, stdout);
+    try listEsths(gpa, 1000, 1010, 9999, 9898, 16, true, stdout);
+    try listEsths(gpa, 1e8, 101_010_101, 13 * 1e7, 123_456_789, 9, true, stdout);
+    try listEsths(gpa, 1e11, 101_010_101_010, 13 * 1e10, 123_456_789_898, 7, false, stdout);
+    try listEsths(gpa, 1e14, 101_010_101_010_101, 13 * 1e13, 123_456_789_898_989, 5, false, stdout);
+    try listEsths(gpa, 1e17, 101_010_101_010_101_010, 13 * 1e16, 123_456_789_898_989_898, 4, false, stdout);
 
     try stdout.flush();
 }
@@ -62,7 +63,7 @@ fn isEsthetic(n_: u64, base: u64) bool {
     return true;
 }
 
-fn dfs(allocator: std.mem.Allocator, esths: *std.ArrayList(u64), n: u64, m: u64, i: u64) !void {
+fn dfs(allocator: Allocator, esths: *std.ArrayList(u64), n: u64, m: u64, i: u64) !void {
     if (i >= n and i <= m)
         try esths.append(allocator, i);
 
@@ -82,7 +83,7 @@ fn dfs(allocator: std.mem.Allocator, esths: *std.ArrayList(u64), n: u64, m: u64,
     }
 }
 
-fn listEsths(allocator: std.mem.Allocator, n: u64, n2: u64, m: u64, m2: u64, per_line: usize, write_all: bool, w: *std.Io.Writer) !void {
+fn listEsths(allocator: Allocator, n: u64, n2: u64, m: u64, m2: u64, per_line: usize, write_all: bool, w: *Io.Writer) !void {
     var esth_list: std.ArrayList(u64) = .empty;
     for (0..10) |i|
         try dfs(allocator, &esth_list, n2, m2, i);
@@ -124,7 +125,7 @@ fn commatize(buffer: []u8, n: u64) ![]const u8 {
     const size = std.fmt.printInt(&buffer2, n, 10, .lower, .{});
     const s = buffer2[0..size];
     //
-    var w: std.Io.Writer = .fixed(buffer);
+    var w: Io.Writer = .fixed(buffer);
 
     // write number string as string with inserted commas
     const last = s.len - 1;

@@ -1,18 +1,22 @@
 // https://rosettacode.org/wiki/Extensible_prime_generator
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // Copied from rosettacode
 
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 // const sieve = @import("sieve.zig");
 // const sieve = @import("Extensible_prime_generator.zig");
 const sieve = @import("Extensible_prime_generator_alternate.zig");
 const PrimeGen = sieve.PrimeGen;
 
-pub fn main() !void {
-    var t0: std.time.Timer = try .start();
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
+    var t0: Io.Timestamp = .now(io, .real);
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try part1(stdout);
@@ -21,14 +25,14 @@ pub fn main() !void {
 
     try stdout.flush();
 
-    std.log.info("processed in {D}", .{t0.read()});
+    std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 }
 
 // exercise 1: Print small primes
-fn part1(w: *std.Io.Writer) !void {
+fn part1(w: *Io.Writer) !void {
     var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
-    const allocator = arena.allocator();
+    const allocator: Allocator = arena.allocator();
 
     var primes: PrimeGen(u8) = .init(allocator);
     defer primes.deinit();
@@ -48,10 +52,10 @@ fn part1(w: *std.Io.Writer) !void {
 }
 
 // exercise 2: count medium primes
-fn part2(w: *std.Io.Writer) !void {
+fn part2(w: *Io.Writer) !void {
     var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
-    const allocator = arena.allocator();
+    const allocator: Allocator = arena.allocator();
 
     var primes: PrimeGen(sieve.AutoSieveType(8000)) = .init(allocator);
     defer primes.deinit();
@@ -79,7 +83,7 @@ fn part2(w: *std.Io.Writer) !void {
 }
 
 // exercise 3: find big primes
-fn part3(w: *std.Io.Writer) !void {
+fn part3(w: *Io.Writer) !void {
     var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
@@ -112,7 +116,7 @@ fn commatize(buffer: []u8, n: u64) ![]const u8 {
     const size = std.fmt.printInt(&buffer2, n, 10, .lower, .{});
     const s = buffer2[0..size];
     //
-    var w: std.Io.Writer = .fixed(buffer);
+    var w: Io.Writer = .fixed(buffer);
 
     // write number string as string with inserted commas
     const last = s.len - 1;
@@ -150,7 +154,7 @@ const testing = std.testing;
 
 test part2 {
     var buffer: [200]u8 = undefined;
-    var w: std.Io.Writer = .fixed(&buffer);
+    var w: Io.Writer = .fixed(&buffer);
 
     try part2(&w);
 

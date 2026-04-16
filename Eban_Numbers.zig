@@ -1,11 +1,15 @@
 // https://rosettacode.org/wiki/Eban_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|D}}
 const std = @import("std");
+const Io = std.Io;
 
 /// start, end, print
 const Interval = struct { u64, u64, bool };
-pub fn main() !void {
+
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     const intervals = [_]Interval{
         .{ 2, 1_000, true },
         .{ 1_000, 4_000, true },
@@ -17,7 +21,7 @@ pub fn main() !void {
         .{ 2, 1_000_000_000, false },
     };
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     for (intervals) |interval| {

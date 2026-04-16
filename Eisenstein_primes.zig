@@ -1,8 +1,11 @@
 // https://rosettacode.org/wiki/Eisenstein_primes
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Nim}}
 // currently lacks a plot
 const std = @import("std");
+
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 const Complex = std.math.Complex;
 
 const Eisenstein = struct {
@@ -35,7 +38,7 @@ const Eisenstein = struct {
         }
     }
 
-    pub fn format(e: Eisenstein, w: *std.Io.Writer) std.Io.Writer.Error!void {
+    pub fn format(e: Eisenstein, w: *Io.Writer) Io.Writer.Error!void {
         const sign: u8, const imag = if (e.n.im >= 0) .{ '+', e.n.im } else .{ '-', -e.n.im };
 
         try w.print("{d:7.4} {c} {d:6.4}i", .{ e.n.re, sign, imag });
@@ -68,10 +71,9 @@ fn isPrimeN(n: u64) bool {
     return true;
 }
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     // Find Eisenstein primes.
     var eprimes_list: std.ArrayList(Eisenstein) = .empty;
@@ -81,16 +83,16 @@ pub fn main() !void {
         while (b < 100 + 1) : (b += 1) {
             const e: Eisenstein = .init(a, b);
             if (e.isPrimeE())
-                try eprimes_list.append(allocator, e);
+                try eprimes_list.append(gpa, e);
         }
     }
 
-    const eprimes = try eprimes_list.toOwnedSlice(allocator);
-    defer allocator.free(eprimes);
+    const eprimes = try eprimes_list.toOwnedSlice(gpa);
+    defer gpa.free(eprimes);
     std.mem.sortUnstable(Eisenstein, eprimes, {}, lessThan);
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     // Display first 100 Eisenstein primes to terminal.

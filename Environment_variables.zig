@@ -1,19 +1,21 @@
 // https://rosettacode.org/wiki/Environment_variables
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 
-pub fn main() !void {
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const allocator: Allocator = init.arena.allocator();
+    const env: std.process.Environ = init.minimal.environ;
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    // no need to free with arena as arena.deinit() frees all allocated with arena
-    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
-    defer _ = arena.deinit();
-    const allocator = arena.allocator();
-
     for ([_][]const u8{ "PATH", "HOME", "USER", "ZIGPATH" }) |v|
-        try stdout.print("{s}={s}\n", .{ v, std.process.getEnvVarOwned(allocator, v) catch "???" });
+        try stdout.print("{s}={s}\n", .{ v, env.getAlloc(allocator, v) catch "???" });
 
     try stdout.flush();
 }

@@ -1,19 +1,22 @@
 // https://rosettacode.org/wiki/Euler%27s_sum_of_powers_conjecture
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Python}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const max_n = 250;
 const Number = u64;
 
-pub fn main() !void {
-    var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
-    const stdout = &stdout_writer.interface;
+pub fn main(init: std.process.Init) !void {
+    var arena: *std.heap.ArenaAllocator = init.arena;
+    const allocator: Allocator = arena.allocator();
 
-    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
+    const io: Io = init.io;
+
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     var pow5_to_n: std.AutoArrayHashMapUnmanaged(Number, usize) = .empty;
     // defer pow5_to_n.deinit(); // not necessary with ArenaAllocator

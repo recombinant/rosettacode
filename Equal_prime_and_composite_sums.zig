@@ -1,27 +1,29 @@
 // https://rosettacode.org/wiki/Equal_prime_and_composite_sums
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 
 // https://rosettacode.org/wiki/Extensible_prime_generator
 const PrimeGen = @import("Extensible_prime_generator_alternate.zig").PrimeGen;
 const AutoSieveType = @import("Extensible_prime_generator_alternate.zig").AutoSieveType;
 
-pub fn main() !void {
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     const limit = 400_000_000;
 
-    var t0: std.time.Timer = try .start();
-
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+    var t0: Io.Timestamp = .now(io, .real);
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var c: Composite(limit) = .init(allocator);
+    var c: Composite(limit) = .init(gpa);
     defer c.deinit();
-    var p: Prime(limit) = .init(allocator);
+    var p: Prime(limit) = .init(gpa);
     defer p.deinit();
 
     try stdout.writeAll("          Sum         |   Prime Index   | Composite Index \n");
@@ -46,7 +48,7 @@ pub fn main() !void {
             break;
     }
 
-    std.log.info("processed in {D}", .{t0.read()});
+    std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 }
 
 fn Prime(comptime limit: u64) type {
@@ -59,7 +61,7 @@ fn Prime(comptime limit: u64) type {
 
         primegen: PrimeGen(T),
 
-        fn init(allocator: std.mem.Allocator) Self {
+        fn init(allocator: Allocator) Self {
             return Self{
                 .primegen = PrimeGen(T).init(allocator),
             };
@@ -88,7 +90,7 @@ fn Composite(comptime limit: u64) type {
         primegen: PrimeGen(T),
         prime: u64,
 
-        fn init(allocator: std.mem.Allocator) Self {
+        fn init(allocator: Allocator) Self {
             var primegen: PrimeGen(T) = .init(allocator);
             const prime = (primegen.next() catch unreachable).?;
             return Self{

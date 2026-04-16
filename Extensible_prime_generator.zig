@@ -1,7 +1,8 @@
 // https://rosettacode.org/wiki/Extensible_prime_generator
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // Copied from rosettacode
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 
 pub fn PrimeGen(comptime Int: type) type {
     assertInt(Int);
@@ -14,22 +15,22 @@ pub fn PrimeGen(comptime Int: type) type {
         offset: u6,
         candidate: Int,
         multiples: MultiplesPriorityQueue,
-        allocator: std.mem.Allocator,
+        allocator: Allocator,
         count: u32,
 
-        pub fn init(alloc: std.mem.Allocator) Self {
+        pub fn init(alloc: Allocator) Self {
             return Self{
                 .initial_primes = 0xAC, // primes 2, 3, 5, 7 in a bitmask
                 .offset = 0,
                 .candidate = 1,
                 .count = 0,
                 .allocator = alloc,
-                .multiples = .init(alloc, {}),
+                .multiples = .empty,
             };
         }
 
         pub fn deinit(self: *PrimeGen(Int)) void {
-            self.multiples.deinit();
+            self.multiples.deinit(self.allocator);
         }
 
         pub fn next(self: *PrimeGen(Int)) !?Int {
@@ -55,7 +56,7 @@ pub fn PrimeGen(comptime Int: type) type {
                         // to the heap.
                         //
                         if (self.candidate <= std.math.maxInt(SqrtType(Int)))
-                            try self.multiples.add(Wheel2357Multiple(Int){
+                            try self.multiples.push(self.allocator, Wheel2357Multiple(Int){
                                 .multiple = self.candidate * self.candidate,
                                 .base_prime = self.candidate,
                                 .offset = self.offset,
@@ -67,7 +68,7 @@ pub fn PrimeGen(comptime Int: type) type {
                             // advance the top of heap to the next prime multiple
                             // that is not a multiple of 2, 3, 5, 7.
                             //
-                            var mult = self.multiples.remove();
+                            var mult = self.multiples.pop().?;
                             // If the multiple becomes too big (greater than the the maximum
                             // sieve size), then there's no reason to add it back to the queue.
                             //
@@ -76,7 +77,7 @@ pub fn PrimeGen(comptime Int: type) type {
                                 mult.multiple, const ov2 = @addWithOverflow(tmp, mult.multiple);
                                 if (ov2 == 0) {
                                     mult.offset = (mult.offset + 1) % @as(u6, wheel2357.len);
-                                    try self.multiples.add(mult);
+                                    try self.multiples.push(self.allocator, mult);
                                 }
                             }
                             top = self.multiples.peek();
