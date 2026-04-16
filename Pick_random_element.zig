@@ -1,11 +1,14 @@
 // https://rosettacode.org/wiki/Pick_random_element
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // Copied from rosettacode
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) void {
+    const io = init.io;
+
     var seed: u64 = undefined;
-    try std.posix.getrandom(std.mem.asBytes(&seed));
+    Io.random(io, std.mem.asBytes(&seed));
     var prng: std.Random.DefaultPrng = .init(seed);
     const random = prng.random();
 

@@ -1,25 +1,25 @@
 // https://rosettacode.org/wiki/Two_bullet_roulette
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     // --------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-    // ------------------------------------------ allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
     // --------------------- pseudo random number generator
     var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        try std.posix.getrandom(std.mem.asBytes(&seed));
+        Io.random(io, std.mem.asBytes(&seed));
         break :blk seed;
     });
     const rand = prng.random();
     // ----------------------------------------------------
-    var revolver: Revolver = .init(allocator, rand);
+    var revolver: Revolver = .init(gpa, rand);
 
     const combinations = [_][]const u8{
         "LSLSFSF",
@@ -29,7 +29,7 @@ pub fn main() !void {
     };
     for (combinations) |string| {
         const result = try revolver.roulette(string);
-        defer allocator.free(result.text);
+        defer gpa.free(result.text);
         try stdout.print(
             "{s: <40} produces {d:6.3}% deaths.\n",
             .{ result.text, result.percent },
@@ -39,11 +39,11 @@ pub fn main() !void {
 }
 
 const Revolver = struct {
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
     rand: std.Random = undefined,
     cylinder: [6]bool = std.mem.zeroes([6]bool),
 
-    fn init(allocator: std.mem.Allocator, rand: std.Random) Revolver {
+    fn init(allocator: Allocator, rand: std.Random) Revolver {
         return Revolver{
             .allocator = allocator,
             .rand = rand,
@@ -52,7 +52,7 @@ const Revolver = struct {
 
     /// Caller owns text memory returned in struct
     fn roulette(self: *Revolver, src: []const u8) !struct { text: []const u8, percent: f64 } {
-        var a: std.Io.Writer.Allocating = .init(self.allocator);
+        var a: Io.Writer.Allocating = .init(self.allocator);
         defer a.deinit();
 
         const test_count = 100_000;
@@ -69,7 +69,7 @@ const Revolver = struct {
         };
     }
 
-    fn mstring(s: []const u8, w: *std.Io.Writer) !void {
+    fn mstring(s: []const u8, w: *Io.Writer) !void {
         for (s) |c| {
             const word: []const u8 = switch (c) {
                 'L' => "load",
