@@ -1,17 +1,21 @@
 // https://rosettacode.org/wiki/Largest_difference_between_adjacent_primes
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 
 const LIMIT = 1_000_000;
 
-pub fn main() !void {
-    var t0: std.time.Timer = try .start();
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
+    var t0: Io.Timestamp = .now(io, .real);
 
     // The `comptime` reduces the runtime sieve creation time by more than 3 orders of magnitude.
     // Without the `comptime` the compile time is considerably quicker.
     const prime_sieve = comptime sieve(LIMIT);
 
-    std.log.info("sieve created in {D}", .{t0.read()});
+    std.log.info("sieve created in {f}", .{t0.untilNow(io, .real)});
 
     var curr: u32 = 2;
     var prev: u32 = 2;
@@ -30,7 +34,7 @@ pub fn main() !void {
         };
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try stdout.print("{} is the largest difference between adjacent primes under {}\n", .{ prime2 - prime1, LIMIT });

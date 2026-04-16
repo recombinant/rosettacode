@@ -1,8 +1,11 @@
 // https://rosettacode.org/wiki/Largest_product_in_a_grid
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     const text =
         \\08 02 22 97 38 15 00 40 00 75 04 05 07 78 52 12 50 77 91 08
         \\49 49 99 40 17 81 18 57 60 87 17 40 98 43 69 48 04 56 62 00
@@ -42,7 +45,7 @@ pub fn main() !void {
         };
     // ----------------------------------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     // The task just asked for the value. Nothing else.
