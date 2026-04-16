@@ -40,7 +40,7 @@ const FwdDiffError = error{
     OrderTooHigh,
 };
 
-fn fwdDiff(allocator: std.mem.Allocator, x_: []const f64, order: usize) ![]f64 {
+fn fwdDiff(allocator: Allocator, x_: []const f64, order: usize) ![]f64 {
     // handle two special cases
     if (order >= x_.len) return FwdDiffError.OrderTooHigh;
 
@@ -59,7 +59,7 @@ fn fwdDiff(allocator: std.mem.Allocator, x_: []const f64, order: usize) ![]f64 {
     return try allocator.realloc(y, len);
 }
 
-fn binomCoeff(allocator: std.mem.Allocator, n: i32) ![]i32 {
+fn binomCoeff(allocator: Allocator, n: i32) ![]i32 {
     var b = try allocator.alloc(i32, 1 + @as(usize, @intCast(n)));
     b[0] = if (@rem(n, 2) == 0) 1 else -1;
 

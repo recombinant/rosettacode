@@ -32,7 +32,7 @@ pub fn main(init: std.process.Init) !void {
 }
 
 /// Primary task
-fn task1(allocator: Allocator, word_set: WordSet, w: *std.Io.Writer) !void {
+fn task1(allocator: Allocator, word_set: WordSet, w: *Io.Writer) !void {
     var found: std.ArrayList([]const u8) = .empty;
     defer found.deinit(allocator);
 
@@ -62,7 +62,7 @@ fn task1(allocator: Allocator, word_set: WordSet, w: *std.Io.Writer) !void {
 }
 
 /// Optional Extra task
-fn task2(allocator: Allocator, word_set: WordSet, w: *std.Io.Writer) !void {
+fn task2(allocator: Allocator, word_set: WordSet, w: *Io.Writer) !void {
     var distinct_letters9: std.AutoArrayHashMapUnmanaged(u8, void) = .empty;
     defer distinct_letters9.deinit(allocator);
     var letter_list9: std.ArrayList(u8) = try .initCapacity(allocator, 9);

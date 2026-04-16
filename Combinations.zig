@@ -81,7 +81,7 @@ fn CombinationIterator(comptime T: type, comptime m: T, comptime n: T) type {
 
 /// Brute force by iterating through all possible combinations of "m"
 /// and only selecting those where the count matches "n".
-fn comb(w: *std.Io.Writer, comptime T: type, comptime m: []const T, n: u8) !void {
+fn comb(w: *Io.Writer, comptime T: type, comptime m: []const T, n: u8) !void {
     var bits: std.StaticBitSet(m.len) = .initEmpty();
 
     // number of possible combinations

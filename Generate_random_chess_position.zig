@@ -42,7 +42,7 @@ const Board = struct {
         };
     }
 
-    fn printBoard(self: Board, w: *std.Io.Writer) !void {
+    fn printBoard(self: Board, w: *Io.Writer) !void {
         for (self.grid) |row| {
             for (row) |square|
                 try w.print("{c} ", .{square});
@@ -50,7 +50,7 @@ const Board = struct {
         }
     }
 
-    fn prettyPrintBoard(self: Board, w: *std.Io.Writer) !void {
+    fn prettyPrintBoard(self: Board, w: *Io.Writer) !void {
         for (self.grid) |row| {
             for (row) |piece| {
                 const pretty = switch (piece) {
@@ -106,7 +106,7 @@ const Board = struct {
         return self;
     }
 
-    fn printFen(self: Board, w: *std.Io.Writer) !void {
+    fn printFen(self: Board, w: *Io.Writer) !void {
         var empty_count: u6 = 0;
         for (self.grid) |row| {
             for (row) |square| {

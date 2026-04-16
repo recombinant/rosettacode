@@ -36,7 +36,7 @@ fn CantorSet(comptime width: usize, comptime height: usize) type {
             self.cantor(start + seg * 2, seg, index + 1);
         }
 
-        fn print(self: *const Self, writer: *std.Io.Writer) !void {
+        fn print(self: *const Self, writer: *Io.Writer) !void {
             for (0..height) |i| {
                 try writer.writeAll(self.lines[i * width .. (i + 1) * width]);
                 try writer.writeByte('\n');

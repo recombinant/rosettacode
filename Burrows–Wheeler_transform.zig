@@ -112,7 +112,7 @@ fn ibwt(allocator: Allocator, r: []const u8, stx: u8, etx: u8) ![]const u8 {
 }
 
 /// Allocates memory for the result, which must be freed by the caller.
-fn printString(s: []const u8, comptime stx: u8, comptime etx: u8, writer: *std.Io.Writer) !void {
+fn printString(s: []const u8, comptime stx: u8, comptime etx: u8, writer: *Io.Writer) !void {
     for (s) |c| {
         const out = switch (c) {
             stx => if (std.ascii.isPrint(c)) c else '^',

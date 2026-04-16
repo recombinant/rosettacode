@@ -36,7 +36,7 @@ pub fn main(init: std.process.Init) !void {
     std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 }
 
-fn multiBasePrimes(allocator: Allocator, max_base: u6, max_length: u4, w: *std.Io.Writer) !void {
+fn multiBasePrimes(allocator: Allocator, max_base: u6, max_length: u4, w: *Io.Writer) !void {
     const sieve: PrimeSieve = try .init(allocator, try std.math.powi(u64, max_base, max_length));
     defer sieve.deinit(allocator);
     var length: u4 = 1;

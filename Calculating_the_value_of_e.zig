@@ -60,7 +60,7 @@ pub fn main(init: std.process.Init) !void {
     }
 }
 
-fn decPrint(w: *std.Io.Writer, num: u64, den: u64, prec: usize) !void {
+fn decPrint(w: *Io.Writer, num: u64, den: u64, prec: usize) !void {
     // print out integer part.
     try w.print("{}.", .{num / den});
 

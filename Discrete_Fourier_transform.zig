@@ -86,7 +86,7 @@ fn idft(allocator: Allocator, y: []Complex) ![]Complex {
 }
 
 /// Print title followed by complex numbers
-fn printComplexSlice(sequence: []const Complex, title: []const u8, w: *std.Io.Writer) !void {
+fn printComplexSlice(sequence: []const Complex, title: []const u8, w: *Io.Writer) !void {
     try w.writeAll(title);
     var sep: []const u8 = " ";
     for (sequence) |c| {
@@ -97,7 +97,7 @@ fn printComplexSlice(sequence: []const Complex, title: []const u8, w: *std.Io.Wr
 }
 
 /// Print complex number. Omit imaginary component if zero.
-fn printComplex(c: Complex, w: *std.Io.Writer) !void {
+fn printComplex(c: Complex, w: *Io.Writer) !void {
     const options: std.fmt.Number = .{ .precision = 2 };
 
     if (c.im == 0)

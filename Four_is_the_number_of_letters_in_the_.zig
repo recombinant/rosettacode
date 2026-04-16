@@ -54,7 +54,7 @@ pub fn main(init: std.process.Init) !void {
 const Sentence = []const Word;
 
 /// Allocates memory for the result, which must be freed by the caller.
-fn getSentence(allocator: std.mem.Allocator, count: usize) !Sentence {
+fn getSentence(allocator: Allocator, count: usize) !Sentence {
     const words = [_][]const u8{
         "Four",    "is",   "the",      "number", "of",
         "letters", "in",   "the",      "first",  "word",
@@ -109,7 +109,7 @@ fn calcSentenceLength(words: Sentence) usize {
     return len;
 }
 /// Allocates memory for the result, which must be freed by the caller.
-fn stringifySentence(allocator: std.mem.Allocator, words: Sentence) ![]const u8 {
+fn stringifySentence(allocator: Allocator, words: Sentence) ![]const u8 {
     const sentence_length = calcSentenceLength(words);
     //
     var result: std.ArrayList(u8) = try .initCapacity(allocator, sentence_length);
@@ -163,7 +163,7 @@ const Word = union(WordTag) {
     }
     /// The word itself as a string.
     /// Allocates memory for the result, which must be freed by the caller.
-    fn asString(self: Word, allocator: std.mem.Allocator) ![]const u8 {
+    fn asString(self: Word, allocator: Allocator) ![]const u8 {
         switch (self) {
             .word, .word_comma => |letters| {
                 return try allocator.dupe(u8, letters);
@@ -225,7 +225,7 @@ fn getNamedNumber(n: u64) NamedNumber {
 }
 
 /// Recursive. Returns a count of the words added.
-fn appendNumberName(result: *std.ArrayList(Word), allocator: std.mem.Allocator, n: usize, ordinal: bool) !usize {
+fn appendNumberName(result: *std.ArrayList(Word), allocator: Allocator, n: usize, ordinal: bool) !usize {
     const small = comptime [_]NumberName{
         .init("zero", "zeroth"),         .init("one", "first"),           .init("two", "second"),
         .init("three", "third"),         .init("four", "fourth"),         .init("five", "fifth"),

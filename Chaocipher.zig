@@ -35,7 +35,7 @@ const ChaoMode = enum {
     decrypt,
 };
 
-fn chao(text_in: []const u8, text_out: []u8, mode: ChaoMode, verbose: bool, writer: *std.Io.Writer) ![]const u8 {
+fn chao(text_in: []const u8, text_out: []u8, mode: ChaoMode, verbose: bool, writer: *Io.Writer) ![]const u8 {
     var left = "HXUCZVAMDSLKPEFJRIGTWOBNYQ".*;
     var right = "PTLNBQDEOYSFAVZKGJRIHWXUMC".*;
 

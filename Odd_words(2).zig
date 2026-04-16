@@ -24,7 +24,7 @@ pub fn main(init: std.process.Init) !void {
 
     // assume words are <= 64 bytes in length
     var buffer2: [64]u8 = undefined;
-    var w = std.Io.Writer.fixed(&buffer2);
+    var w = Io.Writer.fixed(&buffer2);
 
     // ---------------------------------------------------
     // count the words for `word_set` capacity
@@ -92,7 +92,7 @@ pub fn main(init: std.process.Init) !void {
 
 // Count all the words with a length greater than 4
 // (minimum length for a odd word).
-fn getWordCount(r: *std.Io.Reader, w: *std.Io.Writer) !u32 {
+fn getWordCount(r: *Io.Reader, w: *Io.Writer) !u32 {
     var count: u32 = 1;
     while (0 != try r.streamDelimiterEnding(w, '\n')) : (_ = w.consumeAll()) {
         // consume the '\n' (or catch eof)

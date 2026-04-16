@@ -32,7 +32,7 @@ pub fn main(init: std.process.Init) !void {
 }
 
 /// Also know as RPN (Reverse Polish Notation)
-fn postfix(allocator: Allocator, w: *std.Io.Writer, voltage: f32, s: []const u8) !*Node {
+fn postfix(allocator: Allocator, w: *Io.Writer, voltage: f32, s: []const u8) !*Node {
     const tokens = try parse(allocator, s);
     defer allocator.free(tokens);
 

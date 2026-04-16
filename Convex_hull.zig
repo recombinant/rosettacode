@@ -73,7 +73,7 @@ const Point = struct {
     fn init(x: f64, y: f64) Point {
         return .{ .x = x, .y = y };
     }
-    pub fn format(self: *const Point, writer: *std.Io.Writer) std.Io.Writer.Error!void {
+    pub fn format(self: *const Point, writer: *Io.Writer) Io.Writer.Error!void {
         try writer.print("({d}, {d})", .{ self.x, self.y });
     }
     fn lessThan(self: Point, other: Point) bool {

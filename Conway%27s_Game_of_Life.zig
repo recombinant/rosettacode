@@ -54,7 +54,7 @@ fn Life(comptime w: usize, comptime h: usize) type {
                     self.b.set(x, y, self.a.next(x, y));
             std.mem.swap(Field(w, h), &self.a, &self.b);
         }
-        pub fn format(self: *const Self, writer: *std.Io.Writer) std.Io.Writer.Error!void {
+        pub fn format(self: *const Self, writer: *Io.Writer) Io.Writer.Error!void {
             for (0..h) |y| {
                 for (0..w) |x|
                     try writer.writeByte(if (self.a.state(x, y)) '*' else ' ');

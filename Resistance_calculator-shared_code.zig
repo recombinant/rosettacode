@@ -4,6 +4,7 @@
 // Shared Infix/Postfix Code
 const std = @import("std");
 const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 // Zig "enum"
 const NodeType = enum {
@@ -71,7 +72,7 @@ pub const Node = struct {
         }
     }
 
-    pub fn report(self: *Node, allocator: Allocator, w: *std.Io.Writer, level: []const u8) !void {
+    pub fn report(self: *Node, allocator: Allocator, w: *Io.Writer, level: []const u8) !void {
         if (self.voltage) |voltage| {
             try w.print("{d:8.3} {d:8.3} {d:8.3} {d:8.3}  {s}{c}\n", .{
                 self.res(),    voltage, self.current(),
@@ -125,7 +126,7 @@ fn build(allocator: Allocator, tokens: []PostfixToken) !*Node {
     return stack.pop();
 }
 
-pub fn calculate(allocator: Allocator, w: *std.Io.Writer, voltage: f32, tokens: []PostfixToken) !*Node {
+pub fn calculate(allocator: Allocator, w: *Io.Writer, voltage: f32, tokens: []PostfixToken) !*Node {
     try w.writeAll("     Ohm     Volt   Ampere     Watt  Network tree\n");
     try w.flush();
 

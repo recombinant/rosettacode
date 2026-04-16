@@ -22,7 +22,7 @@ pub fn main(init: std.process.Init) !void {
     try stdout.flush();
 }
 
-fn printFreeCell(rnd_: anytype, w: *std.Io.Writer) !void {
+fn printFreeCell(rnd_: anytype, w: *Io.Writer) !void {
     var rnd = rnd_;
 
     const suits = [4][]const u8{ "♧", "♢", "♡", "♤" };

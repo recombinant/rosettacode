@@ -45,7 +45,7 @@ const InfixToken = union(enum) {
 };
 
 /// Convert infix expression 's' to postfix and call the postfix calculate()
-fn infix(allocator: Allocator, w: *std.Io.Writer, voltage: f32, s: []const u8) !*Node {
+fn infix(allocator: Allocator, w: *Io.Writer, voltage: f32, s: []const u8) !*Node {
     // parse infix expression
     const infix_tokens: []InfixToken = try parse(allocator, s);
     defer allocator.free(infix_tokens);

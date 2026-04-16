@@ -20,7 +20,7 @@ pub fn main(init: std.process.Init) !void {
     try stdout.flush();
 }
 
-fn listMags(allocator: Allocator, from: u32, thru: u32, perLine: u8, writer: *std.Io.Writer) !void {
+fn listMags(allocator: Allocator, from: u32, thru: u32, perLine: u8, writer: *Io.Writer) !void {
     if (from < 2)
         try writer.print("\nFirst {} magnanimous numbers:\n", .{thru})
     else {

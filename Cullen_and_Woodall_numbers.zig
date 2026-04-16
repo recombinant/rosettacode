@@ -21,7 +21,7 @@ pub fn main(init: std.process.Init) !void {
     try stdout.flush();
 }
 
-fn displayNumberSequence(count: usize, number_type: NumberType, w: *std.Io.Writer) !void {
+fn displayNumberSequence(count: usize, number_type: NumberType, w: *Io.Writer) !void {
     try w.print("The first {} {t} numbers are:\n", .{ count, number_type });
 
     var it: NumberIterator = .init(number_type);
@@ -32,7 +32,7 @@ fn displayNumberSequence(count: usize, number_type: NumberType, w: *std.Io.Write
     _ = try w.splatByte('\n', 2);
 }
 
-fn displayPrimeNumberNSequence(count: usize, number_type: NumberType, w: *std.Io.Writer) !void {
+fn displayPrimeNumberNSequence(count: usize, number_type: NumberType, w: *Io.Writer) !void {
     try w.print("The first (up to) {} {t} prime numbers are:\n", .{ count, number_type });
 
     var it: PrimeNumberNIterator = .init(number_type);

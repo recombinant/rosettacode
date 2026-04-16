@@ -36,7 +36,7 @@ pub fn main(init: std.process.Init) !void {
     try stdout.flush();
 }
 
-fn printFactorion(n: usize, base: u8, w: *std.Io.Writer) !void {
+fn printFactorion(n: usize, base: u8, w: *Io.Writer) !void {
     if (base != 10) {
         var buffer: [10]u8 = undefined;
         const len = std.fmt.printInt(&buffer, n, base, .lower, .{});

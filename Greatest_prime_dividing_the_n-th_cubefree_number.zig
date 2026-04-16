@@ -67,7 +67,7 @@ pub fn main(init: std.process.Init) !void {
 /// isSet() operation with > 10_000_000 bits.
 ///
 /// Caller owns returned slice memory.
-fn getSieve3(allocator: std.mem.Allocator, comptime maximum: u32) ![]const bool {
+fn getSieve3(allocator: Allocator, comptime maximum: u32) ![]const bool {
     // ----------------------------------- estimate maximum prime
     // (estimate primes in range here rather than cubefree in range)
     // PrimePages

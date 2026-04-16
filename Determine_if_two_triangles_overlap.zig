@@ -64,7 +64,7 @@ fn Point(comptime T: type) type {
         x: T,
         y: T,
 
-        pub fn format(self: *const Self, w: *std.Io.Writer) std.Io.Writer.Error!void {
+        pub fn format(self: *const Self, w: *Io.Writer) Io.Writer.Error!void {
             try w.print("({d},{d})", .{ self.x, self.y });
         }
     };
@@ -79,7 +79,7 @@ fn Triangle(comptime T: type) type {
             return Self{ .points = .{ p0, p1, p2 } };
         }
 
-        pub fn format(self: *const Self, w: *std.Io.Writer) std.Io.Writer.Error!void {
+        pub fn format(self: *const Self, w: *Io.Writer) Io.Writer.Error!void {
             try w.print("{f},{f},{f}", .{ self.points[0], self.points[1], self.points[2] });
         }
 

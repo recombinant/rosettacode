@@ -27,7 +27,7 @@ pub fn main(init: std.process.Init) !void {
     try stdout.flush();
 }
 
-fn printVector(vec: []const i32, writer: *std.Io.Writer) !void {
+fn printVector(vec: []const i32, writer: *Io.Writer) !void {
     try writer.writeByte('[');
     for (vec[0..vec.len], 1..) |n, i| {
         try writer.print("{}", .{n});

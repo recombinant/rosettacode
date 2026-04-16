@@ -33,7 +33,7 @@ pub fn main(init: std.process.Init) !void {
 }
 
 /// Print a path.
-fn printPath(w: *std.Io.Writer, path: []const []const u8) !void {
+fn printPath(w: *Io.Writer, path: []const []const u8) !void {
     try w.print("Shortest path from '{s}' to '{s}': {s}", .{ path[0], path[path.len - 1], path[0] });
     for (path[1..]) |s|
         try w.print(" → {s}", .{s});

@@ -15,7 +15,7 @@ pub fn main(init: std.process.Init) !void {
     try stdout.flush();
 }
 
-fn makeChange(total: u32, w: *std.Io.Writer) !void {
+fn makeChange(total: u32, w: *Io.Writer) !void {
     var coins = [_]u32{ 1, 2, 5, 10, 20, 50, 100, 200 };
     std.mem.sortUnstable(u32, &coins, {}, std.sort.desc(u32));
 

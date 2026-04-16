@@ -88,7 +88,7 @@ const Polygon = struct {
         }
         return axes;
     }
-    pub fn format(self: Polygon, w: *std.Io.Writer) std.Io.Writer.Error!void {
+    pub fn format(self: Polygon, w: *Io.Writer) Io.Writer.Error!void {
         try w.writeAll("[ ");
         for (self.vertices) |vertex|
             try w.print("{f}", .{vertex});
@@ -108,7 +108,7 @@ const Vector = struct {
     fn perpendicular(self: Vector) Vector {
         return Vector{ .x = -self.y, .y = self.x };
     }
-    pub fn format(self: Vector, w: *std.Io.Writer) std.Io.Writer.Error!void {
+    pub fn format(self: Vector, w: *Io.Writer) Io.Writer.Error!void {
         try w.print("({d}, {d}) ", .{ self.x, self.y });
     }
 };

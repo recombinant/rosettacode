@@ -46,7 +46,7 @@ pub fn main(init: std.process.Init) !void {
     try stdout.flush();
 }
 
-fn wordLadder(allocator: Allocator, words: []const []const u8, a: []const u8, b: []const u8, w: *std.Io.Writer) !void {
+fn wordLadder(allocator: Allocator, words: []const []const u8, a: []const u8, b: []const u8, w: *Io.Writer) !void {
     var possible: WordArray = .empty;
     defer possible.deinit(allocator);
     for (words) |word|

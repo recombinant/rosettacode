@@ -25,7 +25,7 @@ pub fn main(init: std.process.Init) !void {
     try run4(gpa, io, n, stdout); // tweaked translation of C
 }
 
-fn run1(allocator: Allocator, io: Io, n: usize, w: *std.Io.Writer) !void {
+fn run1(allocator: Allocator, io: Io, n: usize, w: *Io.Writer) !void {
     try w.writeAll("\n\n" ++ "-" ** 66 ++ "\n");
     try w.print("Calculating {d} terms of Mian-Chowla sequence (translation of C)...\n", .{n});
     try w.flush();
@@ -87,7 +87,7 @@ fn getMianChowla1(allocator: Allocator, io: Io, n: usize) ![]u64 {
     return mc;
 }
 
-fn run2(allocator: Allocator, io: Io, n: usize, w: *std.Io.Writer) !void {
+fn run2(allocator: Allocator, io: Io, n: usize, w: *Io.Writer) !void {
     try w.writeAll("\n\n" ++ "-" ** 66 ++ "\n");
     try w.print("Calculating {d} terms of Mian-Chowla sequence (translation of Go)...\n", .{n});
     try w.flush();
@@ -143,7 +143,7 @@ fn getMianChowla2(allocator: Allocator, io: Io, n: usize) ![]u64 {
     return mc;
 }
 
-fn run3(io: Io, comptime n: usize, w: *std.Io.Writer) !void {
+fn run3(io: Io, comptime n: usize, w: *Io.Writer) !void {
     try w.writeAll("\n\n" ++ "-" ** 66 ++ "\n");
     try w.print("Calculating {d} terms of Mian-Chowla sequence (naive)...\n", .{n});
     try w.flush();
@@ -195,7 +195,7 @@ fn getMianChowla3(io: Io, comptime n: usize) ![n]u64 {
     return mc;
 }
 
-fn run4(allocator: Allocator, io: Io, n: usize, w: *std.Io.Writer) !void {
+fn run4(allocator: Allocator, io: Io, n: usize, w: *Io.Writer) !void {
     try w.writeAll("\n\n" ++ "-" ** 66 ++ "\n");
     try w.print("Calculating {d} terms of Mian-Chowla sequence (tweaked translation of C)...\n", .{n});
     try w.flush();

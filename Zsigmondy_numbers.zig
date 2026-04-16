@@ -22,7 +22,7 @@ pub fn main(init: std.process.Init) !void {
     }
 }
 
-fn printZsigmondy(a: u64, b: u64, terms: u8, w: *std.Io.Writer) !void {
+fn printZsigmondy(a: u64, b: u64, terms: u8, w: *Io.Writer) !void {
     try w.print("Zsigmondy(n, {d}, {d}) - first {d} terms:\n", .{ a, b, terms });
     var n: u8 = 1;
     while (n <= terms) : (n += 1)

@@ -28,7 +28,7 @@ pub fn main(init: std.process.Init) !void {
 }
 
 /// Simple brute force solution
-fn simpleBruteForce(allocator: Allocator, w: *std.Io.Writer) !struct { usize, HouseSet } {
+fn simpleBruteForce(allocator: Allocator, w: *Io.Writer) !struct { usize, HouseSet } {
     var array: std.ArrayList(House) = .empty;
     defer array.deinit(allocator);
 
@@ -131,7 +131,7 @@ const HouseSet = struct {
         return result;
     }
 
-    pub fn format(self: HouseSet, w: *std.Io.Writer) std.Io.Writer.Error!void {
+    pub fn format(self: HouseSet, w: *Io.Writer) Io.Writer.Error!void {
         for (self.houses, 1..) |h, i|
             try w.print("{} {f}\n", .{ i, h });
     }
@@ -188,7 +188,7 @@ const House = struct {
     d: Drink,
     s: Smoke,
 
-    pub fn format(self: *const House, w: *std.Io.Writer) std.Io.Writer.Error!void {
+    pub fn format(self: *const House, w: *Io.Writer) Io.Writer.Error!void {
         try w.print("{s:<9}  {s:<6}  {s:<5}  {s:<6}  {s}", .{
             @tagName(self.n),
             @tagName(self.c),
@@ -274,7 +274,7 @@ const Nationality = enum {
     Norwegian,
     German,
 
-    pub fn format(self: @This(), w: *std.Io.Writer) std.Io.Writer.Error!void {
+    pub fn format(self: @This(), w: *Io.Writer) Io.Writer.Error!void {
         try w.print("{s}", .{@tagName(self)});
     }
 };
@@ -285,7 +285,7 @@ const Colour = enum {
     yellow,
     blue,
 
-    pub fn format(self: @This(), w: *std.Io.Writer) std.Io.Writer.Error!void {
+    pub fn format(self: @This(), w: *Io.Writer) Io.Writer.Error!void {
         try w.print("{s}", .{@tagName(self)});
     }
 };
@@ -296,7 +296,7 @@ const Animal = enum {
     horse,
     zebra,
 
-    pub fn format(self: @This(), w: *std.Io.Writer) std.Io.Writer.Error!void {
+    pub fn format(self: @This(), w: *Io.Writer) Io.Writer.Error!void {
         try w.print("{s}", .{@tagName(self)});
     }
 };
@@ -307,7 +307,7 @@ const Drink = enum {
     beer,
     water,
 
-    pub fn format(self: @This(), w: *std.Io.Writer) std.Io.Writer.Error!void {
+    pub fn format(self: @This(), w: *Io.Writer) Io.Writer.Error!void {
         try w.print("{s}", .{@tagName(self)});
     }
 };
@@ -318,7 +318,7 @@ const Smoke = enum {
     @"Blue Master",
     Prince,
 
-    pub fn format(self: @This(), w: *std.Io.Writer) std.Io.Writer.Error!void {
+    pub fn format(self: @This(), w: *Io.Writer) Io.Writer.Error!void {
         try w.print("{s}", .{@tagName(self)});
     }
 };

@@ -29,7 +29,7 @@ pub fn main(init: std.process.Init) !void {
 
 const Dir = enum { ascending, descending };
 
-fn printLongestSequence(allocator: Allocator, dir: Dir, w: *std.Io.Writer) !void {
+fn printLongestSequence(allocator: Allocator, dir: Dir, w: *Io.Writer) !void {
     const primes = blk: {
         var primes: std.ArrayList(usize) = .empty;
         for (sieve(LIMIT), 0..) |b, n|
