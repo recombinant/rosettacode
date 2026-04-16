@@ -1,26 +1,26 @@
 // https://rosettacode.org/wiki/Bioinformatics/Sequence_mutation
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     // --------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-    // ------------------------------------------ allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
     // --------------------- pseudo random number generator
     var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        try std.posix.getrandom(std.mem.asBytes(&seed));
+        Io.random(io, std.mem.asBytes(&seed));
         break :blk seed;
     });
     const rand = prng.random();
     // ---------------------------------- generate sequence
-    var generator: DnaGenerator = .init(allocator, rand);
+    var generator: DnaGenerator = .init(gpa, rand);
 
     var sequence = try generator.generate(200);
     defer sequence.deinit();
@@ -38,7 +38,7 @@ pub fn main() !void {
 }
 
 const DnaSequence = struct {
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
     rand: std.Random,
     sequence: []u8,
 
@@ -95,7 +95,7 @@ const DnaSequence = struct {
     ///    50: ACTGAACGAC CAGGGCCAAA AAGCACGCGC GTGTAGGCAA AAACGTTTCT
     ///   100: CAGACACGGT CCGACTTAAT TGTGCGGATG CGTAGGTATG CTCAGGGGGA
     ///   150: CTATCGCCAT TCATTTCCCG CAGAGCTGAC GAGCGCTCGT TCAATTACTT
-    fn prettyPrint(self: *const DnaSequence, writer: *std.Io.Writer) !void {
+    fn prettyPrint(self: *const DnaSequence, writer: *Io.Writer) !void {
         const step1 = 50;
         const step2 = 10;
         var start1: usize = 0;
@@ -117,10 +117,10 @@ const DnaSequence = struct {
 
 const DnaGenerator = struct {
     const bases = "ACGT";
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
     rand: std.Random,
 
-    fn init(allocator: std.mem.Allocator, rand: std.Random) DnaGenerator {
+    fn init(allocator: Allocator, rand: std.Random) DnaGenerator {
         return DnaGenerator{
             .allocator = allocator,
             .rand = rand,

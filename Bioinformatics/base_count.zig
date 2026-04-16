@@ -1,6 +1,9 @@
 // https://rosettacode.org/wiki/Bioinformatics/base_count
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
 const sort = std.sort;
 
 const b =
@@ -15,10 +18,12 @@ const b =
     "TCCTAAATTTGAATGGCAAACACAAATAAGATTTAGCAATTCGTGTAGAC" ++
     "GACCGGGGACTTGCATGATGGGAGCAGCTTTGTTAAACTACGAACGTAAT";
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     // --------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // ------------------------------------- print sequence
     {
@@ -31,23 +36,19 @@ pub fn main() !void {
         if (start < b.len)
             try stdout.writeByte('\n');
     }
-    // ------------------------------------------ allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
     // ----------------------------------------------------
     var basemap: std.AutoArrayHashMapUnmanaged(u8, u64) = .empty;
-    defer basemap.deinit(allocator);
+    defer basemap.deinit(gpa);
     for (b) |d| {
-        const gop = try basemap.getOrPut(allocator, d);
+        const gop = try basemap.getOrPut(gpa, d);
         if (gop.found_existing)
             gop.value_ptr.* += 1
         else
             gop.value_ptr.* = 1;
     }
     // ----------------------------------------------------
-    const bases = try allocator.dupe(u8, basemap.keys());
-    defer allocator.free(bases);
+    const bases = try gpa.dupe(u8, basemap.keys());
+    defer gpa.free(bases);
     sort.heap(u8, bases, {}, sort.asc(u8));
     // ----------------------------------------------------
     try stdout.writeAll("\nBASE COUNT:\n");

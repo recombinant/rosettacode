@@ -1,14 +1,15 @@
 // https://rosettacode.org/wiki/Bioinformatics/Global_alignment
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
 const assert = std.debug.assert;
 const print = std.debug.print;
 
-pub fn main() !void {
-    // ------------------------------------------ allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     // ------------------------------------- data from task
     const sequences_array = &[_][]const []const u8{
         &[_][]const u8{ "TA", "AAG", "TA", "GAA", "TA" },
@@ -32,18 +33,18 @@ pub fn main() !void {
     };
     // ----------------------------------------------------
     for (sequences_array) |sequences| {
-        const scs = try shortestCommonSuperstring(allocator, sequences);
+        const scs = try shortestCommonSuperstring(gpa, sequences);
         defer {
-            for (scs) |s| allocator.free(s);
-            allocator.free(scs);
+            for (scs) |s| gpa.free(s);
+            gpa.free(scs);
         }
         for (scs) |s|
-            try printCounts(allocator, s);
+            try printCounts(gpa, io, s);
     }
 }
 
 /// Returns shortest common superstrings of a list of strings.
-fn shortestCommonSuperstring(allocator: std.mem.Allocator, sequences: []const []const u8) ![][]const u8 {
+fn shortestCommonSuperstring(allocator: Allocator, sequences: []const []const u8) ![][]const u8 {
     var ss = try deduplicate(allocator, sequences);
     defer allocator.free(ss);
 
@@ -82,10 +83,10 @@ fn shortestCommonSuperstring(allocator: std.mem.Allocator, sequences: []const []
 /// The longest suffix of `s` that matches a prefix of `t` will be removed.
 /// Callee (this function) owns slice parameter `s` memory.
 /// Caller owns returned slice memory.
-fn smash(allocator: std.mem.Allocator, s: []u8, t: []const u8) ![]u8 {
+fn smash(allocator: Allocator, s: []u8, t: []const u8) ![]u8 {
     defer allocator.free(s);
 
-    var a: std.Io.Writer.Allocating = .init(allocator);
+    var a: Io.Writer.Allocating = .init(allocator);
     defer a.deinit();
     const w = &a.writer;
 
@@ -104,7 +105,7 @@ fn smash(allocator: std.mem.Allocator, s: []u8, t: []const u8) ![]u8 {
 
 /// Return the array of sequences with those that are a substring
 /// of others removed.
-fn deduplicate(allocator: std.mem.Allocator, sequences: []const []const u8) ![][]const u8 {
+fn deduplicate(allocator: Allocator, sequences: []const []const u8) ![][]const u8 {
     var ss: [][]const u8 = try distinct(allocator, sequences);
     if (ss.len < 2)
         return ss; // must be allocated with "allocator"
@@ -127,7 +128,7 @@ fn deduplicate(allocator: std.mem.Allocator, sequences: []const []const u8) ![][
 
 /// Returns all distinct elements from a list of strings.
 /// Caller owns returned slice.
-fn distinct(allocator: std.mem.Allocator, sequences: []const []const u8) ![][]const u8 {
+fn distinct(allocator: Allocator, sequences: []const []const u8) ![][]const u8 {
     var set: std.StringArrayHashMapUnmanaged(void) = .empty;
     defer set.deinit(allocator);
     for (sequences) |s|
@@ -136,7 +137,7 @@ fn distinct(allocator: std.mem.Allocator, sequences: []const []const u8) ![][]co
     return try allocator.dupe([]const u8, set.keys());
 }
 
-fn printCounts(allocator: std.mem.Allocator, sequence: []const u8) !void {
+fn printCounts(allocator: Allocator, io: Io, sequence: []const u8) !void {
     // ----------------------------------------------------
     var base_map: std.AutoArrayHashMapUnmanaged(u8, u64) = .empty;
     defer base_map.deinit(allocator);
@@ -151,7 +152,7 @@ fn printCounts(allocator: std.mem.Allocator, sequence: []const u8) !void {
     const bases = [_]u8{ 'A', 'C', 'G', 'T' };
     // ----------------------------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // ----------------------------------------------------
     try stdout.print("\nNucleotide counts for {s}:\n", .{sequence});
@@ -178,9 +179,9 @@ fn Permutator(comptime T: type) type {
         slice: []T,
         indices: []usize,
         remaining: usize,
-        allocator: std.mem.Allocator,
+        allocator: Allocator,
 
-        fn init(allocator: std.mem.Allocator, slice: []T) !Self {
+        fn init(allocator: Allocator, slice: []T) !Self {
             assert(slice.len < 21); // usize factorial limit
             const indices = try allocator.alloc(usize, slice.len);
             for (indices, 0..) |*index, n|
