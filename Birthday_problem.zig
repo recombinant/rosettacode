@@ -50,7 +50,7 @@ fn BirthdayProblem(comptime options: BirthdayProblemOptions) type {
         fn init(io: Io, random: std.Random) Self {
             return .{
                 .random = random,
-                // null or unbuffered
+                // null or unbuffered writer
                 .stderr = if (options.debug == .none) null else Io.File.stderr().writer(io, &.{}),
             };
         }
