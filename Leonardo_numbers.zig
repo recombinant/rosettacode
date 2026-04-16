@@ -1,7 +1,8 @@
 // https://rosettacode.org/wiki/Leonardo_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Io = std.Io;
 
 // --------------------------------------- normal leonardo series
 // Enter first two Leonardo numbers and increment step : 1 1 1
@@ -14,20 +15,23 @@ const std = @import("std");
 //  0 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597 2584 4181 6765 10946 17711 28657 46368
 
 // --------------------------------------------------------------
-pub fn main() !void {
+
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdin_buffer: [1024]u8 = undefined;
-    var stdin_reader = std.fs.File.stdin().reader(&stdin_buffer);
+    var stdin_reader = Io.File.stdin().reader(io, &stdin_buffer);
     const stdin = &stdin_reader.interface;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try stdout.writeAll("Enter first two Leonardo numbers and increment step : ");
     try stdout.flush();
 
     var buffer1: [1024]u8 = undefined;
-    var w: std.Io.Writer = .fixed(&buffer1);
+    var w: Io.Writer = .fixed(&buffer1);
 
     _ = try stdin.streamDelimiter(&w, '\n');
     const line = w.buffered();
@@ -53,7 +57,7 @@ pub fn main() !void {
     try stdout.flush();
 }
 
-fn leonardo(a_: u64, b_: u64, step: u64, num: u64, w: *std.Io.Writer) !void {
+fn leonardo(a_: u64, b_: u64, step: u64, num: u64, w: *Io.Writer) !void {
     var a = a_;
     var b = b_;
 

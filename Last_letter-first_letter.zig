@@ -1,9 +1,14 @@
 // https://rosettacode.org/wiki/Last_letter-first_letter
-// // {{works with|Zig|0.15.1}}
+// // {{works with|Zig|0.16.0}}
 // {{trans|Wren}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     const pokemon =
         \\ audino bagon baltoy banette bidoof braviary bronzor carracosta charmeleon
         \\ cresselia croagunk darmanitan deino emboar emolga exeggcute gabite
@@ -14,14 +19,11 @@ pub fn main() !void {
         \\ sealeo silcoon simisear snivy snorlax spoink starly tirtouga trapinch treecko
         \\ tyrogue vigoroth vulpix wailord wartortle whismur wingull yamask
     ;
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
 
-    const names = try split(allocator, pokemon);
-    defer allocator.free(names);
+    const names = try split(gpa, pokemon);
+    defer gpa.free(names);
 
-    var llfl: LastLetterFirstLetter = .init(allocator, names);
+    var llfl: LastLetterFirstLetter = .init(gpa, names);
     defer llfl.deinit();
 
     try llfl.search();
@@ -30,7 +32,7 @@ pub fn main() !void {
     // std.mem.sort([]const u8, llfl.max_path_example.items, {}, lessThan);
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try stdout.print("Maximum path length         : {}\n", .{llfl.max_path_length});
@@ -43,13 +45,13 @@ pub fn main() !void {
 }
 
 const LastLetterFirstLetter = struct {
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
     names: [][]const u8,
     max_path_length: usize,
     max_path_length_count: usize,
     max_path_example: std.ArrayList([]const u8),
 
-    fn init(allocator: std.mem.Allocator, names: [][]const u8) LastLetterFirstLetter {
+    fn init(allocator: Allocator, names: [][]const u8) LastLetterFirstLetter {
         return .{
             .allocator = allocator,
             .names = names,
@@ -91,7 +93,7 @@ const LastLetterFirstLetter = struct {
 };
 /// Split string at whitepace and de-duplicate.
 /// Allocates memory for the result, which must be freed by the caller.
-fn split(allocator: std.mem.Allocator, string: []const u8) ![][]const u8 {
+fn split(allocator: Allocator, string: []const u8) ![][]const u8 {
     var name_set: std.StringArrayHashMapUnmanaged(void) = .empty;
     defer name_set.deinit(allocator);
     // dedupe using set
