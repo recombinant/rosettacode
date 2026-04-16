@@ -1,12 +1,15 @@
 // https://rosettacode.org/wiki/Yellowstone_sequence
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Nim}}
 
 // https://rosettacode.org/wiki/Yellowstone_sequence#Procedure_version
 const std = @import("std");
 
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
 /// Caller owns returned slice memory.
-fn yellowstone(allocator: std.mem.Allocator, n: u32) ![]u32 {
+fn yellowstone(allocator: Allocator, n: u32) ![]u32 {
     std.debug.assert(n >= 3);
     var result: std.ArrayList(u32) = try .initCapacity(allocator, n);
     try result.appendSlice(allocator, &[_]u32{ 1, 2, 3 });
@@ -33,17 +36,16 @@ fn yellowstone(allocator: std.mem.Allocator, n: u32) ![]u32 {
     return try result.toOwnedSlice(allocator);
 }
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    const result = try yellowstone(allocator, 30);
-    defer allocator.free(result);
+    const result = try yellowstone(gpa, 30);
+    defer gpa.free(result);
 
     try stdout.print("{any}\n", .{result});
     try stdout.flush();

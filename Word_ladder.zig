@@ -1,21 +1,22 @@
 // https://www.rosettacode.org/wiki/Word_ladder
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 const std = @import("std");
+
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const WordArray = std.ArrayList([]const u8);
 
 const unixdict = @embedFile("data/unixdict.txt");
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     //
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-
     //
     const word_count = blk: {
         var word_count: usize = 0;
@@ -24,14 +25,14 @@ pub fn main() !void {
             word_count += 1;
         break :blk word_count;
     };
-    var word_array: WordArray = try .initCapacity(allocator, word_count);
+    var word_array: WordArray = try .initCapacity(gpa, word_count);
 
     var it = std.mem.tokenizeScalar(u8, unixdict, '\n');
     while (it.next()) |word|
-        try word_array.append(allocator, word);
+        try word_array.append(gpa, word);
 
-    const words = try word_array.toOwnedSlice(allocator);
-    defer allocator.free(words);
+    const words = try word_array.toOwnedSlice(gpa);
+    defer gpa.free(words);
 
     const pairs = [_]struct { a: []const u8, b: []const u8 }{
         .{ .a = "boy", .b = "man" },
@@ -41,11 +42,11 @@ pub fn main() !void {
         .{ .a = "child", .b = "adult" },
     };
     for (pairs) |pair|
-        try wordLadder(allocator, words, pair.a, pair.b, stdout);
+        try wordLadder(gpa, words, pair.a, pair.b, stdout);
     try stdout.flush();
 }
 
-fn wordLadder(allocator: std.mem.Allocator, words: []const []const u8, a: []const u8, b: []const u8, w: *std.Io.Writer) !void {
+fn wordLadder(allocator: Allocator, words: []const []const u8, a: []const u8, b: []const u8, w: *std.Io.Writer) !void {
     var possible: WordArray = .empty;
     defer possible.deinit(allocator);
     for (words) |word|

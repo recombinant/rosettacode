@@ -1,32 +1,34 @@
 // https://rosettacode.org/wiki/Word_frequency
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 
-pub fn main() !void {
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     const n_most_common = 10;
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
     const text_mixed = @embedFile("data/Les Misérables from Project Gutenberg.txt");
-    const text = try std.ascii.allocLowerString(allocator, text_mixed);
-    defer allocator.free(text);
+    const text = try std.ascii.allocLowerString(gpa, text_mixed);
+    defer gpa.free(text);
 
     var map: std.StringArrayHashMapUnmanaged(u32) = .empty;
-    defer map.deinit(allocator);
+    defer map.deinit(gpa);
 
     var word_it: WordIterator = .init(text);
     while (word_it.next()) |word| {
-        const gop = try map.getOrPut(allocator, word);
+        const gop = try map.getOrPut(gpa, word);
         if (gop.found_existing)
             gop.value_ptr.* += 1
         else
             gop.value_ptr.* = 0;
     }
 
-    const counts = try allocator.alloc(u32, map.values().len);
-    defer allocator.free(counts);
+    const counts = try gpa.alloc(u32, map.values().len);
+    defer gpa.free(counts);
     @memcpy(counts, map.values());
     std.mem.sortUnstable(u32, counts, {}, std.sort.desc(u32));
 
@@ -45,19 +47,19 @@ pub fn main() !void {
     };
 
     var most_common: std.ArrayList(KV) = .empty;
-    defer most_common.deinit(allocator);
+    defer most_common.deinit(gpa);
 
     const limit = counts[n - 1];
     var kv_it = map.iterator();
     while (kv_it.next()) |entry| {
         if (entry.value_ptr.* >= limit)
-            try most_common.append(allocator, KV{ .key = entry.key_ptr.*, .value = entry.value_ptr.* });
+            try most_common.append(gpa, KV{ .key = entry.key_ptr.*, .value = entry.value_ptr.* });
     }
 
     std.mem.sortUnstable(KV, most_common.items, {}, KV.greaterThanFn);
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     for (most_common.items, 1..) |kv, i|

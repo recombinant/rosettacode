@@ -1,20 +1,23 @@
 // https://rosettacode.org/wiki/Words_from_neighbour_ones
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const WordSet = std.StringArrayHashMapUnmanaged(void);
 
-pub fn main() !void {
-    const LIMIT: usize = 9;
+const LIMIT: usize = 9;
+
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     const text = @embedFile("data/unixdict.txt");
-    // ---------------------------------------------------- allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+
     // ------------------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // --------------------------------------------------------------
     const max_capacity: usize = blk: {
@@ -26,8 +29,8 @@ pub fn main() !void {
         break :blk word_count;
     };
     var word_set: WordSet = .empty;
-    try word_set.ensureTotalCapacity(allocator, max_capacity);
-    defer word_set.deinit(allocator);
+    try word_set.ensureTotalCapacity(gpa, max_capacity);
+    defer word_set.deinit(gpa);
 
     // Create set of words of task appropriate length from unixdict.txt
     // Insertion order into the set is preserved.
@@ -35,15 +38,15 @@ pub fn main() !void {
     while (it.next()) |word| {
         if (word.len < LIMIT)
             continue;
-        try word_set.putNoClobber(allocator, word, {});
+        try word_set.putNoClobber(gpa, word, {});
     }
 
     // For a set of new words created by task.
     var new_word_set: WordSet = .empty;
     defer {
         for (new_word_set.keys()) |word|
-            allocator.free(word);
-        new_word_set.deinit(allocator);
+            gpa.free(word);
+        new_word_set.deinit(gpa);
     }
 
     var new_word: [LIMIT]u8 = undefined;
@@ -55,7 +58,7 @@ pub fn main() !void {
             new_word[j] = words[i + j][j];
 
         if (word_set.get(&new_word) != null and new_word_set.get(&new_word) == null)
-            try new_word_set.putNoClobber(allocator, try allocator.dupe(u8, &new_word), {});
+            try new_word_set.putNoClobber(gpa, try gpa.dupe(u8, &new_word), {});
     }
 
     // Pretty print.

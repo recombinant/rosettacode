@@ -1,38 +1,38 @@
 // https://rosettacode.org/wiki/Word_wheel
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Wren}}
 const std = @import("std");
+
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
 const WordSet = std.StringArrayHashMapUnmanaged(void);
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     const text = @embedFile("data/unixdict.txt");
     // --------------------------------------------------------------
-    var t0: std.time.Timer = try .start();
-    // ---------------------------------------------------- Allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-    // var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
-    // defer arena.deinit();
-    // const allocator = arena.allocator();
+    var t0: Io.Timestamp = .now(io, .real);
     // --------------------------------------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // --------------------------------------------------------------
-    var word_set = try populateWordSet(allocator, text);
-    defer word_set.deinit(allocator);
+    var word_set = try populateWordSet(gpa, text);
+    defer word_set.deinit(gpa);
     // --------------------------------------------------------------
-    try task1(allocator, word_set, stdout);
+    try task1(gpa, word_set, stdout);
     try stdout.flush();
-    try task2(allocator, word_set, stdout);
+    try task2(gpa, word_set, stdout);
     try stdout.flush();
     // --------------------------------------------------------------
-    std.log.info("processed in {D}", .{t0.read()});
+    std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 }
 
 /// Primary task
-fn task1(allocator: std.mem.Allocator, word_set: WordSet, w: *std.Io.Writer) !void {
+fn task1(allocator: Allocator, word_set: WordSet, w: *std.Io.Writer) !void {
     var found: std.ArrayList([]const u8) = .empty;
     defer found.deinit(allocator);
 
@@ -62,7 +62,7 @@ fn task1(allocator: std.mem.Allocator, word_set: WordSet, w: *std.Io.Writer) !vo
 }
 
 /// Optional Extra task
-fn task2(allocator: std.mem.Allocator, word_set: WordSet, w: *std.Io.Writer) !void {
+fn task2(allocator: Allocator, word_set: WordSet, w: *std.Io.Writer) !void {
     var distinct_letters9: std.AutoArrayHashMapUnmanaged(u8, void) = .empty;
     defer distinct_letters9.deinit(allocator);
     var letter_list9: std.ArrayList(u8) = try .initCapacity(allocator, 9);
@@ -135,7 +135,7 @@ fn task2(allocator: std.mem.Allocator, word_set: WordSet, w: *std.Io.Writer) !vo
 }
 
 /// Set of words in `text` with between 3 and 9 letters inclusive.
-fn populateWordSet(allocator: std.mem.Allocator, text: []const u8) !WordSet {
+fn populateWordSet(allocator: Allocator, text: []const u8) !WordSet {
     // pre-compute capacity
     var word_count: usize = 0;
     var it = std.mem.splitScalar(u8, text, '\n');
@@ -157,7 +157,7 @@ fn populateWordSet(allocator: std.mem.Allocator, text: []const u8) !WordSet {
 }
 
 /// List of 9 letter words in `word_set`
-fn populateWords9(allocator: std.mem.Allocator, word_set: WordSet) ![]const []const u8 {
+fn populateWords9(allocator: Allocator, word_set: WordSet) ![]const []const u8 {
     // pre-compute capacity
     var word_count: usize = 0;
     for (word_set.keys()) |word| {

@@ -1,14 +1,18 @@
 // https://rosettacode.org/wiki/Zumkeller_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 
-pub fn main() !void {
-    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
-    defer arena.deinit();
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const arena: *std.heap.ArenaAllocator = init.arena;
     const allocator = arena.allocator();
+
+    const io: Io = init.io;
     // ----------------------------------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // ----------------------------------------------------------
     {
@@ -56,7 +60,7 @@ pub fn main() !void {
     }
 }
 
-fn isZumkeller(allocator: std.mem.Allocator, n: u32) !bool {
+fn isZumkeller(allocator: Allocator, n: u32) !bool {
     const divs = try getDivisors(allocator, n);
     defer allocator.free(divs);
     const sum = sumSlice(divs);
@@ -77,7 +81,7 @@ fn isZumkeller(allocator: std.mem.Allocator, n: u32) !bool {
 }
 
 /// Caller owns returned memory.
-fn getDivisors(allocator: std.mem.Allocator, n: u32) ![]u32 {
+fn getDivisors(allocator: Allocator, n: u32) ![]u32 {
     var divs: std.ArrayList(u32) = .empty;
     try divs.append(allocator, 1);
     try divs.append(allocator, n);
@@ -91,7 +95,7 @@ fn getDivisors(allocator: std.mem.Allocator, n: u32) ![]u32 {
     return try divs.toOwnedSlice(allocator);
 }
 
-fn isPartSum(allocator: std.mem.Allocator, d: []u32, sum: u32) !bool {
+fn isPartSum(allocator: Allocator, d: []u32, sum: u32) !bool {
     if (sum == 0)
         return true;
     if (d.len == 0)

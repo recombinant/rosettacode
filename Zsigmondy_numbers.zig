@@ -1,16 +1,19 @@
 // https://rosettacode.org/wiki/Zsigmondy_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     const a_list = [10]u8{ 2, 3, 4, 5, 6, 7, 3, 5, 7, 7 };
     const b_list = [10]u8{ 1, 1, 1, 1, 1, 1, 2, 3, 3, 5 };
 
     const terms = 20;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     for (a_list, b_list) |a, b| {

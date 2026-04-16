@@ -1,18 +1,18 @@
 // https://rosettacode.org/wiki/Zebra_puzzle
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 // This Zig version assumes Ascii text to reduce code clutter.
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
     // Using an arena means that free() is optional and possibly meaningless.
-    // arena.deinit() cleans up all allocations.
-    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
+    const allocator: Allocator = init.arena.allocator();
+    const io: Io = init.io;
     // ------------------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // --------------------------------------------------------------
     const n, const solution = try simpleBruteForce(allocator, stdout);
@@ -28,7 +28,7 @@ pub fn main() !void {
 }
 
 /// Simple brute force solution
-fn simpleBruteForce(allocator: std.mem.Allocator, w: *std.Io.Writer) !struct { usize, HouseSet } {
+fn simpleBruteForce(allocator: Allocator, w: *std.Io.Writer) !struct { usize, HouseSet } {
     var array: std.ArrayList(House) = .empty;
     defer array.deinit(allocator);
 
