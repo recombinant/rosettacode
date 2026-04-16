@@ -11,7 +11,6 @@ const assert = std.debug.assert;
 // All of the tasks fail at compile time if implemented directly. By using Zig's overflow arithmetic those tasks that compile give the same results at the C solution.
 // It should also be noted that Zig has wraparound and saturation arithmetic too.
 
-const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
 pub fn main(init: std.process.Init) !void {
