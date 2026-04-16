@@ -1,14 +1,16 @@
 // https://rosettacode.org/wiki/Abelian_sandpile_model/Identity
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     var snapshots: std.ArrayList(SandPile) = .empty;
@@ -16,15 +18,15 @@ pub fn main() !void {
 
     // Avalanche ------------------------------------------
     var s: SandPile = .{ .pile = .{ .{ 4, 3, 3 }, .{ 3, 1, 2 }, .{ 0, 2, 3 } } };
-    try snapshots.append(allocator, s);
+    try snapshots.append(gpa, s);
 
     // Stabilize the sand pile taking snapshots at each iteration.
     while (!s.isStable()) {
         s.topple();
-        try snapshots.append(allocator, s);
+        try snapshots.append(gpa, s);
     }
-    const slice = try snapshots.toOwnedSlice(allocator);
-    defer allocator.free(slice);
+    const slice = try snapshots.toOwnedSlice(gpa);
+    defer gpa.free(slice);
 
     try stdout.print("The piles demonstration avalanche:\n", .{});
     try printSlice(slice, stdout);
@@ -135,7 +137,7 @@ const SandPile = struct {
 };
 
 /// Print a slice of sand piles.
-fn printSlice(slice: []SandPile, w: *std.Io.Writer) !void {
+fn printSlice(slice: []SandPile, w: *Io.Writer) !void {
     for (0..3) |i| {
         for (slice, 0..) |sp, n| {
             if (n != 0)
@@ -147,7 +149,7 @@ fn printSlice(slice: []SandPile, w: *std.Io.Writer) !void {
 }
 
 /// Print "s1 + s2 = s3".
-fn printSum(s1: SandPile, s2: SandPile, s3: SandPile, w: *std.Io.Writer) !void {
+fn printSum(s1: SandPile, s2: SandPile, s3: SandPile, w: *Io.Writer) !void {
     for (0..3) |i| {
         try s1.printRow(w, i);
         try w.writeAll(if (i == 1) " + " else "   ");
