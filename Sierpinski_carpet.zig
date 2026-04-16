@@ -1,34 +1,35 @@
 // https://rosettacode.org/wiki/Sierpinski_carpet
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 
 // BCT = Binary-Coded Ternary: pairs of bits form one digit [0,1,2] (0b11 is invalid digit)
-const std = @import("std");
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+const std = @import("std");
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const arena: *std.heap.ArenaAllocator = init.arena;
+    const io: Io = init.io;
+    const args = init.minimal.args;
 
     // parse N from first argument, if no argument, use 3 as default value
     const n = blk: {
-        const args = try std.process.argsAlloc(allocator);
-        defer std.process.argsFree(allocator, args);
-        if (args.len == 1)
+        const slice = try args.toSlice(arena.allocator());
+        if (slice.len == 1)
             break :blk 3;
-        break :blk try std.fmt.parseInt(u4, args[1], 10);
+        break :blk try std.fmt.parseInt(u4, slice[1], 10);
     };
 
     // check for valid N (0..9) - 16 requires 33 bits for BCT form 1<<(n*2) => hard limit
     if (n > 9) { // but N=9 already produces 370MB output
-        var stderr_writer = std.fs.File.stderr().writer(&.{}); // unbuffered
+        var stderr_writer = Io.File.stderr().writer(io, &.{}); // unbuffered
         const stderr = &stderr_writer.interface;
         try stderr.print("N out of range (use 0..9): {d}\n", .{n});
         return error.NOutOfRange;
     }
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     // 3**n in BCT form (initial value for loops)

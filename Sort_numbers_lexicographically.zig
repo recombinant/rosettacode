@@ -1,23 +1,24 @@
 // https://rosettacode.org/wiki/Sort_numbers_lexicographically
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
 
     const numbers: [5]i16 = .{ 0, 5, 13, 21, -22 };
     try stdout.print("In lexicographical order:\n\n", .{});
 
     for (numbers) |num| {
         // Create the ordered values in LexOrder
-        const ordered: LexOrder(i16) = try .init(allocator, num);
+        const ordered: LexOrder(i16) = try .init(gpa, num);
         defer ordered.deinit();
 
         try stdout.print("{d}: [", .{num});
@@ -37,12 +38,12 @@ fn LexOrder(comptime T: type) type {
     return struct {
         const Self = @This();
 
-        allocator: std.mem.Allocator,
+        allocator: Allocator,
         numbers: []T,
 
         const Pair = struct { n: T, s: []const u8 };
 
-        pub fn init(allocator: std.mem.Allocator, num: T) !Self {
+        pub fn init(allocator: Allocator, num: T) !Self {
             var array: std.ArrayList(Pair) = .empty;
             defer array.deinit(allocator); // not necessary after toOwnedSlice()
 

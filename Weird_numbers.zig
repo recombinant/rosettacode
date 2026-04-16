@@ -1,20 +1,20 @@
 // https://rosettacode.org/wiki/Weird_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     // --------------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-    // ------------------------------------------------ allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
     // ----------------------------------------------------------
-    const w: []bool = try sieve(allocator, 17_000);
-    defer allocator.free(w);
+    const w: []bool = try sieve(gpa, 17_000);
+    defer gpa.free(w);
 
     var count: usize = 0;
     const required: usize = 25;
@@ -30,7 +30,7 @@ pub fn main() !void {
     try stdout.flush();
 }
 
-fn sieve(allocator: std.mem.Allocator, limit: usize) ![]bool {
+fn sieve(allocator: Allocator, limit: usize) ![]bool {
     const w: []bool = try allocator.alloc(bool, limit);
 
     var i: usize = 2;
@@ -48,7 +48,7 @@ fn sieve(allocator: std.mem.Allocator, limit: usize) ![]bool {
     }
     return w;
 }
-fn divisors(allocator: std.mem.Allocator, n: usize) ![]usize {
+fn divisors(allocator: Allocator, n: usize) ![]usize {
     var divs1: std.ArrayList(usize) = .empty;
     defer divs1.deinit(allocator);
     var divs2: std.ArrayList(usize) = .empty;

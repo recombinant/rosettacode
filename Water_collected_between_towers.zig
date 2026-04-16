@@ -1,14 +1,15 @@
 // https://rosettacode.org/wiki/Water_collected_between_towers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     const blocks = [_][]const u7{
@@ -21,7 +22,7 @@ pub fn main() !void {
         &[_]u7{ 6, 7, 10, 7, 6 },
     };
     for (blocks) |block| {
-        var table: Table = try .init(allocator, block);
+        var table: Table = try .init(gpa, block);
         defer table.deinit();
 
         const water = table.fill();
@@ -47,12 +48,12 @@ const Status = enum { empty, wall, water };
 // ↑ rows
 // → columns
 const Table = struct {
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
     array: []Status,
     width: usize,
     height: usize,
 
-    fn init(allocator: std.mem.Allocator, block: []const u7) !Table {
+    fn init(allocator: Allocator, block: []const u7) !Table {
         const width = block.len;
         const height = blk: {
             var max_height: u7 = std.math.minInt(u7);
@@ -108,7 +109,7 @@ const Table = struct {
         const offset = row * self.width;
         return self.array[offset .. offset + self.width];
     }
-    fn printTable(self: Table, w: *std.Io.Writer) !void {
+    fn printTable(self: Table, w: *Io.Writer) !void {
         var row = self.height;
         while (row != 0) {
             try w.print("{d:2} ", .{row});
