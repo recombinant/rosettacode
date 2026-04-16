@@ -5,6 +5,7 @@ const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
 pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
     const io: Io = init.io;
 
     var prng: std.Random.DefaultPrng = .init(blk: {
@@ -14,23 +15,19 @@ pub fn main(init: std.process.Init) !void {
     });
     const rand = prng.random();
     //
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-    //
     var key: [127 - 32]u8 = undefined; // All printable characters.
     for (&key, 32..) |*ptr, ch|
         ptr.* = @truncate(ch);
     rand.shuffle(u8, &key);
     //
-    var cypher: SubstitutionCypher = try .init(allocator, &key);
+    var cypher: SubstitutionCypher = try .init(gpa, &key);
     defer cypher.deinit();
     //
     const message = "The quick brown fox jumps over the lazy dog, who barks VERY loudly!";
     const encrypted = try cypher.encrypt(message);
     const decrypted = try cypher.decrypt(encrypted);
-    defer allocator.free(encrypted);
-    defer allocator.free(decrypted);
+    defer gpa.free(encrypted);
+    defer gpa.free(decrypted);
     //
     var stdout_buffer: [1024]u8 = undefined;
     var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);

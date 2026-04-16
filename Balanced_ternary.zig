@@ -5,19 +5,16 @@ const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
 pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
     const io: Io = init.io;
     // ------------------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
     var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-    // ---------------------------------------------------- allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
     // --------------------------------------------------------------
-    const a: BalancedTernary = try .initString(allocator, "+-0++0+");
-    const b: BalancedTernary = try .initInt(allocator, -436);
-    const c: BalancedTernary = try .initString(allocator, "+-++-");
+    const a: BalancedTernary = try .initString(gpa, "+-0++0+");
+    const b: BalancedTernary = try .initInt(gpa, -436);
+    const c: BalancedTernary = try .initString(gpa, "+-++-");
     defer a.deinit();
     defer b.deinit();
     defer c.deinit();
@@ -34,9 +31,9 @@ pub fn main(init: std.process.Init) !void {
     try stdout.print("c = {:4}\n", .{try c.toInt()});
     try stdout.writeByte('\n');
 
-    var t: BalancedTernary = try .init(allocator);
+    var t: BalancedTernary = try .init(gpa);
     defer t.deinit();
-    var d: BalancedTernary = try .init(allocator);
+    var d: BalancedTernary = try .init(gpa);
     defer d.deinit();
     try t.sub(b, c);
     try d.mul(a, t);

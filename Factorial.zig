@@ -1,19 +1,21 @@
 // https://rosettacode.org/wiki/Factorial
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const Int = std.math.big.int.Managed;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
-    var factorial: Factorial = try .init(allocator);
+    var factorial: Factorial = try .init(gpa);
     defer factorial.deinit();
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     for (0..41) |i| {
@@ -38,10 +40,10 @@ const FactorialError = error{
 };
 
 const Factorial = struct {
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
     one: Int,
 
-    fn init(allocator: std.mem.Allocator) !Factorial {
+    fn init(allocator: Allocator) !Factorial {
         return Factorial{
             .allocator = allocator,
             .one = try Int.initSet(allocator, 1),

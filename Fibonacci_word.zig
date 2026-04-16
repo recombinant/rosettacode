@@ -1,15 +1,16 @@
 // https://rosettacode.org/wiki/Fibonacci_word
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Nim}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try stdout.print(" n    length       entropy\n", .{});
@@ -18,7 +19,7 @@ pub fn main() !void {
 
     var n: usize = 0;
 
-    var fibword: FibWord = try .init(allocator);
+    var fibword: FibWord = try .init(gpa);
     defer fibword.deinit();
 
     while (true) {
@@ -51,12 +52,12 @@ fn entropy(s: []const u8) f64 {
 const FibWord = struct {
     const State = enum { first, second, many };
 
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
     a: []const u8,
     b: []const u8,
     state: State = .first,
 
-    fn init(allocator: std.mem.Allocator) !FibWord {
+    fn init(allocator: Allocator) !FibWord {
         return .{
             .allocator = allocator,
             .a = try allocator.dupe(u8, "1"),

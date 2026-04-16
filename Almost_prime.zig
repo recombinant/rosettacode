@@ -2,7 +2,6 @@
 // {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
-const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
 fn kprime(n0: u32, k: u32) bool {

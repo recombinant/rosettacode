@@ -5,7 +5,6 @@ const c = @cImport({
     @cInclude("time.h");
 });
 
-const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
 pub fn main(init: std.process.Init) anyerror!void {

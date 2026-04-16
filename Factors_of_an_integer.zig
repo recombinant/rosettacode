@@ -1,30 +1,31 @@
 // https://rosettacode.org/wiki/Factors_of_an_integer
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 const testing = std.testing;
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var t0: std.time.Timer = try .start();
+    var t0: Io.Timestamp = .now(io, .real);
 
-    const result = try factors(allocator, 15120);
-    defer allocator.free(result);
+    const result = try factors(gpa, 15120);
+    defer gpa.free(result);
     try stdout.print("{d} => {any}\n", .{ 15120, result });
 
     try stdout.flush();
 
-    std.log.info("Processed in {D}", .{t0.read()});
+    std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 }
 
 /// Caller owns returned slice.
-fn factors(allocator: std.mem.Allocator, number: u64) ![]u64 {
+fn factors(allocator: Allocator, number: u64) ![]u64 {
     var number_list: std.ArrayList(u64) = .empty;
 
     var n: u64 = 1;

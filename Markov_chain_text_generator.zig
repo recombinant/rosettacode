@@ -5,6 +5,7 @@ const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
 pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
     const io: Io = init.io;
 
     var prng: std.Random.DefaultPrng = .init(blk: {
@@ -13,15 +14,12 @@ pub fn main(init: std.process.Init) !void {
         break :blk seed;
     });
     const random = prng.random();
-    // ----------------------------------------------------------
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+
     // ----------------------------------------------------------
     const text = @embedFile("data/alice_oz.txt");
 
-    const result = try markov(allocator, random, text, 3, 300);
-    defer allocator.free(result);
+    const result = try markov(gpa, random, text, 3, 300);
+    defer gpa.free(result);
     std.debug.print("{s}\n", .{result});
 }
 

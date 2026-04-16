@@ -1,25 +1,25 @@
 // https://rosettacode.org/wiki/Faces_from_a_mesh
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
 
     try stdout.print("Perimeter format equality checks:\n", .{});
     {
-        const equal = try perimEqual(allocator, &[_]u32{ 8, 1, 3 }, &[_]u32{ 1, 3, 8 });
+        const equal = try perimEqual(gpa, &[_]u32{ 8, 1, 3 }, &[_]u32{ 1, 3, 8 });
         try stdout.print("  Q == R is {}\n", .{equal});
     }
     {
-        const equal = try perimEqual(allocator, &[_]u32{ 18, 8, 14, 10, 12, 17, 19 }, &[_]u32{ 8, 14, 10, 12, 17, 19, 18 });
+        const equal = try perimEqual(gpa, &[_]u32{ 18, 8, 14, 10, 12, 17, 19 }, &[_]u32{ 8, 14, 10, 12, 17, 19, 18 });
         try stdout.print("  U == V is {}\n", .{equal});
     }
     const e: []const Edge = &[_]Edge{ .{ 7, 11 }, .{ 1, 11 }, .{ 1, 7 } };
@@ -28,9 +28,9 @@ pub fn main() !void {
     const h: []const Edge = &[_]Edge{ .{ 1, 3 }, .{ 9, 11 }, .{ 3, 11 }, .{ 1, 11 } };
     try stdout.print("\nEdge to perimeter format translations:\n", .{});
     for ([_][]const Edge{ e, f, g, h }, 0..) |face, i| {
-        if (faceToPerim(allocator, face)) |perim| {
+        if (faceToPerim(gpa, face)) |perim| {
             try stdout.print("  {c} => {any}\n", .{ @as(u8, @truncate(i)) + 'E', perim });
-            allocator.free(perim);
+            gpa.free(perim);
         } else |err| {
             const msg: []const u8 = switch (err) {
                 EdgeError.EmptyFace => "no points in face",

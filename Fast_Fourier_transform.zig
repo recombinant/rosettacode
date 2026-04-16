@@ -1,21 +1,22 @@
 // https://rosettacode.org/wiki/Fast_Fourier_transform
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
 
     const sequence = [_]f64{ 1, 1, 1, 1, 0, 0, 0, 0 };
     // Ensure array size is power of 2, padding with zeroes if necessary.
     const n = std.math.shl(usize, 1, std.math.log2_int_ceil(u8, sequence.len));
-    var buf = try allocator.alloc(Complex64, n);
-    defer allocator.free(buf);
+    var buf = try gpa.alloc(Complex64, n);
+    defer gpa.free(buf);
     if (n != sequence.len)
         for (buf) |*c| {
             c.* = comptime .init(0, 0);
@@ -27,13 +28,13 @@ pub fn main() !void {
     }
 
     try show(stdout, "Data: ", buf);
-    const result = try fftV2(allocator, buf);
-    defer allocator.free(result);
+    const result = try fftV2(gpa, buf);
+    defer gpa.free(result);
     try show(stdout, "FFT : ", result);
 
     // from https://rosettacode.org/wiki/Fast_Fourier_transform#C
     try show(stdout, "Data: ", buf);
-    try fft(allocator, buf);
+    try fft(gpa, buf);
     try show(stdout, "FFT : ", buf);
 
     try stdout.flush();
@@ -59,7 +60,7 @@ fn fft_(buf: []Complex64, out: []Complex64, n: usize, step: usize) void {
     }
 }
 
-fn fft(allocator: std.mem.Allocator, buf: []Complex64) !void {
+fn fft(allocator: Allocator, buf: []Complex64) !void {
     const n = buf.len;
     const out = try allocator.dupe(Complex64, buf);
     defer allocator.free(out);
@@ -68,7 +69,7 @@ fn fft(allocator: std.mem.Allocator, buf: []Complex64) !void {
 
 // More allocation. Would be better if Zig could dynamically allocate on the stack.
 // https://www.geeksforgeeks.org/fast-fourier-transformation-poynomial-multiplication/
-fn fftV2(allocator: std.mem.Allocator, a: []Complex64) ![]Complex64 {
+fn fftV2(allocator: Allocator, a: []Complex64) ![]Complex64 {
     const n = a.len;
 
     if (n == 1) return allocator.dupe(Complex64, a[0..1]);

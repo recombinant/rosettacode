@@ -2,7 +2,6 @@
 // {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
-const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
 fn isColorful(n: u32) bool {

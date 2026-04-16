@@ -1,24 +1,26 @@
 // https://rosettacode.org/wiki/Find_words_which_contain_the_most_consonants
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 
-pub fn main() !void {
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // ----------------------------------------------------------
     const text = @embedFile("data/unixdict.txt");
-
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
 
     var map: std.AutoArrayHashMapUnmanaged(usize, std.ArrayList([]const u8)) = .empty;
     defer {
         var it = map.iterator();
         while (it.next()) |*entry|
-            entry.value_ptr.deinit(allocator);
-        map.deinit(allocator);
+            entry.value_ptr.deinit(gpa);
+        map.deinit(gpa);
     }
 
     // fill hashmap with task worthy words
@@ -32,16 +34,16 @@ pub fn main() !void {
                 => continue,
             }
         };
-        const gop = try map.getOrPut(allocator, count);
+        const gop = try map.getOrPut(gpa, count);
         if (!gop.found_existing)
             gop.value_ptr.* = .empty;
 
-        try gop.value_ptr.append(allocator, word);
+        try gop.value_ptr.append(gpa, word);
     }
 
     // sort counts ascending
-    const counts: []usize = try allocator.dupe(usize, map.keys());
-    defer allocator.free(counts);
+    const counts: []usize = try gpa.dupe(usize, map.keys());
+    defer gpa.free(counts);
     std.mem.sortUnstable(usize, counts, {}, std.sort.asc(usize));
 
     // pretty print counts and words
