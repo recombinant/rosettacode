@@ -1,28 +1,29 @@
 // https://rosettacode.org/wiki/Concatenate_two_primes_is_also_prime
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    const gpa: Allocator = init.gpa;
+
     const limit = 100;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
     var primes: std.ArrayList(u32) = .empty;
-    defer primes.deinit(allocator);
+    defer primes.deinit(gpa);
     var results: std.ArrayList(u32) = .empty;
-    defer results.deinit(allocator);
+    defer results.deinit(gpa);
 
     for (0..limit) |i| {
         const p: u32 = @intCast(i);
         if (isPrime(p))
-            try primes.append(allocator, p);
+            try primes.append(gpa, p);
     }
 
     var factor: u32 = 1;
@@ -35,7 +36,7 @@ pub fn main() !void {
             }
             const pq = (p * factor) + q;
             if (isPrime(pq))
-                try results.append(allocator, pq);
+                try results.append(gpa, pq);
         }
     }
     std.mem.sortUnstable(u32, results.items, {}, std.sort.asc(u32));

@@ -1,26 +1,28 @@
 // https://rosettacode.org/wiki/Cuban_primes
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Wren}}
 const std = @import("std");
 
-pub fn main() !void {
-    var t0: std.time.Timer = try .start();
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    const gpa: Allocator = init.gpa;
+
+    var t0: Io.Timestamp = .now(io, .real);
     // ------------------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-    // ---------------------------------------------------- allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
     // --------------------------------------------------------------
 
     var primes: std.ArrayList(u64) = .empty;
-    defer primes.deinit(allocator);
-    try primes.appendSlice(allocator, &.{ 3, 5 });
+    defer primes.deinit(gpa);
+    try primes.appendSlice(gpa, &.{ 3, 5 });
     const cutoff = 200;
     var cubans: std.ArrayList(u64) = .empty;
-    defer cubans.deinit(allocator);
+    defer cubans.deinit(gpa);
     const big_one = 100_000;
     var big_cuban: u64 = undefined;
     var c: u64 = 0;
@@ -56,10 +58,10 @@ pub fn main() !void {
                         }
                     }
                     if (!found_prime)
-                        try primes.append(allocator, z);
+                        try primes.append(gpa, z);
                 }
-                try primes.append(allocator, v);
-                try cubans.append(allocator, v);
+                try primes.append(gpa, v);
+                try cubans.append(gpa, v);
                 if (c == cutoff) show_each = false;
             }
             if (c == big_one) {
@@ -68,7 +70,7 @@ pub fn main() !void {
             }
         }
     }
-    std.log.info("calculated in: {D}", .{t0.read()});
+    std.log.info("calculated in: {f}", .{t0.untilNow(io, .real)});
 
     try stdout.print("The first {d} cuban primes are:\n", .{cutoff});
     for (cubans.items[0..cutoff], 0..) |item, i| {

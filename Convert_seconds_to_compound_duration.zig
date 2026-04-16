@@ -1,20 +1,22 @@
 // https://rosettacode.org/wiki/Convert_seconds_to_compound_duration
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
 
-pub fn main() !void {
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    const gpa: Allocator = init.gpa;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
     for ([_]u32{ 7259, 86400, 6_000_000 }) |seconds| {
-        const str = try duration(allocator, seconds);
-        defer allocator.free(str);
+        const str = try duration(gpa, seconds);
+        defer gpa.free(str);
         try stdout.print("{d:>7} sec = {s}\n", .{ seconds, str });
     }
 
@@ -22,7 +24,7 @@ pub fn main() !void {
 }
 
 /// Caller owns returned memory.
-fn duration(allocator: std.mem.Allocator, seconds: u32) ![]const u8 {
+fn duration(allocator: Allocator, seconds: u32) ![]const u8 {
     var quotient = seconds;
     var remainders: [5]u32 = undefined;
     const divisors: [4]u32 = .{ 60, 60, 24, 7 };

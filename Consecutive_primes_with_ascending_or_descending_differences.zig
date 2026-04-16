@@ -1,34 +1,35 @@
 // https://rosettacode.org/wiki/Consecutive_primes_with_ascending_or_descending_differences
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Wren}}
 const std = @import("std");
 
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
 const LIMIT = 1_000_000;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    const gpa: Allocator = init.gpa;
     // ------------------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-    // ---------------------------------------------------- allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
     // --------------------------------------------------------------
-    var t0: std.time.Timer = try .start();
+    var t0: Io.Timestamp = .now(io, .real);
 
     try stdout.writeAll("For primes < 1 million:\n");
-    try printLongestSequence(allocator, .ascending, stdout);
-    try printLongestSequence(allocator, .descending, stdout);
+    try printLongestSequence(gpa, .ascending, stdout);
+    try printLongestSequence(gpa, .descending, stdout);
     // ------------------------------------------------------- stdout
     try stdout.flush();
     // --------------------------------------------------------------
-    std.log.info("processed in {D}", .{t0.read()});
+    std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 }
 
 const Dir = enum { ascending, descending };
 
-fn printLongestSequence(allocator: std.mem.Allocator, dir: Dir, w: *std.Io.Writer) !void {
+fn printLongestSequence(allocator: Allocator, dir: Dir, w: *std.Io.Writer) !void {
     const primes = blk: {
         var primes: std.ArrayList(usize) = .empty;
         for (sieve(LIMIT), 0..) |b, n|
@@ -76,11 +77,11 @@ fn printLongestSequence(allocator: std.mem.Allocator, dir: Dir, w: *std.Io.Write
 }
 
 const LongestSequences = struct {
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
     sequences: std.ArrayList([]const usize),
     len: usize = 0,
 
-    fn init(allocator: std.mem.Allocator) !LongestSequences {
+    fn init(allocator: Allocator) !LongestSequences {
         return LongestSequences{
             .allocator = allocator,
             .sequences = .empty,

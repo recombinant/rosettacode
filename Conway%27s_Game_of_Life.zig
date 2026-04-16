@@ -1,19 +1,21 @@
 // https://rosettacode.org/wiki/Conway%27s_Game_of_Life
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
     // ---------------------------- pseudo random number generator
     var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
+        Io.random(io, std.mem.asBytes(&seed));
         break :blk seed;
     });
     const random = prng.random();
     // ----------------------------------------------------------
     // zero size buffer means unbuffered (to slow it down)
-    var stdout_writer = std.fs.File.stdout().writer(&.{});
+    var stdout_writer = Io.File.stdout().writer(io, &.{});
     const stdout = &stdout_writer.interface;
     // ----------------------------------------------------------
     try stdout.writeAll("\x1b[?25l"); // hide cursor
@@ -23,9 +25,8 @@ pub fn main() !void {
         try stdout.writeAll("\x1b[1;1H"); // move cursor to 1,1
         try stdout.print("{f}", .{life});
         try stdout.flush();
-        // FIXME: not Ok with Zig 0.15.1 on Windows
-        // sleep if using buffered stdout
-        // std.posix.nanosleep(1_000_000_000 / 30, 0); // 1/30th second
+        // fifth of a second
+        try Io.sleep(io, Io.Duration.fromMilliseconds(200), .real);
     }
     try stdout.writeAll("\x1b[?25h"); // show cursor
 }

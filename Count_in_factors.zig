@@ -1,7 +1,10 @@
 // https://rosettacode.org/wiki/Count_in_factors
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 fn Primes(comptime T: type) type {
     return struct {
@@ -45,20 +48,19 @@ fn Primes(comptime T: type) type {
     };
 }
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    const gpa: Allocator = init.gpa;
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
-    const stdout = &stdout_writer.interface;
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const T = u12; // Change type to crudely adjust stopping point
     // If this asserts then refactor the first for() loop below
     std.debug.assert(@sizeOf(T) < @sizeOf(usize));
 
-    var primes = try Primes(T).init(allocator);
+    var primes = try Primes(T).init(gpa);
     defer primes.deinit();
 
     for (1..std.math.maxInt(T) + 1) |x| {

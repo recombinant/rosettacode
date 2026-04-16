@@ -1,11 +1,14 @@
 // https://rosettacode.org/wiki/Cullen_and_Woodall_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // TODO: stretch task is not here - Woodhall primes and Cullen primes - requires GMP
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try displayNumberSequence(20, .Cullen, stdout);

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/99_bottles_of_beer
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // Copied from rosettacode
 const print = @import("std").debug.print;

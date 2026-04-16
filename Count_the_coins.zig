@@ -1,26 +1,28 @@
 // https://rosettacode.org/wiki/Count_the_coins
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Python}}
 // Translation of Python (Fast version)
 const std = @import("std");
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    const gpa: Allocator = init.gpa;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     const us_coins = &[_]u8{ 100, 50, 25, 10, 5, 1 };
     const eu_coins = &[_]u8{ 200, 100, 50, 20, 10, 5, 2, 1 };
 
     for ([_][]const u8{ us_coins, eu_coins }) |coins| {
-        try stdout.print("{}\n", .{try count(allocator, 1_00, coins[2..])});
-        try stdout.print("{}\n", .{try count(allocator, 1_000_00, coins)});
-        try stdout.print("{}\n", .{try count(allocator, 10_000_00, coins)});
-        try stdout.print("{}\n\n", .{try count(allocator, 100_000_00, coins)});
+        try stdout.print("{}\n", .{try count(gpa, 1_00, coins[2..])});
+        try stdout.print("{}\n", .{try count(gpa, 1_000_00, coins)});
+        try stdout.print("{}\n", .{try count(gpa, 10_000_00, coins)});
+        try stdout.print("{}\n\n", .{try count(gpa, 100_000_00, coins)});
     }
 
     try stdout.flush();
