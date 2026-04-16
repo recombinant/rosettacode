@@ -1,35 +1,35 @@
 // https://rosettacode.org/wiki/Check_if_two_polygons_overlap
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Java}}
 // An implementation of the Separating Axis Theorem algorithm for convex polygons.
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    // ----------------------------------------------------------
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    const gpa: Allocator = init.gpa;
     // ----------------------------------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // ----------------------------------------------------------
     //
-    const polygon1: Polygon = try .init(allocator, &[_]Point{
+    const polygon1: Polygon = try .init(gpa, &[_]Point{
         .init(0.0, 0.0), .init(0.0, 2.0), .init(1.0, 4.0),
         .init(2.0, 2.0), .init(2.0, 0.0),
     });
-    defer polygon1.deinit(allocator);
-    const polygon2: Polygon = try .init(allocator, &[_]Point{
+    defer polygon1.deinit(gpa);
+    const polygon2: Polygon = try .init(gpa, &[_]Point{
         .init(4.0, 0.0), .init(4.0, 2.0), .init(5.0, 4.0),
         .init(6.0, 2.0), .init(6.0, 0.0),
     });
-    defer polygon2.deinit(allocator);
-    const polygon3: Polygon = try .init(allocator, &[_]Point{
+    defer polygon2.deinit(gpa);
+    const polygon3: Polygon = try .init(gpa, &[_]Point{
         .init(1.0, 0.0), .init(1.0, 2.0), .init(5.0, 4.0),
         .init(9.0, 2.0), .init(9.0, 0.0),
     });
-    defer polygon3.deinit(allocator);
+    defer polygon3.deinit(gpa);
 
     try stdout.print("polygon1 = {any}\n", .{polygon1});
     try stdout.print("polygon2 = {any}\n", .{polygon2});
@@ -45,7 +45,7 @@ pub fn main() !void {
 const Polygon = struct {
     vertices: []Vector,
     axes: []Vector,
-    fn init(allocator: std.mem.Allocator, points: []const Point) !Polygon {
+    fn init(allocator: Allocator, points: []const Point) !Polygon {
         const vertices = try allocator.alloc(Vector, points.len);
         for (points, vertices) |p, *v|
             v.* = Vector{ .x = p.x, .y = p.y };
@@ -54,7 +54,7 @@ const Polygon = struct {
             .axes = try computeAxes(allocator, vertices),
         };
     }
-    fn deinit(self: Polygon, allocator: std.mem.Allocator) void {
+    fn deinit(self: Polygon, allocator: Allocator) void {
         allocator.free(self.vertices);
         allocator.free(self.axes);
     }
@@ -79,7 +79,7 @@ const Polygon = struct {
         }
         return Projection{ .min = min, .max = max };
     }
-    fn computeAxes(allocator: std.mem.Allocator, vertices: []Vector) ![]Vector {
+    fn computeAxes(allocator: Allocator, vertices: []Vector) ![]Vector {
         const axes = try allocator.alloc(Vector, vertices.len);
         for (axes, vertices, 1..) |*axis, vertex1, i| {
             const vertex2 = vertices[i % vertices.len];

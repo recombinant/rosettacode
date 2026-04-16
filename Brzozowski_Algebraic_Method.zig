@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Brzozowski_Algebraic_Method
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 
 // The main difference from the C++ solution is that this Zig solution
@@ -10,20 +10,21 @@
 // a deferred pool.deinit(). Implementing deallocation for unused items
 // individually would reduce maintainability and readability. Vergiß es.
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     //
-    var pool: RegularExpressionPool = .init(std.heap.page_allocator);
-    defer _ = pool.deinit();
+    var pool: RegularExpressionPool = .empty;
+    defer _ = pool.deinit(std.heap.page_allocator);
     //
     // Define the NFA transition matrix a
-    const array = try allocator.alloc(*RegularExpression, 9);
-    defer allocator.free(array);
-    var a = try allocator.alloc([]*RegularExpression, 3);
-    defer allocator.free(a);
+    const array = try gpa.alloc(*RegularExpression, 9);
+    defer gpa.free(array);
+    var a = try gpa.alloc([]*RegularExpression, 3);
+    defer gpa.free(a);
     for (0..3) |i| a[i] = array[i * 3 .. i * 3 + 3]; // define row slices
     a[0][0] = try EmptyExpr.init(&pool);
     a[0][1] = try CarExpr.init(&pool, 'a');
@@ -36,14 +37,14 @@ pub fn main() !void {
     a[2][2] = try EmptyExpr.init(&pool);
 
     // Define the initial state vector b
-    const b = try allocator.alloc(*RegularExpression, 3);
-    defer allocator.free(b);
+    const b = try gpa.alloc(*RegularExpression, 3);
+    defer gpa.free(b);
     b[0] = try EpsilonExpr.init(&pool);
     b[1] = try EmptyExpr.init(&pool);
     b[2] = try EmptyExpr.init(&pool);
     //
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     // Apply Brzozowski's algorithm
@@ -140,7 +141,7 @@ const RegularExpression = union(RegularExpressionType) {
 
 const EmptyExpr = struct {
     fn init(pool: *RegularExpressionPool) !*RegularExpression {
-        const self = try pool.create();
+        const self = try pool.create(std.heap.page_allocator);
         self.* = .{ .empty = .{} };
         return self;
     }
@@ -157,7 +158,7 @@ const EmptyExpr = struct {
 
 const EpsilonExpr = struct {
     fn init(pool: *RegularExpressionPool) !*RegularExpression {
-        const self = try pool.create();
+        const self = try pool.create(std.heap.page_allocator);
         self.* = .{ .epsilon = .{} };
         return self;
     }
@@ -175,7 +176,7 @@ const EpsilonExpr = struct {
 const CarExpr = struct {
     c: u8,
     fn init(pool: *RegularExpressionPool, c: u8) !*RegularExpression {
-        const self = try pool.create();
+        const self = try pool.create(std.heap.page_allocator);
         self.* = .{ .car = .{ .c = c } };
         return self;
     }
@@ -194,7 +195,7 @@ const UnionExpr = struct {
     e: *RegularExpression,
     f: *RegularExpression,
     fn init(pool: *RegularExpressionPool, e: *RegularExpression, f: *RegularExpression) !*RegularExpression {
-        const self = try pool.create();
+        const self = try pool.create(std.heap.page_allocator);
         self.* = .{ .@"union" = .{ .e = e, .f = f } };
         return self;
     }
@@ -237,7 +238,7 @@ const ConcatExpr = struct {
     e: *RegularExpression,
     f: *RegularExpression,
     fn init(pool: *RegularExpressionPool, e: *RegularExpression, f: *RegularExpression) !*RegularExpression {
-        const self = try pool.create();
+        const self = try pool.create(std.heap.page_allocator);
         self.* = .{ .concat = .{ .e = e, .f = f } };
         return self;
     }
@@ -279,7 +280,7 @@ const ConcatExpr = struct {
 const StarExpr = struct {
     e: *RegularExpression,
     fn init(pool: *RegularExpressionPool, e: *RegularExpression) !*RegularExpression {
-        const self = try pool.create();
+        const self = try pool.create(std.heap.page_allocator);
         self.* = .{ .star = .{ .e = e } };
         return self;
     }

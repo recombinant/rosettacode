@@ -1,14 +1,17 @@
 // https://rosettacode.org/wiki/Check_if_a_polygon_overlaps_with_a_rectangle
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Java}}
 // There is no runtime heap allocation - everything happens on
 // the stack - hence variable declarations in the main() routine
 // where their array size is known at compile time.
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // ----------------------------------------------------------
     // 1st shape. Polygon.
