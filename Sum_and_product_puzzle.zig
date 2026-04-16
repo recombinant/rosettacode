@@ -1,7 +1,9 @@
 // https://rosettacode.org/wiki/Sum_and_product_puzzle
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const List = std.SinglyLinkedList;
 const Item = struct {
@@ -11,30 +13,29 @@ const Item = struct {
 };
 const Pool = std.heap.MemoryPoolExtra(Item, .{});
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     // ----------------------------------------------------
-    var pool: Pool = .init(std.heap.page_allocator);
-    defer pool.deinit();
-    // ----------------------------------------------------
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+    var pool: Pool = .empty;
+    defer pool.deinit(std.heap.page_allocator);
     // ----------------------------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // ----------------------------------------------------
     var candidates = try setup(&pool);
     defer deinit(&pool, &candidates);
     try printCount(candidates, stdout);
 
-    try statement1(allocator, &pool, &candidates);
+    try statement1(gpa, &pool, &candidates);
     try printCount(candidates, stdout);
 
-    try statement2(allocator, &pool, &candidates);
+    try statement2(gpa, &pool, &candidates);
     try printCount(candidates, stdout);
 
-    try statement3(allocator, &pool, &candidates);
+    try statement3(gpa, &pool, &candidates);
     try printCount(candidates, stdout);
 
     try printList(candidates, stdout);
@@ -69,7 +70,7 @@ fn setup(pool: *Pool) !List {
         // numbers must be unique, and sum no more than 100
         for (x + 1..99) |y| {
             if (x + y <= 100) {
-                const item = try pool.create();
+                const item = try pool.create(std.heap.page_allocator);
                 item.* = .{ .x = x, .y = y };
                 list.prepend(&item.node);
             }

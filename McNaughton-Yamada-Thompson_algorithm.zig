@@ -1,23 +1,27 @@
 // https://rosettacode.org/wiki/McNaughton-Yamada-Thompson_algorithm
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 
 // This is a nearly verbatim translation of the C++ solution
 // with the use of a memory pool for State creation.
 const std = @import("std");
-const mem = std.mem;
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
     // ------------------------------------------------ allocator
     // https://ziglang.org/documentation/master/std/#std.heap.ArenaAllocator
+    // This arena is reset in this function, so init.arena is not suitable.
     var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
-    var state_pool: StatePool = .init(std.heap.page_allocator);
-    defer state_pool.deinit();
+
+    var state_pool: StatePool = .empty;
+    defer state_pool.deinit(std.heap.page_allocator);
     // ----------------------------------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     const infixes = [_][]const u8{ "a.b.c*", "a.(b|d).c*", "(a.(b|d))*", "a.(b.b)*.c" };
@@ -27,7 +31,7 @@ pub fn main() !void {
         for (strings) |str| {
             const result = try matchRegex(allocator, &state_pool, infix, str);
             _ = arena.reset(.retain_capacity); // reset allocated memory
-            _ = state_pool.reset(.retain_capacity);
+            _ = state_pool.reset(std.heap.page_allocator, .retain_capacity);
             try stdout.print("{} {s} {s}\n", .{ result, infix, str });
         }
         try stdout.writeByte('\n');
@@ -36,7 +40,7 @@ pub fn main() !void {
 }
 
 // Function to match a string against the regex
-fn matchRegex(allocator: mem.Allocator, state_pool: *StatePool, infix: []const u8, str: []const u8) !bool {
+fn matchRegex(allocator: Allocator, state_pool: *StatePool, infix: []const u8, str: []const u8) !bool {
     const postfix = try shunt(allocator, infix);
     // Uncomment the next line to see the postfix expression
     // std.debug.print("Postfix: {s}\n", .{postfix});
@@ -61,7 +65,7 @@ fn matchRegex(allocator: mem.Allocator, state_pool: *StatePool, infix: []const u
 
 /// Function to convert infix regex to postfix using the Shunting Yard algorithm.
 /// Caller owns returned slice memory.
-fn shunt(allocator: mem.Allocator, infix: []const u8) ![]const u8 {
+fn shunt(allocator: Allocator, infix: []const u8) ![]const u8 {
     var specials = blk: {
         const specialsK = [_]u8{ '*', '+', '?', '.', '|' };
         const specialsV = [specialsK.len]u8{ 60, 55, 50, 40, 20 };
@@ -118,7 +122,7 @@ const NFA = struct {
 };
 
 /// Function to compute the epsilon closure of a state
-fn followes(allocator: mem.Allocator, state: *State) !StateSet {
+fn followes(allocator: Allocator, state: *State) !StateSet {
     var states: StateSet = .empty;
     var stack: StackUnmanaged(*State) = .empty;
     try stack.push(allocator, state);
@@ -136,15 +140,15 @@ fn followes(allocator: mem.Allocator, state: *State) !StateSet {
 }
 
 // Function to compile postfix regex into an NFA
-fn compileRegex(allocator: mem.Allocator, state_pool: *StatePool, postfix: []const u8) !NFA {
+fn compileRegex(allocator: Allocator, state_pool: *StatePool, postfix: []const u8) !NFA {
     var nfa_stack: StackUnmanaged(NFA) = .empty;
 
     for (postfix) |c| {
         switch (c) {
             '*' => {
                 var nfa1 = nfa_stack.pop();
-                var initial = try state_pool.create();
-                const accept = try state_pool.create();
+                var initial = try state_pool.create(std.heap.page_allocator);
+                const accept = try state_pool.create(std.heap.page_allocator);
                 initial.* = State{};
                 accept.* = State{};
                 initial.edge1 = nfa1.initial;
@@ -162,8 +166,8 @@ fn compileRegex(allocator: mem.Allocator, state_pool: *StatePool, postfix: []con
             '|' => {
                 const nfa2 = nfa_stack.pop();
                 const nfa1 = nfa_stack.pop();
-                var initial = try state_pool.create();
-                const accept = try state_pool.create();
+                var initial = try state_pool.create(std.heap.page_allocator);
+                const accept = try state_pool.create(std.heap.page_allocator);
                 initial.* = State{};
                 accept.* = State{};
                 initial.edge1 = nfa1.initial;
@@ -174,8 +178,8 @@ fn compileRegex(allocator: mem.Allocator, state_pool: *StatePool, postfix: []con
             },
             '+' => {
                 const nfa1 = nfa_stack.pop();
-                var initial = try state_pool.create();
-                const accept = try state_pool.create();
+                var initial = try state_pool.create(std.heap.page_allocator);
+                const accept = try state_pool.create(std.heap.page_allocator);
                 initial.* = State{};
                 accept.* = State{};
                 initial.edge1 = nfa1.initial;
@@ -185,8 +189,8 @@ fn compileRegex(allocator: mem.Allocator, state_pool: *StatePool, postfix: []con
             },
             '?' => {
                 const nfa1 = nfa_stack.pop();
-                var initial = try state_pool.create();
-                const accept = try state_pool.create();
+                var initial = try state_pool.create(std.heap.page_allocator);
+                const accept = try state_pool.create(std.heap.page_allocator);
                 initial.* = State{};
                 accept.* = State{};
                 initial.edge1 = nfa1.initial;
@@ -196,8 +200,8 @@ fn compileRegex(allocator: mem.Allocator, state_pool: *StatePool, postfix: []con
             },
             else => {
                 // Literal character
-                var initial = try state_pool.create();
-                const accept = try state_pool.create();
+                var initial = try state_pool.create(std.heap.page_allocator);
+                const accept = try state_pool.create(std.heap.page_allocator);
                 initial.* = .init(c);
                 accept.* = .{};
                 initial.edge1 = accept;

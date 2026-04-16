@@ -1,17 +1,15 @@
 // https://rosettacode.org/wiki/Hailstone_sequence
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 
 const print = std.debug.print;
 
 const N: u32 = 100_000;
 
-pub fn main() !void {
-    // -------------------------------- allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
     // ------------------------------------------
     var jatmax: u32 = undefined;
     var hmax: u32 = 0;
@@ -24,8 +22,8 @@ pub fn main() !void {
         }
     }
 
-    const array = try allocator.alloc(u32, hailstone(27, null));
-    defer allocator.free(array);
+    const array = try gpa.alloc(u32, hailstone(27, null));
+    defer gpa.free(array);
     const n = hailstone(27, array);
 
     print(

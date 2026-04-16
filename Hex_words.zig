@@ -1,6 +1,8 @@
 // https://rosettacode.org/wiki/Hex_words
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const Result = struct { word: []const u8, value: u64, root: u64 };
 
@@ -12,23 +14,26 @@ fn greaterThanValue(_: void, r1: Result, r2: Result) bool {
     return r1.value > r2.value;
 }
 
-pub fn main() !void {
-    // ------------------------------------------ allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     // ------------------------------------------ read text
-    const f = try std.fs.cwd().openFile("data/unixdict.txt", .{});
+    const f = try Io.Dir.cwd().openFile(io, "data/unixdict.txt", .{});
+
     var buffer: [4096]u8 = undefined;
-    var file_reader = f.reader(&buffer);
+    var file_reader = f.reader(io, &buffer);
     const r = &file_reader.interface;
-    const text = try r.allocRemaining(allocator, .unlimited);
-    defer allocator.free(text);
+    const text = try r.allocRemaining(gpa, .unlimited);
+    defer gpa.free(text);
+
+    f.close(io);
+
     // ----------------------------------------------------
     var results: std.ArrayList(Result) = .empty;
     var results_distinct: std.ArrayList(Result) = .empty;
-    defer results.deinit(allocator);
-    defer results_distinct.deinit(allocator);
+    defer results.deinit(gpa);
+    defer results_distinct.deinit(gpa);
 
     var it = std.mem.splitScalar(u8, text, '\n');
     outer: while (it.next()) |word| {
@@ -49,17 +54,17 @@ pub fn main() !void {
         const root = digitalRoot(value);
 
         const result = Result{ .word = word, .value = value, .root = root };
-        try results.append(allocator, result);
+        try results.append(gpa, result);
 
         if (letter_bits.count() >= 4)
-            try results_distinct.append(allocator, result);
+            try results_distinct.append(gpa, result);
     }
 
     std.mem.sortUnstable(Result, results.items, {}, lessThanRoot);
     std.mem.sortUnstable(Result, results_distinct.items, {}, greaterThanValue);
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try stdout.print("{d} hex words in unixdict.txt with 4 or more letters:\n\n", .{results.items.len});
