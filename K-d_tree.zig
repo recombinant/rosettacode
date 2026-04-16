@@ -1,29 +1,30 @@
 // https://rosettacode.org/wiki/K-d_tree
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 // also https://en.wikipedia.org/wiki/Quickselect
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const assert = std.debug.assert;
 const print = std.debug.print;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        try std.posix.getrandom(std.mem.asBytes(&seed));
+        Io.random(io, std.mem.asBytes(&seed));
         break :blk seed;
     });
     const rand = prng.random();
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
     const arr = [_]Point(2){ .{ 2, 3 }, .{ 5, 4 }, .{ 9, 6 }, .{ 4, 7 }, .{ 8, 1 }, .{ 7, 2 } };
     const this_point = Point(2){ 9, 2 };
 
-    const nodes = try createKDNodesFromPoints(allocator, 2, &arr);
-    defer allocator.free(nodes);
+    const nodes = try createKDNodesFromPoints(gpa, 2, &arr);
+    defer gpa.free(nodes);
     print("nodes = {}\n", .{nodes.len});
     var root: *KDNode(2) = makeTree(rand, 2, nodes, 0).?;
 

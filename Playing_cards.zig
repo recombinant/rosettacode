@@ -1,17 +1,20 @@
 // https://rosettacode.org/wiki/Playing_cards
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var prng: std.Random.DefaultPrng = .init(blk: {
         var seed: u64 = undefined;
-        try std.posix.getrandom(std.mem.asBytes(&seed));
+        Io.random(io, std.mem.asBytes(&seed));
         break :blk seed;
     });
     const random = prng.random();
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     var deck: Deck = .init();
@@ -46,7 +49,7 @@ const Card = struct {
     suit: Suit,
     pip: Pip,
 
-    pub fn format(self: Card, w: *std.Io.Writer) std.Io.Writer.Error!void {
+    pub fn format(self: Card, w: *Io.Writer) Io.Writer.Error!void {
         return try w.print("{s}{s}", .{ @tagName(self.pip), @tagName(self.suit) });
     }
 };
@@ -74,7 +77,7 @@ const Deck = struct {
         return deck;
     }
 
-    fn show(deck: *const Deck, w: *std.Io.Writer) !void {
+    fn show(deck: *const Deck, w: *Io.Writer) !void {
         var sep: []const u8 = "";
         for (deck.cards[deck.cards_dealt..]) |card| {
             try w.print("{s}{f}", .{ sep, card });
