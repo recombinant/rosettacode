@@ -60,7 +60,7 @@ pub fn main(init: std.process.Init) !void {
     }
 
     std.log.info("elapsed time {f}", .{t0.untilNow(io, .real)});
-    std.log.warn("DebugAllocator.deinit() is now checking for leaks (slow)", .{});
+    std.log.warn("Allocator may now checking for leaks (slow)", .{});
 }
 
 /// Return an array of prime numbers up to and including limit

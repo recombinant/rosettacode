@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Four_is_the_number_of_letters_in_the_...
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 
 // Differs from the C++ inasmuch as the C++ implementation uses std::string
@@ -7,20 +7,21 @@
 // Tagged Unions and comptime strings thus avoiding the extra allocation
 // for each word, hyphen and comma.
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     {
         const n: usize = 201;
-        const words = try getSentence(allocator, n);
-        defer allocator.free(words);
+        const words = try getSentence(gpa, n);
+        defer gpa.free(words);
 
         // const s = try stringifySentence(allocator, words);
         // defer allocator.free(s);
@@ -39,10 +40,10 @@ pub fn main() !void {
     {
         var n: usize = 1_000;
         while (n <= 10_000_000) : (n *= 10) {
-            const words = try getSentence(allocator, n);
-            defer allocator.free(words);
-            const word = try words[n - 1].asString(allocator);
-            defer allocator.free(word);
+            const words = try getSentence(gpa, n);
+            defer gpa.free(words);
+            const word = try words[n - 1].asString(gpa);
+            defer gpa.free(word);
             try stdout.print("The {}th word is '{s}' and has {} letters. ", .{ n, word, words[n - 1].countLetters() });
             try stdout.print("Sentence length: {} characters\n", .{calcSentenceLength(words)});
         }

@@ -1,6 +1,8 @@
 // https://rosettacode.org/wiki/Greatest_prime_dividing_the_n-th_cubefree_number
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const assert = std.debug.assert;
 const print = std.debug.print;
@@ -12,20 +14,19 @@ const AutoSieveType = @import("Extensible_prime_generator_alternate.zig").AutoSi
 // https://rosettacode.org/wiki/Largest_prime_factor
 const findLargestPrimeFactor = @import("Largest_prime_factor.zig").findLargestPrimeFactor;
 
-pub fn main() !void {
-    var t0: std.time.Timer = try .start();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
+    var t0: Io.Timestamp = .now(io, .real);
 
     const task1_limit: u32 = 100;
     var task2_count: u32 = 1000;
     const task_stretch_limit: u32 = 10_000_000;
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
     // Pre-compute a cubefree sieve.
-    const cube_free = try getSieve3(allocator, task_stretch_limit);
-    defer allocator.free(cube_free);
+    const cube_free = try getSieve3(gpa, task_stretch_limit);
+    defer gpa.free(cube_free);
 
     var buffer: [task1_limit]u32 = undefined;
     var first_hundred: std.ArrayList(u32) = .initBuffer(&buffer);
@@ -55,7 +56,7 @@ pub fn main() !void {
             }
         }
     }
-    std.log.info("processed in {D}", .{t0.read()});
+    std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 }
 
 /// Sieve for cubefree numbers. Cubefree are true in the returned slice,

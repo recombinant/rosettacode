@@ -1,9 +1,11 @@
 // https://rosettacode.org/wiki/Gaussian_elimination
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
     const b = [_]f128{ -0.01, 0.61, 0.91, 0.99, 0.60, 0.02 };
     const a = [b.len * b.len]f128{
         1.00, 0.00, 0.00, 0.00,  0.00,  0.00,
@@ -18,7 +20,7 @@ pub fn main() !void {
     const x: [b.len]f128 = matrix.gaussEliminate(&b);
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     for (x) |value|

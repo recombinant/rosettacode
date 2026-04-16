@@ -1,32 +1,32 @@
 // https://rosettacode.org/wiki/Forward_difference
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 //
 // Original C binomCoeff example trundles off the end of the array with k + j
 //
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    try main1();
-    try main2();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+    try main1(gpa, io);
+    try main2(gpa, io);
 }
 
 // --------------------------------------------------------------
 
-pub fn main1() !void {
+pub fn main1(gpa: Allocator, io: Io) !void {
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
 
     const x: []const f64 = &[_]f64{ 90, 47, 58, 29, 22, 32, 55, 5, 55, 73 };
 
     for (0..x.len) |p| {
-        const y = try fwdDiff(allocator, x, p);
-        defer allocator.free(y);
+        const y = try fwdDiff(gpa, x, p);
+        defer gpa.free(y);
         for (y) |n|
             try stdout.print("{d:5} ", .{n});
         try stdout.writeByte('\n');
@@ -74,14 +74,10 @@ fn binomCoeff(allocator: std.mem.Allocator, n: i32) ![]i32 {
 
 // --------------------------------------------------------------
 /// Use method with Pascal triangle, binomial coefficients are pre-computed
-pub fn main2() !void {
+pub fn main2(gpa: Allocator, io: Io) !void {
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
 
     const original = [_]f64{ 90, 47, 58, 29, 22, 32, 55, 5, 55, 73 };
     var array: [original.len]f64 = undefined;
@@ -89,8 +85,8 @@ pub fn main2() !void {
     for (0..array.len) |p| {
         @memcpy(&array, &original);
         // pre-compute binomial coefficients for order p
-        const b = try binomCoeff(allocator, @intCast(p));
-        defer allocator.free(b);
+        const b = try binomCoeff(gpa, @intCast(p));
+        defer gpa.free(b);
 
         // compute p-th difference
         for (0..array.len) |k| {
