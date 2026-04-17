@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Strip_comments_from_a_string
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 const print = std.debug.print;
 

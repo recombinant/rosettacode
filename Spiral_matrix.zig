@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Spiral_matrix
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Python}}
 const std = @import("std");
 

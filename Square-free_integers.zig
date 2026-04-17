@@ -1,7 +1,8 @@
 // https://rosettacode.org/wiki/Square-free_integers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 const std = @import("std");
+const Io = std.Io;
 const print = std.debug.print;
 
 pub fn main() !void {
@@ -37,7 +38,7 @@ fn isSquareFree(n_: anytype) bool {
 fn printSquareFreeNumbers(from: u64, to: u64) !void {
     print("Square-free numbers between {} and {}:\n", .{ from, to });
     var buffer: [128]u8 = undefined;
-    var writer: std.Io.Writer = .fixed(&buffer);
+    var writer: Io.Writer = .fixed(&buffer);
     var i = from;
     while (i <= to) : (i += 1) {
         if (isSquareFree(i)) {

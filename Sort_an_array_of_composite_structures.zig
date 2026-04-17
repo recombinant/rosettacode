@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Sort_an_array_of_composite_structures
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 
 const Entry = struct {

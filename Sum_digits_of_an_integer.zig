@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Sum_digits_of_an_integer
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // zig test Sum_digits_of_an_integer.zig
 const std = @import("std");
 

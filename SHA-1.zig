@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/SHA-1
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 const Sha1 = std.crypto.hash.Sha1;
 

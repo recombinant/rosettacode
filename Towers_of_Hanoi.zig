@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Towers_of_Hanoi
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 
 pub fn main() void {
