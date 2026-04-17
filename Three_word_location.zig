@@ -1,11 +1,14 @@
 // https://rosettacode.org/wiki/Three_word_location
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try stdout.writeAll("Starting figures:\n");
@@ -57,7 +60,7 @@ pub fn main() !void {
 }
 
 fn toWord(output: []u8, n: u64) ![]u8 {
-    var w: std.Io.Writer = .fixed(output);
+    var w: Io.Writer = .fixed(output);
     try w.print("W{d:0>5}", .{n});
     return w.buffered();
 }

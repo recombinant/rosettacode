@@ -1,6 +1,7 @@
 // https://rosettacode.org/wiki/Trabb_Pardo%E2%80%93Knuth_algorithm
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 
 // Please enter 11 numbers : 10 -1 1 2 3 4 4.3 4.305 4.303 4.302 4.301
 // f( 4.3010) = 399.8863
@@ -15,22 +16,24 @@ const std = @import("std");
 // f(-1.0000) =  -4.0000
 // f(10.0000) = Overflow!
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     const overflow_value = 400;
 
     var stdin_buffer: [1024]u8 = undefined;
-    var stdin_reader = std.fs.File.stdin().reader(&stdin_buffer);
+    var stdin_reader = Io.File.stdin().reader(io, &stdin_buffer);
     const stdin = &stdin_reader.interface;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try stdout.writeAll("Please enter 11 numbers : ");
     try stdout.flush();
 
     var buffer1: [1024]u8 = undefined;
-    var w: std.Io.Writer = .fixed(&buffer1);
+    var w: Io.Writer = .fixed(&buffer1);
 
     _ = try stdin.streamDelimiter(&w, '\n');
     const line = w.buffered();

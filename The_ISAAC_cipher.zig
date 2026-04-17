@@ -1,9 +1,10 @@
 // https://rosettacode.org/wiki/The_ISAAC_cipher
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // Links with the (tweaked) original C source code
 //   zig run The_ISAAC_cipher.zig The_ISAAC_cipher.c -lc -I.
 const std = @import("std");
+const Io = std.Io;
 const c = @cImport({
     @cInclude("The_ISAAC_cipher.h");
 });
@@ -17,7 +18,9 @@ fn copy(dest: []u8, src: [*c]const u8) []const u8 {
     return slice; // pointer and length
 }
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     // input: message and key
     const msg = "a Top Secret secret";
     const key = "this is my secret key";
@@ -51,7 +54,7 @@ pub fn main() !void {
     };
     // Program output
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try stdout.print("Message: {s}\n", .{msg});

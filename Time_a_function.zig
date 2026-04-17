@@ -1,19 +1,22 @@
 // https://rosettacode.org/wiki/Time_a_function
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
-    std.log.info("identity (4) takes {D}", .{try timeIt(identity, 4)});
-    std.log.info("sum      (4) takes {D}", .{try timeIt(sum, 4)});
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
+    std.log.info("identity (4) takes {f}", .{try timeIt(io, identity, 4)});
+    std.log.info("sum      (4) takes {f}", .{try timeIt(io, sum, 4)});
 }
 
-fn timeIt(action: fn (u128) u128, arg: u128) !u64 {
-    var t0: std.time.Timer = try .start();
+fn timeIt(io: Io, action: fn (u128) u128, arg: u128) !Io.Duration {
+    var t0: Io.Timestamp = .now(io, .real);
 
     _ = action(arg);
 
-    return t0.read();
+    return t0.untilNow(io, .real);
 }
 
 fn identity(s: u128) u128 {
