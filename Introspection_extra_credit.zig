@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Introspection
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // This file should fail to compile.
 

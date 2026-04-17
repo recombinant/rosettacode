@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Introspection
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // Copied from rosettacode
 // Works with: 0.10.1, 0.11.0, 0.12.0, 0.12.1, 0.13.0, 0.14.1, 0.15.1

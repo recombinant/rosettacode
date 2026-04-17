@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Intersecting_number_wheels
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // This is a simple solution without tagged unions, allocators or hashmaps.
 // It written purely to solve the rosettacode tasks. No error checking.

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Hofstadter_Q_sequence
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Nim}}
 const std = @import("std");
 const print = std.debug.print;

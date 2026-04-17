@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Greatest_subsequential_sum
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 const std = @import("std");
 const print = std.debug.print;
