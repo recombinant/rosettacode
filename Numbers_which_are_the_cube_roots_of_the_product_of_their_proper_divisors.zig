@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Numbers_which_are_the_cube_roots_of_the_product_of_their_proper_divisors
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Wren (alternative version)}}
 const std = @import("std");
 const print = std.debug.print;

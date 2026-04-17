@@ -1,25 +1,28 @@
 // https://rosettacode.org/wiki/Own_digits_power_sum
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Io = std.Io;
 
 const MAX_BASE = 10;
 
-pub fn main() !void {
-    var t0 = try std.time.Timer.start();
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
+    var t0: Io.Timestamp = .now(io, .real);
 
     var pd: PowerDgt = .init();
     pd.nextDigit(0, 0);
 
     const numbers = pd.getNumbers();
 
-    const t1 = t0.read();
+    const duration: Io.Duration = t0.untilNow(io, .real);
 
     std.debug.print("Own digits power sums for N = 3 to 9 inclusive:\n", .{});
     for (numbers) |n|
         std.debug.print("{}\n", .{n});
 
-    std.log.info("processed in {D}", .{t1});
+    std.log.info("processed in {f}", .{duration});
 }
 
 const SumType = u32;

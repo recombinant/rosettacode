@@ -2,7 +2,7 @@
 // {{works with|Zig|0.16.0}}
 
 // Copied from rosettacode
-// Works with: 0.10.1, 0.11.0, 0.12.0, 0.12.1, 0.13.0, 0.14.1, 0.15.1
+// Works with: 0.10.1, 0.11.0, 0.12.0, 0.12.1, 0.13.0, 0.14.1, 0.15.1, 0.16.0
 const std = @import("std");
 const builtin = @import("builtin");
 

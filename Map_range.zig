@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Map_range
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
 
