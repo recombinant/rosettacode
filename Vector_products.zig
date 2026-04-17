@@ -1,7 +1,8 @@
 // https://rosettacode.org/wiki/Vector_products
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // Uses Zig vectors https://ziglang.org/documentation/master/#Vectors
 const std = @import("std");
+const Io = std.Io;
 
 const Vector = struct {
     // refer https://geometrian.com/resources/cross_product/
@@ -33,14 +34,16 @@ const Vector = struct {
     fn vectorTripleProduct(a: Vector, b: Vector, c: Vector) Vector {
         return a.crossProduct(b.crossProduct(c));
     }
-    pub fn format(u: Vector, w: *std.Io.Writer) std.Io.Writer.Error!void {
+    pub fn format(u: Vector, w: *Io.Writer) Io.Writer.Error!void {
         try w.print("({d}, {d}, {d})", .{ u.data[0], u.data[1], u.data[2] });
     }
 };
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     const a: Vector = .init(3, 4, 5);

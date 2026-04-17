@@ -1,16 +1,25 @@
 // https://rosettacode.org/wiki/Golden_ratio/Convergence#C
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
-    try calcGoldenRatio(f16);
-    try calcGoldenRatio(f32);
-    try calcGoldenRatio(f64);
-    try calcGoldenRatio(f80);
-    try calcGoldenRatio(f128);
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
+    try printGoldenRatio(f16, stdout);
+    try printGoldenRatio(f32, stdout);
+    try printGoldenRatio(f64, stdout);
+    try printGoldenRatio(f80, stdout);
+    try printGoldenRatio(f128, stdout);
+
+    try stdout.flush();
 }
 
-fn calcGoldenRatio(comptime T: type) !void {
+fn printGoldenRatio(comptime T: type, w: *Io.Writer) !void {
     var count: usize = 0;
     var phi0: T = 1;
     var phi1: T = undefined;
@@ -22,15 +31,9 @@ fn calcGoldenRatio(comptime T: type) !void {
         if (difference <= 1.0e-5) break;
     }
 
-    var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
-    const stdout = &stdout_writer.interface;
-
-    try stdout.print("Using type {s} --\n", .{@typeName(T)});
-    try stdout.print("Result: {d} after {d} iterations\n", .{ phi1, count });
+    try w.print("Using type {s} --\n", .{@typeName(T)});
+    try w.print("Result: {d} after {d} iterations\n", .{ phi1, count });
 
     const err = phi1 - std.math.phi;
-    try stdout.print("The error is approximately {d}\n\n", .{err});
-
-    try stdout.flush();
+    try w.print("The error is approximately {d}\n\n", .{err});
 }

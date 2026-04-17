@@ -1,12 +1,15 @@
 // https://rosettacode.org/wiki/Ulam_spiral_(for_primes)
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // based on code from https://github.com/tiehuis/zig-rosetta
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try ulam(9, stdout);
@@ -14,7 +17,7 @@ pub fn main() !void {
     try stdout.flush();
 }
 
-fn ulam(n_: usize, w: *std.Io.Writer) !void {
+fn ulam(n_: usize, w: *Io.Writer) !void {
     const n = if (n_ % 2 == 0) n_ + 1 else n_;
 
     for (0..n) |x| {

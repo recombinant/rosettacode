@@ -1,6 +1,7 @@
 // https://rosettacode.org/wiki/Two_sum
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 
 fn sumsUpTo(comptime T: type, input: []const T, target_sum: T) ?struct { usize, usize } {
     if (input.len <= 1) return null;
@@ -18,13 +19,15 @@ fn sumsUpTo(comptime T: type, input: []const T, target_sum: T) ?struct { usize, 
     } else null;
 }
 
-pub fn main() error{WriteFailed}!void {
+pub fn main(init: std.process.Init) error{WriteFailed}!void {
+    const io: Io = init.io;
+
     var stderr_buffer: [1024]u8 = undefined;
-    var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
+    var stderr_writer = Io.File.stderr().writer(io, &stderr_buffer);
     const stderr = &stderr_writer.interface;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     const a = [_]u32{ 0, 2, 11, 19, 90 };

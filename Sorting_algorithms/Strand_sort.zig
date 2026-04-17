@@ -1,6 +1,7 @@
 // https://rosettacode.org/wiki/Sorting_algorithms/Strand_sort
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 
 const List = std.DoublyLinkedList;
 
@@ -9,14 +10,16 @@ const Element = struct {
     data: u16,
 };
 
-const NodePool = std.heap.MemoryPoolExtra(Element, .{});
+const NodePool = std.heap.MemoryPool(Element);
 
-pub fn main() !void {
-    var node_pool: NodePool = .init(std.heap.page_allocator);
-    defer node_pool.deinit();
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
+    var node_pool: NodePool = .empty;
+    defer node_pool.deinit(std.heap.page_allocator);
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     // Create a new linked list of integers
@@ -25,7 +28,7 @@ pub fn main() !void {
     // Add the following integers to the linked list
     const integers = [_]u16{ 5, 1, 4, 2, 0, 9, 6, 3, 8, 7 };
     for (integers) |int| {
-        const element = try node_pool.create();
+        const element = try node_pool.create(std.heap.page_allocator);
         element.* = .{ .data = int };
         list.append(&element.node);
     }
