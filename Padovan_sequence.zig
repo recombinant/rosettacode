@@ -1,47 +1,45 @@
 // https://rosettacode.org/wiki/Padovan_sequence
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Nim}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
     // ----------------------------------------------------------
-    const seq1 = try padovan1(allocator, 20);
-    defer allocator.free(seq1);
+    const seq1 = try padovan1(gpa, 20);
+    defer gpa.free(seq1);
     std.debug.print("First 20 terms of the Padovan sequence:\n {any}\n", .{seq1});
     // ----------------------------------------------------------
-    const list1 = try padovan1(allocator, 64);
-    defer allocator.free(list1);
-    const list2 = try padovan2(allocator, 64);
-    defer allocator.free(list2);
+    const list1 = try padovan1(gpa, 64);
+    defer gpa.free(list1);
+    const list2 = try padovan2(gpa, 64);
+    defer gpa.free(list2);
     std.debug.print(
         "The first 64 iterative and calculated values {s}.\n\n",
         .{if (std.mem.eql(u64, list1, list2)) "are the same" else "differ"},
     );
     // ----------------------------------------------------------
-    const seq3 = try padovan3(allocator, 10);
+    const seq3 = try padovan3(gpa, 10);
     defer {
-        for (seq3) |s| allocator.free(s);
-        allocator.free(seq3);
+        for (seq3) |s| gpa.free(s);
+        gpa.free(seq3);
     }
-    const str3 = try std.mem.join(allocator, " ", seq3);
-    defer allocator.free(str3);
+    const str3 = try std.mem.join(gpa, " ", seq3);
+    defer gpa.free(str3);
     std.debug.print("First 10 L-system strings:\n {s}\n\n", .{str3});
     // ----------------------------------------------------------
     const list3 = blk: {
-        const seq4 = try padovan3(allocator, 32);
+        const seq4 = try padovan3(gpa, 32);
         defer {
-            for (seq4) |s| allocator.free(s);
-            allocator.free(seq4);
+            for (seq4) |s| gpa.free(s);
+            gpa.free(seq4);
         }
-        const list3 = try allocator.alloc(u64, seq4.len);
+        const list3 = try gpa.alloc(u64, seq4.len);
         for (seq4, list3) |s, *n| n.* = s.len;
         break :blk list3;
     };
-    defer allocator.free(list3);
+    defer gpa.free(list3);
     std.debug.print("Lengths of the first 32 L-system strings:\n {any}\n", .{list3});
     std.debug.print(
         "These lengths are{s}the first 32 terms of the Padovan sequence.\n",
@@ -62,7 +60,7 @@ fn getRule(ch: u8) []const u8 {
 }
 
 // the first "n" Padovan values using recurrence relation
-fn padovan1(allocator: std.mem.Allocator, n: u64) ![]const u64 {
+fn padovan1(allocator: Allocator, n: u64) ![]const u64 {
     var result: std.ArrayList(u64) = try .initCapacity(allocator, n);
     try result.appendNTimes(allocator, 1, @min(n, 3));
 
@@ -81,7 +79,7 @@ fn padovan1(allocator: std.mem.Allocator, n: u64) ![]const u64 {
 }
 
 /// the first "n" Padovan values using formula.
-fn padovan2(allocator: std.mem.Allocator, n: u64) ![]const u64 {
+fn padovan2(allocator: Allocator, n: u64) ![]const u64 {
     var result: std.ArrayList(u64) = try .initCapacity(allocator, n);
     if (n > 1) try result.append(allocator, 1);
     var p: f64 = 1.0;
@@ -94,7 +92,7 @@ fn padovan2(allocator: std.mem.Allocator, n: u64) ![]const u64 {
 }
 
 /// the strings produced by the L-system.
-fn padovan3(allocator: std.mem.Allocator, n: u64) ![][]const u8 {
+fn padovan3(allocator: Allocator, n: u64) ![][]const u8 {
     var result: std.ArrayList([]const u8) = try .initCapacity(allocator, n);
     var s: std.ArrayList(u8) = .empty;
     defer s.deinit(allocator);

@@ -1,21 +1,21 @@
 // https://www.rosettacode.org/wiki/Magic_squares_of_doubly_even_order
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Java}}
 // {{trans|Kotlin}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     // ------------------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-    // ---------------------------------------------------- allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
     // --------------------------------------------------------------
     const n: u16 = 8;
-    const magic: MagicSquareDoublyEven = try .init(allocator, n);
+    const magic: MagicSquareDoublyEven = try .init(gpa, n);
     defer magic.deinit();
 
     for (magic.m) |row| {
@@ -34,9 +34,9 @@ const MagicSquareError = error{
 const MagicSquareDoublyEven = struct {
     cells: []u16,
     m: [][]u16,
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
 
-    fn init(allocator: std.mem.Allocator, n: u16) !MagicSquareDoublyEven {
+    fn init(allocator: Allocator, n: u16) !MagicSquareDoublyEven {
         if (n < 4 or n % 4 != 0)
             return MagicSquareError.BaseNotMultipleOfFour;
 

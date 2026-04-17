@@ -1,31 +1,32 @@
 // https://rosettacode.org/wiki/Permutations_with_some_identical_elements
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 
 // Based of C++ code from https://www.geeksforgeeks.org/distinct-permutations-string-set-2/
 // with original comments.
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     // --------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // --------------------------------
     const nums2 = &[_]u8{ 2, 1 };
-    try printPermutations(allocator, nums2, '1', stdout);
+    try printPermutations(gpa, nums2, '1', stdout);
     // --------------------------------
     const nums3 = &[_]u8{ 2, 3, 1 };
-    try printPermutations(allocator, nums3, 'A', stdout);
-    try printPermutations(allocator, nums3, '1', stdout);
+    try printPermutations(gpa, nums3, 'A', stdout);
+    try printPermutations(gpa, nums3, '1', stdout);
     // --------------------------------
     try stdout.flush();
 }
 
-fn printPermutations(allocator: std.mem.Allocator, input: []const u8, start: u8, writer: *std.Io.Writer) !void {
+fn printPermutations(allocator: Allocator, input: []const u8, start: u8, writer: *Io.Writer) !void {
     try writer.print("{any}\n[ ", .{input});
 
     const slice = try createSlice(allocator, input, start);
@@ -36,7 +37,7 @@ fn printPermutations(allocator: std.mem.Allocator, input: []const u8, start: u8,
     try writer.print("]\n\n", .{});
 }
 
-fn createSlice(allocator: std.mem.Allocator, nums: []const u8, start: u8) ![]u8 {
+fn createSlice(allocator: Allocator, nums: []const u8, start: u8) ![]u8 {
     var len: usize = 0;
     for (nums) |n|
         len += n;
@@ -49,7 +50,7 @@ fn createSlice(allocator: std.mem.Allocator, nums: []const u8, start: u8) ![]u8 
 }
 
 // Prints all distinct permutations in str[0..n-1]
-fn findPermutations(str: []u8, index: usize, n: usize, writer: *std.Io.Writer) !void {
+fn findPermutations(str: []u8, index: usize, n: usize, writer: *Io.Writer) !void {
     if (index >= n) {
         try writer.print("{s} ", .{str});
         return;

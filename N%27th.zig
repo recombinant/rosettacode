@@ -1,25 +1,26 @@
 // https://rosettacode.org/wiki/N%27th
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &buffer);
     const stdout = &stdout_writer.interface;
 
     const ranges = [_][2]usize{ .{ 0, 25 }, .{ 250, 265 }, .{ 1000, 1025 } };
     for (ranges) |range|
-        try printRange(allocator, range[0], range[1], stdout);
+        try printRange(gpa, range[0], range[1], stdout);
 
     try stdout.flush();
 }
 
-fn printRange(allocator: std.mem.Allocator, lo: usize, hi: usize, w: *std.Io.Writer) !void {
+fn printRange(allocator: Allocator, lo: usize, hi: usize, w: *Io.Writer) !void {
     try w.print("Set [{},{}] :\n", .{ lo, hi });
     for (lo..hi + 1) |n| {
         const s = try nth(allocator, n, .{});
@@ -34,7 +35,7 @@ const NthOptions = struct {
 };
 
 /// Caller owns returned slice memory.
-fn nth(allocator: std.mem.Allocator, n: usize, options: NthOptions) ![]const u8 {
+fn nth(allocator: Allocator, n: usize, options: NthOptions) ![]const u8 {
     const apostrophe: []const u8 = if (options.apostrophe) "'" else "";
 
     // Calculate the precise amount of memory required to
@@ -45,7 +46,7 @@ fn nth(allocator: std.mem.Allocator, n: usize, options: NthOptions) ![]const u8 
     // count of digits + (1? for apostrophe) (2 for length of suffix)
     const len = (if (n == 0) 1 else std.math.log10_int(n) + 1) + apostrophe.len + 2;
 
-    var a: std.Io.Writer.Allocating = try .initCapacity(allocator, len);
+    var a: Io.Writer.Allocating = try .initCapacity(allocator, len);
     defer a.deinit();
     const w = &a.writer;
 

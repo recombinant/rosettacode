@@ -1,24 +1,25 @@
 // https://rosettacode.org/wiki/Playfair_cipher
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Nim}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     const key = "playfair example";
     const text = "Hide the gold...in the TREESTUMP!!!";
 
-    var pf: Playfair = try .init(allocator, key, .use_ji_merge);
+    var pf: Playfair = try .init(gpa, key, .use_ji_merge);
 
     const pairs = try pf.encode(text);
-    defer allocator.free(pairs);
+    defer gpa.free(pairs);
 
     // print encoded pairs here as they will be mutated in pf.decode()
     try stdout.print("Encoded message:", .{});
@@ -42,7 +43,7 @@ const PlayfairJIQ = enum {
 const Point = struct { x: u4, y: u4 };
 const Pair = struct { u8, u8 };
 
-fn makePairsFromText(allocator: std.mem.Allocator, text: []const u8) ![]Pair {
+fn makePairsFromText(allocator: Allocator, text: []const u8) ![]Pair {
     std.debug.assert(text.len % 2 == 0);
     const pairs = try allocator.alloc(Pair, text.len / 2);
     for (pairs, 0..) |*pair, i| {
@@ -52,13 +53,13 @@ fn makePairsFromText(allocator: std.mem.Allocator, text: []const u8) ![]Pair {
     return pairs;
 }
 
-fn printPairs(pairs: []const Pair, w: *std.Io.Writer) !void {
+fn printPairs(pairs: []const Pair, w: *Io.Writer) !void {
     for (pairs) |pair|
         try w.print(" {c}{c}", .{ pair[0], pair[1] });
 }
 
 const Playfair = struct {
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
     jiq: PlayfairJIQ,
     table: [5][5]u8,
     positions: [26]Point,
@@ -67,7 +68,7 @@ const Playfair = struct {
     const repl1: u8 = 'X';
     const repl2: u8 = 'Z';
 
-    fn init(allocator: std.mem.Allocator, key: []const u8, jiq: PlayfairJIQ) !Playfair {
+    fn init(allocator: Allocator, key: []const u8, jiq: PlayfairJIQ) !Playfair {
         var playfair: Playfair = .{
             .allocator = allocator,
             .jiq = jiq,

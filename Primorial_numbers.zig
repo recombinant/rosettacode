@@ -1,42 +1,43 @@
 // https://rosettacode.org/wiki/Primorial_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // To improve speed use this C library for prime numbers:
 // https://github.com/kimwalisch/primesieve
 
 const std = @import("std");
 
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 const Int = std.math.big.int.Managed;
 
 // https://rosettacode.org/wiki/Extensible_prime_generator
 const AutoSieveType = @import("sieve.zig").AutoSieveType;
 const PrimeGen = @import("sieve.zig").PrimeGen;
 
-pub fn main() !void {
-    var t0: std.time.Timer = try .start();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
+    var t0: Io.Timestamp = .now(io, .real);
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    try part1(stdout);
+    try part1(gpa, stdout);
     try stdout.flush();
 
-    try part2v2(stdout);
+    try part2v2(gpa, stdout);
     try stdout.flush();
 
-    try part3(stdout); // Slow
+    try part3(gpa, stdout); // Slow
     try stdout.flush();
 
-    std.log.info("processed in {D}", .{t0.read()});
+    std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 }
 
 /// Show the first ten primorial numbers (0 ──► 9, inclusive)
-fn part1(w: *std.Io.Writer) !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
+fn part1(allocator: Allocator, w: *Io.Writer) !void {
     var primes: PrimeGen(u8) = .init(allocator);
     defer primes.deinit();
 
@@ -56,11 +57,7 @@ fn part1(w: *std.Io.Writer) !void {
 
 /// Part2 Show the length of primorial numbers whose indexes are:
 ///       10 100 1,000 10,000 and 100,000.
-fn part2v1(w: *std.Io.Writer) !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
+fn part2v1(allocator: Allocator, w: *Io.Writer) !void {
     // 1,299,709 is the 100,000th prime
     const T = AutoSieveType(1_288_709);
     var primes: PrimeGen(T) = .init(allocator);
@@ -112,11 +109,7 @@ fn part2v1(w: *std.Io.Writer) !void {
 ///       10 100 1,000 10,000 and 100,000.
 /// Uses a translation of the Go example's vecprod() function.
 /// part2v2() is faster than part2v1() as there are fewer big integer multiplications.
-fn part2v2(w: *std.Io.Writer) !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
+fn part2v2(allocator: Allocator, w: *Io.Writer) !void {
     // 1,299,709 is the 100,000th prime
     const T = AutoSieveType(1_288_709);
     var primes: PrimeGen(T) = .init(allocator);
@@ -162,11 +155,7 @@ fn part2v2(w: *std.Io.Writer) !void {
 }
 
 /// Show the length of the one millionth primorial number
-fn part3(w: *std.Io.Writer) !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
+fn part3(allocator: Allocator, w: *Io.Writer) !void {
     const T = AutoSieveType(15_485_863); // 1,000,000th prime
     var primes: PrimeGen(T) = .init(allocator);
     defer primes.deinit();
@@ -227,7 +216,7 @@ fn part3(w: *std.Io.Writer) !void {
 /// All other Int values in `primes_array` will be deinit()
 /// and `primes_array` shrunk to a list of 1 item.
 /// T is a std.BoundArray type.
-fn vecProd(allocator: std.mem.Allocator, T: type, primes_array: *T) !Int {
+fn vecProd(allocator: Allocator, T: type, primes_array: *T) !Int {
     // Use a temporary and swap() after multiplication
     // as bare multiplication with aliasing will be slower.
     var tmp: Int = try .init(allocator);
@@ -257,7 +246,7 @@ fn commatize(buffer: []u8, n: u64) ![]const u8 {
     const size = std.fmt.printInt(&buffer2, n, 10, .lower, .{});
     const s = buffer2[0..size];
     //
-    var w: std.Io.Writer = .fixed(buffer);
+    var w: Io.Writer = .fixed(buffer);
 
     // write number string as string with inserted commas
     const last = s.len - 1;

@@ -1,17 +1,18 @@
 // https://rosettacode.org/wiki/Pascal%27s_triangle
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    try printPascalsTriangle(allocator, stdout, 17);
+    try printPascalsTriangle(gpa, stdout, 17);
 
     try stdout.flush();
 }
@@ -19,7 +20,7 @@ pub fn main() !void {
 /// Pretty print Pascal's Triangle. The triangle is created as
 /// strings so that the length of the final line is known for
 /// calculating the padding necessary to center all the lines.
-fn printPascalsTriangle(allocator: std.mem.Allocator, w: *std.Io.Writer, n: u8) !void {
+fn printPascalsTriangle(allocator: Allocator, w: *Io.Writer, n: u8) !void {
     // The triangle as numbers
     var triangle1 = try allocator.alloc([]u64, n);
     defer {
@@ -45,7 +46,7 @@ fn printPascalsTriangle(allocator: std.mem.Allocator, w: *std.Io.Writer, n: u8) 
         allocator.free(triangle2);
     }
     for (triangle1, 0..) |values, i| {
-        var line: std.Io.Writer.Allocating = .init(allocator);
+        var line: Io.Writer.Allocating = .init(allocator);
         defer line.deinit();
         for (values, 0..) |value, j| {
             if (j != 0)

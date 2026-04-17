@@ -1,17 +1,17 @@
 // https://rosettacode.org/wiki/Permutations
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const N = 4;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     var x: [N]usize = undefined;
@@ -26,12 +26,12 @@ pub fn main() !void {
     try perm2(&x, args, &show);
     try stdout.writeByte('\n');
 
-    try perm3(allocator, &x, args, &show);
+    try perm3(gpa, &x, args, &show);
 
     try stdout.flush();
 }
 
-const ShowArgs = struct { writer: *std.Io.Writer };
+const ShowArgs = struct { writer: *Io.Writer };
 
 // print a list of ints
 fn show(x: []usize, args: ShowArgs) !void {
@@ -57,7 +57,7 @@ fn perm2(x: []usize, args: anytype, callback: *const fn ([]usize, @TypeOf(args))
 }
 
 /// same as perm2, but flattened recursions into iterations
-fn perm3(allocator: std.mem.Allocator, x: []usize, args: anytype, callback: *const fn ([]usize, @TypeOf(args)) anyerror!void) !void {
+fn perm3(allocator: Allocator, x: []usize, args: anytype, callback: *const fn ([]usize, @TypeOf(args)) anyerror!void) !void {
     if (x.len != 0) {
         try callback(x, args);
 

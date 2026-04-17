@@ -1,20 +1,21 @@
 // https://rosettacode.org/wiki/Number_names
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     for ([_]i64{ 12, 1048576, 9e18, -2, 0 }) |n| {
-        const text = try spellInteger(allocator, n);
-        defer allocator.free(text);
+        const text = try spellInteger(gpa, n);
+        defer gpa.free(text);
         try stdout.print("{s}\n", .{text});
     }
 
@@ -59,7 +60,7 @@ pub const WordType = union(WordTypeTag) {
     millions: usize,
 
     /// Stringize array of tokens `words`.
-    pub fn spellCardinal(allocator: std.mem.Allocator, words: []const WordType) ![]u8 {
+    pub fn spellCardinal(allocator: Allocator, words: []const WordType) ![]u8 {
         const len = WordType.getLength(words);
 
         var result: std.ArrayList(u8) = try .initCapacity(allocator, len);
@@ -96,7 +97,7 @@ pub const WordType = union(WordTypeTag) {
 /// Supports integers in range math.minInt(i64) to math.maxInt(i64)
 /// (which is a greater range than the Go solution - by one)
 /// Caller owns returned slice memory.
-fn spellInteger(allocator: std.mem.Allocator, n_: i64) ![]const u8 {
+fn spellInteger(allocator: Allocator, n_: i64) ![]const u8 {
     const words = try parseInteger(allocator, n_);
     defer allocator.free(words);
 
@@ -104,7 +105,7 @@ fn spellInteger(allocator: std.mem.Allocator, n_: i64) ![]const u8 {
 }
 
 /// This function is also imported by Spelling_of_ordinal_numbers.zig
-pub fn parseInteger(allocator: std.mem.Allocator, n_: i64) ![]const WordType {
+pub fn parseInteger(allocator: Allocator, n_: i64) ![]const WordType {
     var t: std.ArrayList(WordType) = .empty;
     if (n_ < 0)
         try t.append(allocator, WordType.negative);

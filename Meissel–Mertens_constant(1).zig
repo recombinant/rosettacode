@@ -1,14 +1,15 @@
 // https://rosettacode.org/wiki/Meissel%E2%80%93Mertens_constant
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
-    const prime_reciprocals = try listPrimeReciprocals(allocator, 100_000_000);
-    defer allocator.free(prime_reciprocals);
+    const prime_reciprocals = try listPrimeReciprocals(gpa, 100_000_000);
+    defer gpa.free(prime_reciprocals);
 
     const euler: f64 = 0.577_215_664_901_532_861;
     var sum: f64 = 0.0;
@@ -18,7 +19,7 @@ pub fn main() !void {
     const meissel_mertens = euler + sum;
 
     var stdout_buffer: [256]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try stdout.print("The Meissel-Mertens constant = {d:.8}\n", .{meissel_mertens});
@@ -26,7 +27,7 @@ pub fn main() !void {
     try stdout.flush();
 }
 
-fn listPrimeReciprocals(allocator: std.mem.Allocator, limit: usize) ![]f64 {
+fn listPrimeReciprocals(allocator: Allocator, limit: usize) ![]f64 {
     const half_limit = if (limit % 2 == 0) limit / 2 else 1 + limit / 2;
 
     var composite = try allocator.alloc(bool, half_limit);

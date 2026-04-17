@@ -1,8 +1,10 @@
 // https://www.rosettacode.org/wiki/Magic_squares_of_odd_order
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 // Usage : executable <integer specifying rows in magic square>
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const MagicError = error{
     MissingCountArgument,
@@ -11,8 +13,12 @@ const MagicError = error{
     CountArgumentNotOdd,
 };
 
-pub fn main() !void {
-    const n: u16 = try getN();
+pub fn main(init: std.process.Init) !void {
+    const args: std.process.Args = init.minimal.args;
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
+    const n: u16 = try getN(gpa, args);
     // --------------------------------
     if (n < 3)
         return MagicError.CountArgumentLessThanThree;
@@ -20,7 +26,7 @@ pub fn main() !void {
         return MagicError.CountArgumentNotOdd;
     // --------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     for (0..n) |i| {
         for (0..n) |j|
@@ -37,16 +43,13 @@ fn f(n: u16, x: usize, y: usize) u16 {
 }
 
 /// Get the square dimension from the command line.
-fn getN() !u16 {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+fn getN(allocator: Allocator, args: std.process.Args) !u16 {
+    var it = try args.iterateAllocator(allocator);
+    defer it.deinit();
+
+    _ = it.skip(); // current program
     //
-    var args = try std.process.argsWithAllocator(allocator);
-    defer args.deinit();
-    _ = args.skip(); // current program
-    //
-    if (args.next()) |count_string| {
+    if (it.next()) |count_string| {
         const n = std.fmt.parseInt(u16, count_string, 10) catch
             return MagicError.CountArgumentNotInteger;
         return n; // ------------------- column / row count
