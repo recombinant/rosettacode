@@ -1,19 +1,20 @@
 // https://rosettacode.org/wiki/Meissel%E2%80%93Mertens_constant
-const std = @import("std");
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
+const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const Float = f64;
 const max_number = 100_000_000;
 
-pub fn main() !void {
-    var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
-    const stdout = &stdout_writer.interface;
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    const allocator: Allocator = init.arena.allocator();
 
-    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     const euler = 0.57721566490153286;
 
@@ -34,7 +35,7 @@ pub fn main() !void {
 }
 
 /// Return at least n prime numbers.
-fn sieve(allocator: std.mem.Allocator, n: usize) ![]u64 {
+fn sieve(allocator: Allocator, n: usize) ![]u64 {
     const limit: usize = @intFromFloat(blk: {
         const n_: f32 = @floatFromInt(n);
         // https://en.wikipedia.org/wiki/Prime_number_theorem#Approximations_for_the_nth_prime_number

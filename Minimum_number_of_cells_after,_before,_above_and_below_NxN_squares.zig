@@ -1,10 +1,13 @@
 // https://rosettacode.org/wiki/Minimum_number_of_cells_after,_before,_above_and_below_NxN_squares
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try minab(stdout, 10);
@@ -12,7 +15,7 @@ pub fn main() !void {
     try stdout.flush();
 }
 
-fn minab(w: *std.Io.Writer, n: usize) !void {
+fn minab(w: *Io.Writer, n: usize) !void {
     try w.print("Minimum number of cells after, before, above and below {} x {} square:\n", .{ n, n });
 
     for (0..n) |i| {
