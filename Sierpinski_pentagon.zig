@@ -1,19 +1,22 @@
 // https://rosettacode.org/wiki/Sierpinski_pentagon
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|D}}
 const std = @import("std");
+const Io = std.Io;
 
 const ORDER = 5; // minimum 1
 
 /// Run the generation of a P(5) sierpinksi pentagon
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     std.debug.assert(ORDER != 0);
 
     const size = 500;
     var turtle: Turtle = .init(size / 2, size, 0);
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     // Write the header to an SVG file for the image
@@ -37,7 +40,7 @@ const part_ratio = 2.0 * @cos(std.math.degreesToRadians(72));
 const side_ratio = 1.0 / (part_ratio + 2.0);
 
 /// Use the provided turtle to draw a pentagon of the specified size
-fn pentagon(turtle: *Turtle, size: f64, w: *std.Io.Writer) !void {
+fn pentagon(turtle: *Turtle, size: f64, w: *Io.Writer) !void {
     turtle.right(std.math.degreesToRadians(36));
     try turtle.begin_fill(w);
     for (0..5) |_| {
@@ -48,7 +51,7 @@ fn pentagon(turtle: *Turtle, size: f64, w: *std.Io.Writer) !void {
 }
 
 /// Draw a sierpinski pentagon of the desired order
-fn sierpinski(order: u16, turtle: *Turtle, size: f64, w: *std.Io.Writer) !void {
+fn sierpinski(order: u16, turtle: *Turtle, size: f64, w: *Io.Writer) !void {
     turtle.theta = 0.0; // heading
 
     const new_size = size * side_ratio;
@@ -83,7 +86,7 @@ const Point = struct {
     y: f64,
 
     /// When a point is written, do it in the form "x,y " to three decimal places
-    pub fn format(self: *const Point, w: *std.Io.Writer) std.Io.Writer.Error!void {
+    pub fn format(self: *const Point, w: *Io.Writer) Io.Writer.Error!void {
         try w.print("{d:.3},{d:.3} ", .{ self.x, self.y });
     }
 };
@@ -101,7 +104,7 @@ const Turtle = struct {
         };
     }
     /// Move the turtle through space
-    fn forward(self: *Turtle, dist: f64, w: *std.Io.Writer) !void {
+    fn forward(self: *Turtle, dist: f64, w: *Io.Writer) !void {
         self.pos.x += dist * @cos(self.theta);
         self.pos.y += dist * @sin(self.theta);
 
@@ -113,12 +116,12 @@ const Turtle = struct {
         self.theta -= angle;
     }
     /// Start exporting the points of the polygon
-    fn begin_fill(self: *Turtle, w: *std.Io.Writer) !void {
+    fn begin_fill(self: *Turtle, w: *Io.Writer) !void {
         try w.writeAll("<polygon points=\"");
         self.tracing = true;
     }
     /// Stop exporting the points of the polygon
-    fn end_fill(self: *Turtle, w: *std.Io.Writer) !void {
+    fn end_fill(self: *Turtle, w: *Io.Writer) !void {
         try w.writeAll("\"/>\n");
         self.tracing = false;
     }

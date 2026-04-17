@@ -1,6 +1,7 @@
 // https://rosettacode.org/wiki/Solve_a_Holy_Knight%27s_tour
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 const assert = std.debug.assert;
 
 const board1 =
@@ -28,16 +29,18 @@ const board2 =
     ".....x.x....." ++
     ".....x.x.....";
 
-pub fn main() anyerror!void {
+pub fn main(init: std.process.Init) anyerror!void {
+    const io: Io = init.io;
+
     // unbuffered
-    var stderr_writer = std.fs.File.stderr().writer(&.{});
+    var stderr_writer = Io.File.stderr().writer(io, &.{});
     const stderr = &stderr_writer.interface;
     // buffered
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    findSolution(stdout, board1, 8) catch |err| {
+    findSolution(8, board1, stdout) catch |err| {
         switch (err) {
             SolutionError.CannotSolve => try stderr.print("Cannot solve this puzzle!", .{}),
             else => return err,
@@ -46,7 +49,7 @@ pub fn main() anyerror!void {
     try stdout.flush();
 
     try stdout.writeByte('\n');
-    findSolution(stdout, board2, 13) catch |err| {
+    findSolution(13, board2, stdout) catch |err| {
         switch (err) {
             SolutionError.CannotSolve => try stderr.print("Cannot solve this puzzle!", .{}),
             else => return err,
@@ -155,7 +158,7 @@ fn BoardState(comptime sz: usize) type {
 const SolutionError = error{
     CannotSolve,
 };
-fn findSolution(w: *std.Io.Writer, board: []const u8, comptime sz: usize) anyerror!void {
+fn findSolution(comptime sz: usize, board: []const u8, w: *Io.Writer) anyerror!void {
     var pz: BoardState(sz) = .{};
 
     const start = try pz.populate(board);

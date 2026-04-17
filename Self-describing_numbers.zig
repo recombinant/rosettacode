@@ -1,22 +1,25 @@
 // https://rosettacode.org/wiki/Self-describing_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // Copied from rosettacode
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() anyerror!void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var t0: std.time.Timer = try .start();
+    var t0: Io.Timestamp = .now(io, .real);
     for (0..100_000_000) |number| {
         if (isSelfDescribing(@intCast(number)))
             try stdout.print("{}\n", .{number});
     }
     try stdout.flush();
-    std.log.info("processed in {D}", .{t0.read()});
+    std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 
-    t0 = try .start();
+    t0 = .now(io, .real);
     try stdout.writeByte('\n');
     for (0..100_000_000) |number| {
         if (isSelfDescribingAlt(@intCast(number)))
@@ -25,7 +28,7 @@ pub fn main() anyerror!void {
     try stdout.flush();
 
     std.log.info("alternative with \"optimizations\"", .{});
-    std.log.info("processed in {D}", .{t0.read()});
+    std.log.info("processed in {f}", .{t0.untilNow(io, .real)});
 }
 
 /// Return true if number is self describing
