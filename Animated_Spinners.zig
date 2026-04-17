@@ -1,10 +1,11 @@
 // https://rosettacode.org/wiki/Animated_Spinners
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 // {{libheader|raylib}}
 
 // includes stretch goal
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 const rl = @cImport({
     @cInclude("raylib.h");
     @cInclude("raymath.h");
@@ -31,16 +32,18 @@ fn calcEndPos(pos: rl.Vector2, angle: f32) rl.Vector2 {
     };
 }
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const args: std.process.Args = init.minimal.args;
+    const gpa: Allocator = init.gpa;
+
     // Default rotation speed
     var speed: f32 = 5;
 
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-
     // Allow overriding speed via command line argument
-    var iter = try std.process.ArgIterator.initWithAllocator(arena.allocator());
-    _ = iter.next(); // executable
+    var iter = try args.iterateAllocator(gpa);
+    defer iter.deinit();
+
+    _ = iter.skip(); // executable
     if (iter.next()) |arg|
         speed = try std.fmt.parseFloat(f32, arg);
 

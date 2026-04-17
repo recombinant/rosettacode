@@ -1,12 +1,13 @@
 // https://rosettacode.org/wiki/Maximum_triangle_path_sum
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Nim}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 
 const print = std.debug.print;
 
 // Originally seven lines of Nim code (ignoring data)
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
     // Triangle as text to look pretty.
     const text =
         \\                           55
@@ -28,16 +29,14 @@ pub fn main() !void {
         \\   06 71 28 75 94 48 37 10 23 51 06 48 53 18 74 98 15
         \\ 27 02 92 23 08 71 76 84 15 52 92 63 81 10 44 10 69 93
     ;
-    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
 
+    const allocator: Allocator = init.arena.allocator();
     const solution = try solve(allocator, text);
 
     print("{}\n", .{solution});
 }
 
-fn solve(allocator: std.mem.Allocator, text: []const u8) !u64 {
+fn solve(allocator: Allocator, text: []const u8) !u64 {
     var tri = try convertToNumbers(allocator, text);
     while (tri.items.len > 1) {
         const t0 = tri.pop().?;
@@ -53,7 +52,7 @@ fn solve(allocator: std.mem.Allocator, text: []const u8) !u64 {
 }
 
 /// Rows of text to rows of numbers.
-fn convertToNumbers(allocator: std.mem.Allocator, text: []const u8) !std.ArrayList([]u64) {
+fn convertToNumbers(allocator: Allocator, text: []const u8) !std.ArrayList([]u64) {
     var tri: std.ArrayList([]u64) = .empty;
 
     // split lines

@@ -1,18 +1,19 @@
 // https://rosettacode.org/wiki/Prime_words
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 const testing = std.testing;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const allocator: Allocator = init.arena.allocator();
+    const io: Io = init.io;
     const text = @embedFile("data/unixdict.txt");
-
-    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
 
     // cache prime chars with codepoints between 33 and 255, say
     var prime_char_set: std.AutoArrayHashMapUnmanaged(u8, void) = .empty;
-    defer prime_char_set.deinit(allocator);
+    // not required using arena
+    // // defer prime_char_set.deinit(allocator);
     for (33..256) |i| { // brute force, simple and it works
         const ch: u8 = @truncate(i);
         if (isPrime(ch))
@@ -35,9 +36,10 @@ pub fn main() !void {
     }
     // print prime words ----------------------------------
     const prime_word_slice = try prime_words.toOwnedSlice(allocator);
-    defer allocator.free(prime_word_slice);
+    // not required using arena
+    // // defer allocator.free(prime_word_slice);
 
-    try printWords(prime_word_slice);
+    try printWords(io, prime_word_slice);
 }
 
 fn isPrime(n: u32) bool {
@@ -55,10 +57,10 @@ fn isPrime(n: u32) bool {
     return true;
 }
 
-fn printWords(words: []const []const u8) !void {
+fn printWords(io: Io, words: []const []const u8) !void {
     // buffered stdout ------------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // ----------------------------------------------------
     try stdout.writeAll("Prime words in 'unixdict.txt' are:\n");
@@ -99,7 +101,7 @@ test "test isPrime" {
 }
 
 /// Return at least n prime numbers.
-fn sieve(allocator: std.mem.Allocator, n: usize) ![]u32 {
+fn sieve(allocator: Allocator, n: usize) ![]u32 {
     const float_n: f32 = @floatFromInt(n);
     const limit: usize = @intFromFloat(@log(float_n) * float_n * 1.2); // should be enough
 
