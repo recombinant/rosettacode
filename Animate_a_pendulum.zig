@@ -54,7 +54,7 @@ pub fn main() void {
         // If, due to computation errors, potential energy is greater than total energy,
         // reset theta to ±theta0 and omega to 0.
         if (length * g * (1 - @cos(theta)) >= e) {
-            theta = @as(f32, @floatFromInt(std.math.sign(theta))) * theta0;
+            theta = @as(f32, std.math.sign(theta)) * theta0;
             omega = 0;
         }
         accel = -g / length * @sin(theta);
