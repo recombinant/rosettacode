@@ -1,18 +1,19 @@
 // https://rosettacode.org/wiki/Vampire_number
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     //
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     //
     var solutions: std.ArrayList(Solution) = .empty;
-    defer solutions.deinit(allocator);
+    defer solutions.deinit(gpa);
     // --------------------------------------------------- task 1
     {
         var found_count: usize = 0;
@@ -22,7 +23,7 @@ pub fn main() !void {
             const end = start * 10;
             var num = start;
             while (num < end) : (num += 1)
-                if (try isVampireNumber(allocator, num, &solutions)) {
+                if (try isVampireNumber(gpa, num, &solutions)) {
                     defer solutions.clearRetainingCapacity();
                     found_count += 1;
                     try stdout.print("{}: {} ", .{ found_count, num });
@@ -40,7 +41,7 @@ pub fn main() !void {
     {
         const numbers = [_]u64{ 16_758_243_290_880, 24_959_017_348_650, 14_593_825_548_650 };
         for (numbers) |num| {
-            if (try isVampireNumber(allocator, num, &solutions)) {
+            if (try isVampireNumber(gpa, num, &solutions)) {
                 defer solutions.clearRetainingCapacity();
                 try stdout.print("{}", .{num});
                 for (solutions.items) |pair|
@@ -57,7 +58,7 @@ pub fn main() !void {
 
 const Solution = struct { u64, u64 };
 
-fn isVampireNumber(allocator: std.mem.Allocator, n: u64, solutions: *std.ArrayList(Solution)) !bool {
+fn isVampireNumber(allocator: Allocator, n: u64, solutions: *std.ArrayList(Solution)) !bool {
     const n_digits: usize = std.math.log10_int(n) + 1;
     std.debug.assert(n_digits & 1 == 0); // must be even
     //

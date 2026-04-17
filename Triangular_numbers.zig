@@ -1,16 +1,18 @@
 // https://rosettacode.org/wiki/Triangular_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     // ------------------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-    // ---------------------------------------------------- allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+
     // --------------------------------------------------------------
     for ([_]u64{ 7140, 21408696, 26728085384, 14545501785001 }) |n| {
         try stdout.print("Roots of {}:\n", .{n});
@@ -23,11 +25,13 @@ pub fn main() !void {
             try stdout.print("  {s} {d:.6}\n", .{ s.title, s.f(@floatFromInt(n)) });
         try stdout.writeByte('\n');
     }
+
     // --------------------------------------------------------------
-    try printNSimplexNumbers(stdout, allocator, 2, 30, "First 30 triangular numbers:");
-    try printNSimplexNumbers(stdout, allocator, 3, 30, "First 30 tetrahedral numbers:");
-    try printNSimplexNumbers(stdout, allocator, 4, 30, "First 30 pentatopic numbers:");
-    try printNSimplexNumbers(stdout, allocator, 12, 30, "First 30 12-simplex numbers:");
+    try printNSimplexNumbers(stdout, gpa, 2, 30, "First 30 triangular numbers:");
+    try printNSimplexNumbers(stdout, gpa, 3, 30, "First 30 tetrahedral numbers:");
+    try printNSimplexNumbers(stdout, gpa, 4, 30, "First 30 pentatopic numbers:");
+    try printNSimplexNumbers(stdout, gpa, 12, 30, "First 30 12-simplex numbers:");
+
     // --------------------------------------------------------------
     try stdout.flush();
 }
@@ -35,7 +39,7 @@ pub fn main() !void {
 /// Pretty print the first "count" terms of the "r-simplex" sequence
 /// Zig print() requires the format parameter to be comptime known, so a
 /// workaround is used.
-fn printNSimplexNumbers(w: *std.Io.Writer, allocator: std.mem.Allocator, r: u8, count: u8, title: []const u8) !void {
+fn printNSimplexNumbers(w: *Io.Writer, allocator: Allocator, r: u8, count: u8, title: []const u8) !void {
     try w.print("{s}\n", .{title});
     var width: usize = 0;
     var terms = try std.ArrayList([]const u8).initCapacity(allocator, count);

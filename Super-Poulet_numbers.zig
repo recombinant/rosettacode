@@ -1,21 +1,22 @@
 // https://rosettacode.org/wiki/Super-Poulet_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     var n: u64 = 2;
     var count: usize = 0;
     while (true) : (n += 1) {
-        if (try isSuperPouletNumber(allocator, n)) {
+        if (try isSuperPouletNumber(gpa, n)) {
             count += 1;
             if (count <= 20) {
                 try stdout.print("{d:5}", .{n});
@@ -75,7 +76,7 @@ fn isPrime(n: u64) bool {
 }
 
 /// Caller owns returned slice memory.
-fn divisors(allocator: std.mem.Allocator, n_: u64) ![]u64 {
+fn divisors(allocator: Allocator, n_: u64) ![]u64 {
     var result: std.ArrayList(u64) = .empty;
     errdefer result.deinit(allocator);
 
@@ -108,7 +109,7 @@ fn divisors(allocator: std.mem.Allocator, n_: u64) ![]u64 {
 }
 
 /// Caller owns returned slice memory.
-fn divisors2(allocator: std.mem.Allocator, n: u64) ![]u64 {
+fn divisors2(allocator: Allocator, n: u64) ![]u64 {
     var result: std.ArrayList(u64) = .empty;
     errdefer result.deinit();
 
@@ -128,7 +129,7 @@ fn isPouletNumber(n: u64) bool {
     return modpow(2, n - 1, n) == 1 and !isPrime(n);
 }
 
-fn isSuperPouletNumber(allocator: std.mem.Allocator, n: u64) !bool {
+fn isSuperPouletNumber(allocator: Allocator, n: u64) !bool {
     if (!isPouletNumber(n))
         return false;
 

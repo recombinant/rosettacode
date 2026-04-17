@@ -1,29 +1,33 @@
 // https://rosettacode.org/wiki/Ulam_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var t0 = std.time.Timer.start() catch unreachable;
-    // ---------------------------------------------------- allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
+    var t0: Io.Timestamp = .now(io, .real);
+
     // ------------------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
+
     // --------------------------------------------------------------
     var n: u64 = 1;
     while (n <= 100_000) : (n *= 10) {
-        try stdout.print("Ulam({}) = {}\n", .{ n, try ulam(allocator, n) });
+        try stdout.print("Ulam({}) = {}\n", .{ n, try ulam(gpa, n) });
         try stdout.flush();
     }
+
     // --------------------------------------------------------------
-    std.log.info("Elapsed time: {D}", .{t0.read()});
+    std.log.info("Elapsed time: {f}", .{t0.untilNow(io, .real)});
 }
 
-fn ulam(allocator: std.mem.Allocator, n: u64) !u64 {
+fn ulam(allocator: Allocator, n: u64) !u64 {
     if (n <= 2)
         return n;
     var ulams: std.ArrayListUnmanaged(u64) = try .initCapacity(allocator, n);

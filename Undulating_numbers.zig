@@ -1,24 +1,25 @@
 // https://rosettacode.org/wiki/Undulating_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Python}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
     for ([2]u8{ 10, 7 }) |base|
-        try undulating(allocator, base, 600, stdout);
+        try undulating(gpa, base, 600, stdout);
 
     try stdout.flush();
 }
 
-fn undulating(allocator: std.mem.Allocator, base: u8, n: u16, w: *std.Io.Writer) !void {
+fn undulating(allocator: Allocator, base: u8, n: u16, w: *Io.Writer) !void {
     const mpow = 53;
     const limit = try std.math.powi(u64, 2, mpow) - 1;
     const bsquare = @as(u64, base) * @as(u64, base);
@@ -89,7 +90,7 @@ fn undulating(allocator: std.mem.Allocator, base: u8, n: u16, w: *std.Io.Writer)
     try w.writeByte('\n');
 }
 
-fn printTable(nums: []const u64, cols: u8, w: *std.Io.Writer) !void {
+fn printTable(nums: []const u64, cols: u8, w: *Io.Writer) !void {
     var lf = false;
     for (nums, 1..) |n, i| {
         try w.print(" {}", .{n});

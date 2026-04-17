@@ -1,17 +1,19 @@
 // https://rosettacode.org/wiki/Sutherland-Hodgman_polygon_clipping
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     // --------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-    // --------------------------------
 
+    // --------------------------------
     const subject_points = [_]Point{
         .{ .x = 50, .y = 150 },  .{ .x = 200, .y = 50 },  .{ .x = 350, .y = 150 }, .{ .x = 350, .y = 300 },
         .{ .x = 250, .y = 300 }, .{ .x = 200, .y = 250 }, .{ .x = 150, .y = 350 }, .{ .x = 100, .y = 250 },
@@ -21,8 +23,8 @@ pub fn main() !void {
         .{ .x = 100, .y = 100 }, .{ .x = 300, .y = 100 }, .{ .x = 300, .y = 300 }, .{ .x = 100, .y = 300 },
     };
 
-    const clipped = try clip(allocator, &subject_points, &clipping_points);
-    defer allocator.free(clipped);
+    const clipped = try clip(gpa, &subject_points, &clipping_points);
+    defer gpa.free(clipped);
 
     // for (clipped) |point|
     //     std.debug.print("{d} {d}\n", .{ point.x, point.y });
@@ -91,7 +93,7 @@ const Edge = struct {
 const Polygon = []Edge;
 const PointArray = std.ArrayList(Point);
 
-fn createPolygon(allocator: std.mem.Allocator, vertices: []const Point) !Polygon {
+fn createPolygon(allocator: Allocator, vertices: []const Point) !Polygon {
     const polygon = try allocator.alloc(Edge, vertices.len);
     const len = vertices.len;
     for (polygon, 0..) |*edge, i|
@@ -102,7 +104,7 @@ fn createPolygon(allocator: std.mem.Allocator, vertices: []const Point) !Polygon
     return polygon;
 }
 
-fn clip(allocator: std.mem.Allocator, subject_vertices: []const Point, clip_vertices: []const Point) ![]Point {
+fn clip(allocator: Allocator, subject_vertices: []const Point, clip_vertices: []const Point) ![]Point {
     std.debug.assert(subject_vertices.len > 1);
     std.debug.assert(clip_vertices.len > 1);
 

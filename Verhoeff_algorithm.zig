@@ -1,37 +1,38 @@
 // https://rosettacode.org/wiki/Verhoeff_algorithm
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Wren}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
 const assert = std.debug.assert;
 
-pub fn main() !void {
-    // ------------------------------------------------ allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     // ------------------------------------------ buffered stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // -------------------------------- dynamic string for digits
     var digits: std.ArrayList(u8) = .empty;
-    defer digits.deinit(allocator);
+    defer digits.deinit(gpa);
     // -------------------------------------------- data for task
     const ss: []const []const u8 = &.{ "236", "12345", "123456789012" };
     const vs = [_]bool{ true, true, false };
     // --------------------------------------------- perform task
     for (ss, vs) |s, verbose| {
         digits.clearRetainingCapacity();
-        try digits.appendSlice(allocator, s);
+        try digits.appendSlice(gpa, s);
 
-        const c: u8 = try verhoeff(allocator, &digits, false, verbose, stdout);
+        const c: u8 = try verhoeff(gpa, &digits, false, verbose, stdout);
         try stdout.print("\nThe check digit for '{s}' is '{d}'.\n\n", .{ s, c });
 
         for ([2]u8{ c + '0', '9' }) |ch| {
             digits.shrinkRetainingCapacity(s.len); // keep s in buffer
-            try digits.append(allocator, ch);
+            try digits.append(gpa, ch);
 
-            const v = try verhoeff(allocator, &digits, true, verbose, stdout);
+            const v = try verhoeff(gpa, &digits, true, verbose, stdout);
             try stdout.print("\nThe validation for '{s}' is {s}.\n\n", .{ digits.items, if (v != 0) "correct" else "incorrect" });
         }
     }
@@ -39,7 +40,7 @@ pub fn main() !void {
     try stdout.flush();
 }
 
-fn verhoeff(allocator: std.mem.Allocator, digits: *std.ArrayList(u8), validate: bool, verbose: bool, w: *std.Io.Writer) !u8 {
+fn verhoeff(allocator: Allocator, digits: *std.ArrayList(u8), validate: bool, verbose: bool, w: *Io.Writer) !u8 {
     if (verbose) {
         const what: []const u8 = if (validate) "Validation" else "Check digit";
         try w.print("{s} calculations for '{s}':\n\n", .{ what, digits.items });

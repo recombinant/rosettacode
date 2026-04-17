@@ -1,30 +1,31 @@
 // https://rosettacode.org/wiki/Thue-Morse
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
-    var thue_morse: ThueMorseSequence = .init(allocator);
+    var thue_morse: ThueMorseSequence = .init(gpa);
     for (0..7) |index| {
         const s = try thue_morse.next();
         try stdout.print("{d}: {s}\n", .{ index, s });
-        allocator.free(s);
+        gpa.free(s);
     }
 
     try stdout.flush();
 }
 const ThueMorseSequence = struct {
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
     index: u64,
 
-    fn init(allocator: std.mem.Allocator) ThueMorseSequence {
+    fn init(allocator: Allocator) ThueMorseSequence {
         return ThueMorseSequence{
             .allocator = allocator,
             .index = 0,

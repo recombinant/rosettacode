@@ -1,18 +1,19 @@
 // https://rosettacode.org/wiki/Subleq
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Kotlin}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     const program: []const u8 = "15 17 -1 17 -1 -1 16 1 -1 16 3 -1 15 15 0 0 -1 72 101 108 108 111 44 32 119 111 114 108 100 33 10 0";
-    try subleq(allocator, program);
+    try subleq(gpa, io, program);
 }
 
-fn subleq(allocator: std.mem.Allocator, program: []const u8) !void {
+fn subleq(allocator: Allocator, io: Io, program: []const u8) !void {
     // ------------------------------------------- output storage
     var sb: std.ArrayList(u8) = .empty;
     defer sb.deinit(allocator);
@@ -27,7 +28,7 @@ fn subleq(allocator: std.mem.Allocator, program: []const u8) !void {
     defer allocator.free(words);
     // --------------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // ------------------------------------------ execute program
     var ip: usize = 0;
