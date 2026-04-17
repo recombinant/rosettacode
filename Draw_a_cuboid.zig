@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Draw_a_cuboid
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Factor}}
 // {{libheader|raylib}}
 const std = @import("std");

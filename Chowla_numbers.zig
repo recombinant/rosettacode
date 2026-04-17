@@ -1,6 +1,7 @@
 // https://rosettacode.org/wiki/Chowla_numbers
 // {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 const print = std.debug.print;
 
 pub fn main() !void {
@@ -86,7 +87,7 @@ fn commatize(buffer1: []u8, n: anytype) ![]const u8 {
     const size = std.fmt.printInt(&buffer2, n, 10, .lower, .{});
     const s = buffer2[0..size];
     //
-    var w: std.Io.Writer = .fixed(buffer1);
+    var w: Io.Writer = .fixed(buffer1);
     // write number string as string with inserted commas
     const last = s.len - 1;
     for (s, 0..) |c, idx| {
