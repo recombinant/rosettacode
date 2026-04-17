@@ -1,7 +1,6 @@
 // https://rosettacode.org/wiki/Combinations_and_permutations
 // {{works with|Zig|0.16.0}}
 const std = @import("std");
-
 const Io = std.Io;
 
 const Number = f64;

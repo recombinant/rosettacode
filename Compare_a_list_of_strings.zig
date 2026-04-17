@@ -3,7 +3,6 @@
 
 // from https://github.com/tiehuis/zig-rosetta
 const std = @import("std");
-
 const Io = std.Io;
 
 fn stringsAreEqual(list: []const []const u8) bool {

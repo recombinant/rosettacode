@@ -2,7 +2,6 @@
 // {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
-
 const Io = std.Io;
 
 pub fn main(init: std.process.Init) void {

@@ -1,7 +1,6 @@
 // https://rosettacode.org/wiki/Count_occurrences_of_a_substring
 // {{works with|Zig|0.16.0}}
 const std = @import("std");
-
 const Io = std.Io;
 
 pub fn main(init: std.process.Init) !void {

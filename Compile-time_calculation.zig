@@ -14,6 +14,7 @@ fn factorialRuntime(n: u64) comptime_int {
 
 pub fn main(init: std.process.Init) !void {
     const io: Io = init.io;
+
     var timestamp: Io.Timestamp = undefined;
     var duration: Io.Duration = undefined;
 
