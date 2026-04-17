@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Empty_string
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 
 pub fn main() void {

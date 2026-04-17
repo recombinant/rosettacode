@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Find_words_which_contains_more_than_3_e_vowels
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 const mem = std.mem;
 const print = std.debug.print;

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Find_words_whose_first_and_last_three_letters_are_equal
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 const print = std.debug.print;
 

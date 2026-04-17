@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Egyptian_division
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // taken from a version on rosettacode.
 const std = @import("std");
 

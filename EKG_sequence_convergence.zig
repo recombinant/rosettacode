@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/EKG_sequence_convergence
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 const std = @import("std");
 const assert = std.debug.assert;

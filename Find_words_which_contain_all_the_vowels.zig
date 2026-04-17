@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Find_words_which_contain_all_the_vowels
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 const print = std.debug.print;
 
