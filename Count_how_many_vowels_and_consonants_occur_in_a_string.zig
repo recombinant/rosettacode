@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Count_how_many_vowels_and_consonants_occur_in_a_string
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 const testing = std.testing;
 const print = std.debug.print;

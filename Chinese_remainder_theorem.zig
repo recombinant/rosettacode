@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Chinese_remainder_theorem
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // from https://github.com/tiehuis/zig-rosetta
 const std = @import("std");

@@ -1,6 +1,7 @@
 // https://rosettacode.org/wiki/Compile-time_calculation
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 const print = std.debug.print;
 
 fn factorialComptime(comptime n: comptime_int) comptime_int {
@@ -11,18 +12,22 @@ fn factorialRuntime(n: u64) comptime_int {
     return if (n != 0) n * factorialRuntime(n - 1) else 1;
 }
 
-pub fn main() !void {
-    var t: std.time.Timer = try .start();
-    const f2 = factorialRuntime(10);
-    const t2 = t.read();
-    print("{}\n", .{f2});
-    print("factorial 10 runtime processed in {D}\n\n", .{t2});
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+    var timestamp: Io.Timestamp = undefined;
+    var duration: Io.Duration = undefined;
 
-    t = try .start();
+    timestamp = .now(io, .real);
+    const f2 = factorialRuntime(10);
+    duration = timestamp.untilNow(io, .real);
+    print("{}\n", .{f2});
+    print("factorial 10 runtime processed in {f}\n\n", .{duration});
+
+    timestamp = .now(io, .real);
     const f1 = factorialComptime(10);
-    const t1 = t.read();
+    duration = timestamp.untilNow(io, .real);
     print("{}\n", .{f1});
-    print("factorial 10 comptime processed in {D}\n\n", .{t1});
+    print("factorial 10 comptime processed in {f}\n\n", .{duration});
 
     const divisor: comptime_int = blk: {
         comptime var n: comptime_int = 10;
@@ -38,22 +43,22 @@ pub fn main() !void {
     // raised for this to be given enough cycles to run.
     @setEvalBranchQuota(10_000);
 
-    t = try .start();
+    timestamp = .now(io, .real);
     const answer1 = factorialComptime(1_000);
-    const t3 = t.read();
-    print("comptime factorial 1,000 processed in {D}\n\n", .{t3});
+    duration = timestamp.untilNow(io, .real);
+    print("comptime factorial 1,000 processed in {f}\n\n", .{duration});
 
     // Print processing is the cause of delay in the display of 'answer1'
     // Large numbers take time to print.
-    t = try .start();
+    timestamp = .now(io, .real);
     print("{}\n", .{answer1});
-    const t4 = t.read();
-    print("comptime factorial 1,000  printing processed in {D}\n\n", .{t4});
+    duration = timestamp.untilNow(io, .real);
+    print("comptime factorial 1,000  printing processed in {f}\n\n", .{duration});
 
     const answer2 = answer1 / divisor; // Smaller number will print faster.
 
-    t = try .start();
+    timestamp = .now(io, .real);
     print("{}\n", .{answer2});
-    const t5 = t.read();
-    print("smaller number printing processed in {D}\n", .{t5});
+    duration = timestamp.untilNow(io, .real);
+    print("smaller number printing processed in {f}\n", .{duration});
 }

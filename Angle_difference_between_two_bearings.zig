@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Angle_difference_between_two_bearings
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 
 fn getDifference(b1: anytype, b2: anytype) @TypeOf(b1, b2) {

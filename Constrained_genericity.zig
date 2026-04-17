@@ -1,8 +1,8 @@
 // https://rosettacode.org/wiki/Constrained_genericity
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // This file should fail to compile.
-// works with Zig 0.11.0, 0.12.1, 0.13.0, 0.14.1 and 0.15.1
+// works with Zig 0.11.0, 0.12.1, 0.13.0, 0.14.1, 0.15.2 and 0.16.0
 
 // from https://github.com/tiehuis/zig-rosetta
 const std = @import("std");

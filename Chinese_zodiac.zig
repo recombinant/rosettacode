@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Chinese_zodiac
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|zkl}}
 const std = @import("std");
 const print = std.debug.print;
@@ -19,20 +19,56 @@ const ZodiacResult = std.meta.Tuple(&[_]type{[]const u8} ** 7);
 
 fn ceToChineseZodiac(ce_year: u14) ZodiacResult {
     const celestial_pinyin = [10][]const u8{
-        "jiă", "yĭ",   "bĭng", "dīng", "wù",
-        "jĭ",  "gēng", "xīn",  "rén",  "gŭi",
+        "jiă",
+        "yĭ",
+        "bĭng",
+        "dīng",
+        "wù",
+        "jĭ",
+        "gēng",
+        "xīn",
+        "rén",
+        "gŭi",
     };
     const celestial = [10][]const u8{
-        "甲", "乙", "丙", "丁", "戊",
-        "己", "庚", "辛", "壬", "癸",
+        "甲",
+        "乙",
+        "丙",
+        "丁",
+        "戊",
+        "己",
+        "庚",
+        "辛",
+        "壬",
+        "癸",
     };
     const terrestrial = [12][]const u8{
-        "子", "丑", "寅", "卯", "辰", "巳",
-        "午", "未", "申", "酉", "戌", "亥",
+        "子",
+        "丑",
+        "寅",
+        "卯",
+        "辰",
+        "巳",
+        "午",
+        "未",
+        "申",
+        "酉",
+        "戌",
+        "亥",
     };
     const terrestrial_pinyin = [12][]const u8{
-        "zĭ", "chŏu", "yín",  "măo", "chén", "sì",
-        "wŭ", "wèi",  "shēn", "yŏu", "xū",   "hài",
+        "zĭ",
+        "chŏu",
+        "yín",
+        "măo",
+        "chén",
+        "sì",
+        "wŭ",
+        "wèi",
+        "shēn",
+        "yŏu",
+        "xū",
+        "hài",
     };
     const animals = [12][]const u8{
         "Rat",   "Ox",   "Tiger",  "Rabbit",  "Dragon", "Snake",
