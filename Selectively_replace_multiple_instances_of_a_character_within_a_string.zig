@@ -1,17 +1,16 @@
 // https://rosettacode.org/wiki/Selectively_replace_multiple_instances_of_a_character_within_a_string
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
 
     const string = "abracadabra";
 
-    const replaced = try allocator.dupe(u8, string);
-    defer allocator.free(replaced);
+    const replaced = try gpa.dupe(u8, string);
+    defer gpa.free(replaced);
 
     // Null terminated replacement character arrays
     var a_rep: [*c]const u8 = "ABaCD";

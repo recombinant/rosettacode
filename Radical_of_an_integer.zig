@@ -1,10 +1,15 @@
 // https://rosettacode.org/wiki/Radical_of_an_integer
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // --------------------------------------------------- task 1
     try stdout.writeAll("The radicals of 1 to 50 are:\n");
@@ -27,12 +32,8 @@ pub fn main() !void {
     // --------------------------------------------------- task 3
     try stdout.writeAll("\nDistribution of radicals up to 1,000,000:\n");
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
-    const primes: []u64 = try getPrimes(allocator, 1_000_000);
-    defer allocator.free(primes);
+    const primes: []u64 = try getPrimes(gpa, 1_000_000);
+    defer gpa.free(primes);
 
     var radical_count: [8]usize = undefined;
     @memset(&radical_count, 0);
@@ -120,7 +121,7 @@ fn getPrimeRadicalType(n_: u64, primes: []const u64) RadicalType {
 
 /// Returns an array of prime numbers.
 /// Allocates memory for the result, which must be freed by the caller.
-fn getPrimes(allocator: std.mem.Allocator, comptime limit: usize) ![]u64 {
+fn getPrimes(allocator: Allocator, comptime limit: usize) ![]u64 {
     const sieve = createSieve(limit);
     // count primes in the sieve
     const prime_count = blk: {

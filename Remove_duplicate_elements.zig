@@ -1,14 +1,13 @@
 // https://rosettacode.org/wiki/Remove_duplicate_elements
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 
 const testing = std.testing;
 const print = std.debug.print;
 
-pub fn main() anyerror!void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
 
     var a1 = [_]u16{ 1, 2, 3, 4, 1, 2, 3, 5, 1, 2, 3, 4, 5 };
     var a2: [a1.len]u16 = undefined;
@@ -17,12 +16,12 @@ pub fn main() anyerror!void {
     @memcpy(&a3, &a1);
 
     print("Original: {any}\n", .{a1});
-    print("Method 1: {any}\n", .{try removeDuplicates1(allocator, &a1)});
+    print("Method 1: {any}\n", .{try removeDuplicates1(gpa, &a1)});
     print("Method 2: {any}\n", .{removeDuplicates2(&a2)});
     print("Method 3: {any}\n", .{removeDuplicates3(&a3)});
 }
 
-fn removeDuplicates1(allocator: std.mem.Allocator, a: []u16) ![]u16 {
+fn removeDuplicates1(allocator: Allocator, a: []u16) ![]u16 {
     if (a.len <= 1) return a;
 
     var map: std.AutoHashMapUnmanaged(u16, void) = .empty;

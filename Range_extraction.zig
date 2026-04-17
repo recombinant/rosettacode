@@ -1,25 +1,26 @@
 // https://rosettacode.org/wiki/Range_extraction
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    const rf = try getRangeFormat(allocator, u8, &[_]u8{
+    const rf = try getRangeFormat(gpa, u8, &[_]u8{
         0,  1,  2,  4,  6,  7,  8,  11, 12, 14,
         15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
         25, 27, 28, 29, 30, 31, 32, 33, 35, 36,
         37, 38, 39,
     });
-    defer allocator.free(rf);
+    defer gpa.free(rf);
 
     try stdout.print("range format: {s}\n", .{rf});
 
@@ -27,7 +28,7 @@ pub fn main() !void {
 }
 
 /// Allocates memory for the result, which must be freed by the caller.
-fn getRangeFormat(allocator: std.mem.Allocator, T: type, slice: []const T) ![]const u8 {
+fn getRangeFormat(allocator: Allocator, T: type, slice: []const T) ![]const u8 {
     if (@typeInfo(T) != .int)
         @compileError("getRangeFormat() expected integer argument, found " ++ @typeName(T));
 
@@ -38,7 +39,7 @@ fn getRangeFormat(allocator: std.mem.Allocator, T: type, slice: []const T) ![]co
     const U = std.meta.Int(.unsigned, @typeInfo(T).int.bits);
     var buffer: [@as(u16, std.math.log10_int(@as(U, std.math.maxInt(U))) * 2) + 5]u8 = undefined;
 
-    var w: std.Io.Writer = .fixed(&buffer);
+    var w: Io.Writer = .fixed(&buffer);
 
     var parts: std.ArrayList([]const u8) = .empty;
     defer {

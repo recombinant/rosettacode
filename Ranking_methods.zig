@@ -1,16 +1,17 @@
 // https://rosettacode.org/wiki/Ranking_methods
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Nim}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
 
     var data = [_]Record{
         .init(44, "Solomon"), .init(42, "Jason"),
@@ -32,13 +33,13 @@ pub fn main() !void {
 
     inline for (table, 1..) |entry, i| {
         try stdout.print("{s}:\n", .{entry.title});
-        switch (try entry.rankingFn(allocator, &data)) {
+        switch (try entry.rankingFn(gpa, &data)) {
             inline else => |ranks| {
                 for (ranks) |rank| {
                     try stdout.print(entry.fmt, .{rank.rank});
                     try stdout.print(": {s} {}\n", .{ rank.name, rank.score });
                 }
-                allocator.free(ranks);
+                gpa.free(ranks);
             },
         }
         if (i != table.len)
@@ -82,7 +83,7 @@ const RankingResultsType = union(RankingResultsTag) {
     rankings_fractional: []RankFract,
 };
 
-fn standardRanks(allocator: std.mem.Allocator, records: []Record) !RankingResultsType {
+fn standardRanks(allocator: Allocator, records: []Record) !RankingResultsType {
     std.mem.sort(Record, records, {}, greaterThan);
     var result: std.ArrayList(RankInt) = .empty;
 
@@ -98,7 +99,7 @@ fn standardRanks(allocator: std.mem.Allocator, records: []Record) !RankingResult
     return RankingResultsType{ .rankings_integer = try result.toOwnedSlice(allocator) };
 }
 
-fn modifiedRanks(allocator: std.mem.Allocator, records: []Record) !RankingResultsType {
+fn modifiedRanks(allocator: Allocator, records: []Record) !RankingResultsType {
     std.mem.sort(Record, records, {}, greaterThan);
     std.mem.reverse(Record, records);
     var result: std.ArrayList(RankInt) = .empty;
@@ -116,7 +117,7 @@ fn modifiedRanks(allocator: std.mem.Allocator, records: []Record) !RankingResult
     return RankingResultsType{ .rankings_integer = try result.toOwnedSlice(allocator) };
 }
 
-fn denseRanks(allocator: std.mem.Allocator, records: []Record) !RankingResultsType {
+fn denseRanks(allocator: Allocator, records: []Record) !RankingResultsType {
     std.mem.sort(Record, records, {}, greaterThan);
     var result: std.ArrayList(RankInt) = .empty;
 
@@ -132,7 +133,7 @@ fn denseRanks(allocator: std.mem.Allocator, records: []Record) !RankingResultsTy
     return RankingResultsType{ .rankings_integer = try result.toOwnedSlice(allocator) };
 }
 
-fn ordinalRanks(allocator: std.mem.Allocator, records: []Record) !RankingResultsType {
+fn ordinalRanks(allocator: Allocator, records: []Record) !RankingResultsType {
     std.mem.sort(Record, records, {}, greaterThan);
     var result: std.ArrayList(RankInt) = .empty;
 
@@ -144,7 +145,7 @@ fn ordinalRanks(allocator: std.mem.Allocator, records: []Record) !RankingResults
     return RankingResultsType{ .rankings_integer = try result.toOwnedSlice(allocator) };
 }
 
-fn fractionalRanks(allocator: std.mem.Allocator, records: []Record) !RankingResultsType {
+fn fractionalRanks(allocator: Allocator, records: []Record) !RankingResultsType {
     std.mem.sort(Record, records, {}, greaterThan);
     var result: std.ArrayList(RankFract) = .empty;
 

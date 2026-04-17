@@ -1,19 +1,18 @@
 // https://rosettacode.org/wiki/Sailors,_coconuts_and_a_monkey_problem
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Kotlin}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 const print = std.debug.print;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
     //
     var coconuts: u32 = 11;
     var ns: u32 = 2;
     outer: while (ns <= 9) : (ns += 1) {
-        var hidden = try allocator.alloc(u32, ns);
-        defer allocator.free(hidden);
+        var hidden = try gpa.alloc(u32, ns);
+        defer gpa.free(hidden);
         coconuts = (coconuts / ns) * ns + 1;
         while (true) {
             var nc = coconuts;
