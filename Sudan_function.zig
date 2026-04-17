@@ -1,9 +1,10 @@
 // https://rosettacode.org/wiki/Sudan_function
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // requires utf-8 terminal for printing to work.
 
 const std = @import("std");
+const Io = std.Io;
 
 fn sudan(n: u64, x: u64, y: u64) u64 {
     if (n == 0) return x + y;
@@ -16,9 +17,11 @@ const SudanError = error{
     PrintableSubscriptOutOfRange,
 };
 
-pub fn main() anyerror!void {
+pub fn main(init: std.process.Init) anyerror!void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     const parameters = [_]struct { n: u64, x: u64, y: u64 }{

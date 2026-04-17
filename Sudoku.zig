@@ -1,8 +1,11 @@
 // https://rosettacode.org/wiki/Sudoku
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     const problem = [_]u8{
         8, 5, 0, 0, 0, 2, 4, 0, 0,
         7, 2, 0, 0, 0, 0, 0, 0, 9,
@@ -17,7 +20,7 @@ pub fn main() !void {
     var sudoku: Sudoku = .init(problem);
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     if (sudoku.solve())
@@ -76,7 +79,7 @@ const Sudoku = struct {
         self.grid[i] = 0;
         return false;
     }
-    pub fn format(self: *const Sudoku, w: *std.Io.Writer) std.Io.Writer.Error!void {
+    pub fn format(self: *const Sudoku, w: *Io.Writer) Io.Writer.Error!void {
         for (0..9) |y| {
             for (0..9) |x| {
                 if (x != 0) try w.writeByte(' ');

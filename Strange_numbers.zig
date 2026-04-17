@@ -1,8 +1,9 @@
 // https://rosettacode.org/wiki/Strange_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // zig run Strange_numbers.zig | fmt
 const std = @import("std");
+const Io = std.Io;
 
 // // This would be the array if it were hard-coded integers.
 // const next_digit = [_]u32{
@@ -29,7 +30,7 @@ const next_digit: [10]u32 = blk: {
     break :blk possibles;
 };
 
-fn gen(p: []u8, i: usize, c: u8, w: *std.Io.Writer) void {
+fn gen(p: []u8, i: usize, c: u8, w: *Io.Writer) void {
     p[i] = c;
 
     if (i == p.len - 1)
@@ -41,9 +42,11 @@ fn gen(p: []u8, i: usize, c: u8, w: *std.Io.Writer) void {
     }
 }
 
-pub fn main() void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // ----------------------------------------------- task
     {
