@@ -1,7 +1,9 @@
 // https://rosettacode.org/wiki/Kaprekar_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const print = std.debug.print;
 
@@ -31,7 +33,7 @@ fn kaprekar(n: u64, base: u64) struct { bool, ?usize } {
     return .{ false, null };
 }
 
-pub fn main() void {
+pub fn main(init: std.process.Init) !void {
     {
         // Task
         const max: u64 = 10_000;
@@ -57,11 +59,9 @@ pub fn main() void {
     }
     {
         // Extra Extra Credit
-        var gpa: std.heap.DebugAllocator(.{}) = .init;
-        defer _ = gpa.deinit();
-        const allocator = gpa.allocator();
-        var wa1: std.Io.Writer.Allocating = .init(allocator);
-        var wa2: std.Io.Writer.Allocating = .init(allocator);
+        const gpa: Allocator = init.gpa;
+        var wa1: Io.Writer.Allocating = .init(gpa);
+        var wa2: Io.Writer.Allocating = .init(gpa);
         defer wa1.deinit();
         defer wa2.deinit();
 

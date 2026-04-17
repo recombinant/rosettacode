@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/L-system
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|FreeBASIC}}
 
 // This solution is overly sophisticated for a solution with only
@@ -8,17 +8,17 @@
 // matching symbol.
 
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+
 const print = std.debug.print;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
 
     var rules = [_]Rule{ .{ 'I', "M" }, .{ 'M', "MI" } };
     std.mem.sort(Rule, &rules, {}, lessThanRule);
 
-    try showLindenmayer(allocator, "I", rules[0..], 5);
+    try showLindenmayer(gpa, "I", rules[0..], 5);
 }
 
 const Rule = struct { u8, []const u8 };
@@ -31,7 +31,7 @@ fn orderRule(symbol: u8, rule: Rule) std.math.Order {
     return std.math.order(symbol, rule[0]);
 }
 
-fn showLindenmayer(allocator: std.mem.Allocator, axiom: []const u8, rules: []const Rule, count: usize) !void {
+fn showLindenmayer(allocator: Allocator, axiom: []const u8, rules: []const Rule, count: usize) !void {
     var next: std.ArrayList(u8) = .empty;
     defer next.deinit(allocator);
 

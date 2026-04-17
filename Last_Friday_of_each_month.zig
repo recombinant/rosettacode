@@ -1,35 +1,34 @@
 // https://rosettacode.org/wiki/Last_Friday_of_each_month
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Fortran}}
 
 // see also:
 // https://rosettacode.org/wiki/Find_the_last_Sunday_of_each_month
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+
 const print = std.debug.print;
 
 const YearError = error{
     OutOfRange,
 };
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
 
     // try getLastFridays(allocator, 1582);
     // try getLastFridays(allocator, 1701);
     // try getLastFridays(allocator, 2023);
     // try getLastFridays(allocator, 2024);
-    const fridays = try getLastFridays(allocator, 2012);
+    const fridays = try getLastFridays(gpa, 2012);
     for (fridays) |friday| {
         print("{s}\n", .{friday});
-        allocator.free(friday);
+        gpa.free(friday);
     }
 }
 
 /// Caller owns contents of returned array.
-fn getLastFridays(allocator: std.mem.Allocator, year: u16) ![12][]const u8 {
+fn getLastFridays(allocator: Allocator, year: u16) ![12][]const u8 {
     if (year < 1582) return YearError.OutOfRange; // Start of Gregorian Calender
 
     const febuary_days: u16 = 28 + @as(u16, @intFromBool(isLeapYear(year)));

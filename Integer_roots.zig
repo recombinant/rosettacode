@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Integer_roots
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 // {{trans|Python}}
 // {{trans|Go}}
@@ -9,10 +9,12 @@ const mem = std.mem;
 
 const Int = math.big.int.Managed;
 const Const = math.big.int.Const;
+const Allocator = std.mem.Allocator;
 
 const print = std.debug.print;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
     // ------------------------------------------------------ u64
     const b: u64 = 2e18;
 
@@ -29,17 +31,13 @@ pub fn main() !void {
         // .{ 2, "2" ++ "00" ** 2000 },
     };
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
     // ---------- Translation of Python
     print("\n\n", .{});
     for (integers) |tuple| {
         const n = tuple[0];
         const x = tuple[1];
-        const rt = try rootP(allocator, n, x);
-        defer allocator.free(rt);
+        const rt = try rootP(gpa, n, x);
+        defer gpa.free(rt);
 
         print("{d}{s} root of {s} = {s}\n", .{ n, getSuffix(n), x, rt });
     }
@@ -49,8 +47,8 @@ pub fn main() !void {
     for (integers) |tuple| {
         const n = tuple[0];
         const x = tuple[1];
-        const rt = try rootG(allocator, n, x);
-        defer allocator.free(rt);
+        const rt = try rootG(gpa, n, x);
+        defer gpa.free(rt);
 
         print("{d}{s} root of {s} = {s}\n", .{ n, getSuffix(n), x, rt });
     }

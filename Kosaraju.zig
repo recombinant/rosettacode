@@ -1,12 +1,11 @@
 // https://rosettacode.org/wiki/Kosaraju
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
 
     const g = [_][]const u32{
         &.{1},
@@ -18,13 +17,13 @@ pub fn main() !void {
         &.{5},
         &.{ 4, 6, 7 },
     };
-    const result = try kosaraju(allocator, &g);
+    const result = try kosaraju(gpa, &g);
     std.debug.print("{any}", .{result});
-    allocator.free(result);
+    gpa.free(result);
 }
 
 /// Allocates memory for the result, which must be freed by the caller.
-fn kosaraju(allocator: std.mem.Allocator, g: []const []const u32) ![]u32 {
+fn kosaraju(allocator: Allocator, g: []const []const u32) ![]u32 {
     // 1. For each vertex u of the graph, mark u as unvisited. Let L be empty.
     var k: Kosajaru = try .init(allocator, g);
     defer k.deinit();
@@ -42,14 +41,14 @@ fn kosaraju(allocator: std.mem.Allocator, g: []const []const u32) ![]u32 {
 }
 
 const Kosajaru = struct {
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
     g: []const []const u32,
     vis: []bool,
     L: []u32,
     x: usize, // index for filling L in reverse order
     t: []std.ArrayList(u32), // transpose graph
 
-    fn init(allocator: std.mem.Allocator, g: []const []const u32) !Kosajaru {
+    fn init(allocator: Allocator, g: []const []const u32) !Kosajaru {
         const vis = try allocator.alloc(bool, g.len);
         @memset(vis, false);
         const L = try allocator.alloc(u32, g.len);

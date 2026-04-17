@@ -1,11 +1,12 @@
 // https://rosettacode.org/wiki/Longest_common_prefix
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Wren (alternative version)}}
 const std = @import("std");
-const testing = std.testing;
+const Allocator = std.mem.Allocator;
+
 const print = std.debug.print;
 
-fn lcp(allocator: std.mem.Allocator, strings: []const []const u8) ![]u8 {
+fn lcp(allocator: Allocator, strings: []const []const u8) ![]u8 {
     if (strings.len == 0)
         return try allocator.alloc(u8, 0);
     if (strings.len == 1)
@@ -31,10 +32,8 @@ fn lcp(allocator: std.mem.Allocator, strings: []const []const u8) ![]u8 {
     return try result.toOwnedSlice(allocator);
 }
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
 
     const data = [_][]const []const u8{
         &.{ "interspecies", "interstellar", "interstate" },
@@ -50,9 +49,9 @@ pub fn main() !void {
     };
 
     for (data) |strings| {
-        const result = try lcp(allocator, strings);
+        const result = try lcp(gpa, strings);
 
-        defer allocator.free(result);
+        defer gpa.free(result);
 
         print("Longest common prefix : {s}\n", .{result});
     }

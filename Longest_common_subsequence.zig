@@ -1,21 +1,22 @@
 // https://rosettacode.org/wiki/Longest_common_subsequence
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    // ------------------------------------------ allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     // ------------------------------------------------ lcs
     const a = "thisisatest";
     const b = "testing123testing";
 
-    const result = try lcs(allocator, a, b);
-    defer allocator.free(result);
+    const result = try lcs(gpa, a, b);
+    defer gpa.free(result);
     // ---------------------------------------------- print
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try stdout.print("{s}\n", .{result});
@@ -24,7 +25,7 @@ pub fn main() !void {
 }
 
 /// Caller owns returned slice memory.
-fn lcs(allocator: std.mem.Allocator, a: []const u8, b: []const u8) ![]const u8 {
+fn lcs(allocator: Allocator, a: []const u8, b: []const u8) ![]const u8 {
     // generate matrix of length of longest common subsequence for substrings of both strings
     const ls = try allocator.alloc([]usize, a.len + 1);
     defer allocator.free(ls);

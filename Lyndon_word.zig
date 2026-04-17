@@ -1,34 +1,35 @@
 // https://rosettacode.org/wiki/Lyndon_word
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    var lyndon_words: LyndonWords = try .init(allocator, 5, "01");
+    var lyndon_words: LyndonWords = try .init(gpa, 5, "01");
     defer lyndon_words.deinit();
 
     while (try lyndon_words.next()) |word| {
         try stdout.print("{s}\n", .{word});
-        allocator.free(word);
+        gpa.free(word);
     }
 
     try stdout.flush();
 }
 
 const LyndonWords = struct {
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
     n: usize,
     alphabet: []const u8,
     w: []const u8,
 
-    fn init(allocator: std.mem.Allocator, n: usize, alphabet_: []const u8) !LyndonWords {
+    fn init(allocator: Allocator, n: usize, alphabet_: []const u8) !LyndonWords {
         const alphabet = try allocator.dupe(u8, alphabet_);
         std.sort.pdq(u8, alphabet, {}, std.sort.asc(u8));
         return LyndonWords{

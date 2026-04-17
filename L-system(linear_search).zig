@@ -1,23 +1,23 @@
 // https://rosettacode.org/wiki/L-system
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|FreeBASIC}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+
 const print = std.debug.print;
 
 // This is a simple solution suitable for a rule count.
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
 
     const rules = [2]Rule{ .{ 'I', "M" }, .{ 'M', "MI" } };
-    try showLindenmayer(allocator, "I", &rules, 5);
+    try showLindenmayer(gpa, "I", &rules, 5);
 }
 
 const Rule = struct { u8, []const u8 };
 
-fn showLindenmayer(allocator: std.mem.Allocator, axiom: []const u8, rules: []const Rule, count: usize) !void {
+fn showLindenmayer(allocator: Allocator, axiom: []const u8, rules: []const Rule, count: usize) !void {
     var next: std.ArrayList(u8) = .empty;
     defer next.deinit(allocator);
 

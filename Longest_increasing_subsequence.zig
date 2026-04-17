@@ -1,15 +1,14 @@
 // https://rosettacode.org/wiki/Longest_increasing_subsequence
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // Based on O(n log n) method from wikipedia
 // https://en.wikipedia.org/wiki/Longest_increasing_subsequence#Efficient_algorithms
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 
 const print = std.debug.print;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
 
     const data = [2][]const u4{
         &[_]u4{ 3, 2, 6, 4, 5, 1 },
@@ -17,14 +16,14 @@ pub fn main() !void {
     };
 
     for (data) |d| {
-        const lis = try getLongestIncreasingSubsequence(allocator, u4, d);
-        defer allocator.free(lis);
+        const lis = try getLongestIncreasingSubsequence(gpa, u4, d);
+        defer gpa.free(lis);
         print("a L.I.S. of {any} is {any}\n", .{ d, lis });
     }
 }
 
 /// Caller owns returned slice memory.
-fn getLongestIncreasingSubsequence(allocator: std.mem.Allocator, T: type, x: []const T) ![]const T {
+fn getLongestIncreasingSubsequence(allocator: Allocator, T: type, x: []const T) ![]const T {
     const n = x.len;
     switch (n) {
         0, 1 => return try allocator.dupe(T, x),

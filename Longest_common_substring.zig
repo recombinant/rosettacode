@@ -1,48 +1,46 @@
 // https://rosettacode.org/wiki/Longest_common_substring
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // from the Go and Java examples
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    // ------------------------------------------ allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     // ----------------------------------------------------
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
     // --------------------------------------------- stdout
-    var t0: std.time.Timer = try .start();
+    var t0: Io.Timestamp = .now(io, .real);
 
     const result1 = try longestCommonSubstringWithAlloc(
-        allocator,
+        gpa,
         "thisisatest",
         "testing123testing",
     );
-    const t1 = t0.read();
 
     try stdout.writeAll(result1);
     try stdout.writeByte('\n');
     try stdout.flush();
-    std.log.info("longestCommonSubstringWithAlloc() processed in {D}", .{t1});
+    std.log.info("longestCommonSubstringWithAlloc() processed in {f}", .{t0.untilNow(io, .real)});
 
-    var t2: std.time.Timer = try .start();
+    var t1: Io.Timestamp = .now(io, .real);
 
     const result2 = longestCommonSubstring(
         "thisisatest",
         "testing123testing",
     );
-    const t3 = t2.read();
 
     try stdout.writeAll(result2);
     try stdout.writeByte('\n');
     try stdout.flush();
-    std.log.info("longestCommonSubstring() processed in {D}", .{t3});
+    std.log.info("longestCommonSubstring() processed in {f}", .{t1.untilNow(io, .real)});
 }
 
-fn longestCommonSubstringWithAlloc(allocator: std.mem.Allocator, a: []const u8, b: []const u8) ![]const u8 {
+fn longestCommonSubstringWithAlloc(allocator: Allocator, a: []const u8, b: []const u8) ![]const u8 {
     var result: []const u8 = "";
     var lengths = try allocator.alloc(usize, a.len * b.len); // lengths matrix
     defer allocator.free(lengths);
