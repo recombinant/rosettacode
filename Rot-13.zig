@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Rot-13
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 pub fn main() void {
     const message: []const u8 =

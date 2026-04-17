@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Polyspiral
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{libheader|raylib}}
 const std = @import("std");
 const rl = @cImport({
