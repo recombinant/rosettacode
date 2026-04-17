@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Call_an_object_method
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // zig test Call_an_object_method.zig
 // Copied from rosettacode
 const testing = @import("std").testing;

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Animate_a_pendulum
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{libheader|raylib}}
 const std = @import("std");
 const rl = @cImport({
@@ -54,7 +54,7 @@ pub fn main() void {
         // If, due to computation errors, potential energy is greater than total energy,
         // reset theta to ±theta0 and omega to 0.
         if (length * g * (1 - @cos(theta)) >= e) {
-            theta = std.math.sign(theta) * theta0;
+            theta = @as(f32, @floatFromInt(std.math.sign(theta))) * theta0;
             omega = 0;
         }
         accel = -g / length * @sin(theta);
