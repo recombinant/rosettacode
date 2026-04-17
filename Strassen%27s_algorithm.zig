@@ -1,53 +1,58 @@
 // https://rosettacode.org/wiki/Strassen%27s_algorithm
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.GeneralPurposeAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+    // `init.arena` is for the lifetime of the executable
+    // and should not be reset.
+    // We use a separate arena for ephemeral allocations.
 
+    // This arena is reset after each call to strassen() from main().
     var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
     const ephemeral_allocator = arena.allocator();
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    const a: Matrix(f64) = try .initSet(allocator, 2, 2, &[_]f64{
+    const a: Matrix(f64) = try .initSet(gpa, 2, 2, &[_]f64{
         1, 2,
         3, 4,
     });
     defer a.deinit();
-    const b: Matrix(f64) = try .initSet(allocator, 2, 2, &[_]f64{
+    const b: Matrix(f64) = try .initSet(gpa, 2, 2, &[_]f64{
         5, 6,
         7, 8,
     });
     defer b.deinit();
-    const c: Matrix(f64) = try .initSet(allocator, 4, 4, &[_]f64{
+    const c: Matrix(f64) = try .initSet(gpa, 4, 4, &[_]f64{
         1, 1,  1,  1,
         2, 4,  8,  16,
         3, 9,  27, 81,
         4, 16, 64, 256,
     });
     defer c.deinit();
-    const d: Matrix(f64) = try .initSet(allocator, 4, 4, &[_]f64{
+    const d: Matrix(f64) = try .initSet(gpa, 4, 4, &[_]f64{
         4,           -3,         4.0 / 3.0,  -1.0 / 4.0,
         -13.0 / 3.0, 19.0 / 4.0, -7.0 / 3.0, 11.0 / 24.0,
         3.0 / 2.0,   -2,         7.0 / 6.0,  -1.0 / 4.0,
         -1.0 / 6.0,  1.0 / 4.0,  -1.0 / 6.0, 1.0 / 24.0,
     });
     defer d.deinit();
-    const e: Matrix(f64) = try .initSet(allocator, 4, 4, &[_]f64{
+    const e: Matrix(f64) = try .initSet(gpa, 4, 4, &[_]f64{
         1,  2,  3,  4,
         5,  6,  7,  8,
         9,  10, 11, 12,
         13, 14, 15, 16,
     });
     defer e.deinit();
-    const f: Matrix(f64) = try .initSet(allocator, 4, 4, &[_]f64{
+    const f: Matrix(f64) = try .initSet(gpa, 4, 4, &[_]f64{
         1, 0, 0, 0,
         0, 1, 0, 0,
         0, 0, 1, 0,
@@ -92,12 +97,12 @@ pub fn main() !void {
 fn Matrix(comptime T: type) type {
     return struct {
         const Self = @This();
-        allocator: std.mem.Allocator,
+        allocator: Allocator,
         rows: usize,
         cols: usize,
         data: []T,
 
-        fn init(allocator: std.mem.Allocator, rows: usize, cols: usize) !Self {
+        fn init(allocator: Allocator, rows: usize, cols: usize) !Self {
             const data = try allocator.alloc(T, rows * cols);
             @memset(data, 0);
             return .{
@@ -107,7 +112,7 @@ fn Matrix(comptime T: type) type {
                 .data = data,
             };
         }
-        fn initSet(allocator: std.mem.Allocator, rows: usize, cols: usize, data: []const T) !Self {
+        fn initSet(allocator: Allocator, rows: usize, cols: usize, data: []const T) !Self {
             if (rows * cols != data.len)
                 return error.MatrixDataLenIncorrect;
             return .{
@@ -120,7 +125,7 @@ fn Matrix(comptime T: type) type {
         fn deinit(self: Self) void {
             self.allocator.free(self.data);
         }
-        pub fn format(value: Self, w: *std.Io.Writer) std.Io.Writer.Error!void {
+        pub fn format(value: Self, w: *Io.Writer) Io.Writer.Error!void {
             try w.writeAll("[ ");
             for (0..value.rows, 0..) |row, i| {
                 if (i != 0)
@@ -175,7 +180,7 @@ fn Matrix(comptime T: type) type {
             return m;
         }
 
-        fn strassen(ephemeral_allocator: std.mem.Allocator, a: Self, b: Self) !Self {
+        fn strassen(ephemeral_allocator: Allocator, a: Self, b: Self) !Self {
             if (a.rows != a.cols or b.rows != b.cols or a.rows != b.rows) return error.MatrixSizeMismatch;
             if (a.rows == 0 or (a.rows & (a.rows - 1)) != 0) return error.MatrixSizeNotPow2;
             if (a.rows == 1) return a.mul(b);
@@ -196,7 +201,7 @@ fn Matrix(comptime T: type) type {
             return Self.fromQuarters(a.allocator, q);
         }
 
-        fn toQuarters(ephemeral_allocator: std.mem.Allocator, m: Self) ![4]Self {
+        fn toQuarters(ephemeral_allocator: Allocator, m: Self) ![4]Self {
             const r = m.rows / 2;
             const c = m.cols / 2;
             const p = params(r, c);
@@ -211,7 +216,7 @@ fn Matrix(comptime T: type) type {
             return quarters;
         }
 
-        fn fromQuarters(allocator: std.mem.Allocator, q: [4]Self) Self {
+        fn fromQuarters(allocator: Allocator, q: [4]Self) Self {
             var r = q[0].rows;
             var c = q[0].cols;
             const p = params(r, c);

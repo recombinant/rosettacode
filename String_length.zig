@@ -1,9 +1,11 @@
 // https://rosettacode.org/wiki/String_length
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // Copied from rosettacode
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-fn printResults(alloc: std.mem.Allocator, string: []const u8, w: *std.Io.Writer) !void {
+fn printResults(alloc: Allocator, string: []const u8, w: *Io.Writer) !void {
     try w.print("String: \"{s}\"\n", .{string});
 
     const cnt_codepts_utf8 = try std.unicode.utf8CountCodepoints(string);
@@ -19,23 +21,22 @@ fn printResults(alloc: std.mem.Allocator, string: []const u8, w: *std.Io.Writer)
     try w.flush();
 }
 
-pub fn main() !void {
-    var arena_instance: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
-    defer arena_instance.deinit();
+pub fn main(init: std.process.Init) !void {
+    const allocator: Allocator = init.arena.allocator();
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    const arena = arena_instance.allocator();
     const string1: []const u8 = "Hello, world!";
-    try printResults(arena, string1, stdout);
+    try printResults(allocator, string1, stdout);
     const string2: []const u8 = "møøse";
-    try printResults(arena, string2, stdout);
+    try printResults(allocator, string2, stdout);
     const string3: []const u8 = "𝔘𝔫𝔦𝔠𝔬𝔡𝔢";
-    try printResults(arena, string3, stdout);
+    try printResults(allocator, string3, stdout);
     // \u{332} is underscore of previous character, which the browser may not
     // copy correctly
     const string4: []const u8 = "J\u{332}o\u{332}s\u{332}e\u{301}\u{332}";
-    try printResults(arena, string4, stdout);
+    try printResults(allocator, string4, stdout);
 }

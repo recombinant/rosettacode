@@ -1,7 +1,9 @@
 // https://rosettacode.org/wiki/Primes_whose_sum_of_digits_is_25
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 fn isPrime(n: u64) bool {
     if (n < 2) return false;
@@ -27,10 +29,9 @@ fn digitSum(n_: u64) u16 {
     return sum;
 }
 
-pub fn main() !void {
-    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
+pub fn main(init: std.process.Init) !void {
+    const allocator: Allocator = init.arena.allocator();
+    const io: Io = init.io;
 
     var result: std.ArrayList(u64) = .empty;
     defer result.deinit(allocator);
@@ -43,7 +44,7 @@ pub fn main() !void {
     }
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     for (result.items, 0..) |n, i|
