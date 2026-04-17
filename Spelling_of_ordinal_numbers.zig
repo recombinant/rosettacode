@@ -1,6 +1,7 @@
 // https://rosettacode.org/wiki/Spelling_of_ordinal_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 
 const assert = std.debug.assert;
 const print = std.debug.print;
@@ -9,14 +10,12 @@ const number_names = @import("Number_names.zig");
 const WordType = number_names.WordType;
 const parseInteger = number_names.parseInteger;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
 
     for ([_]i64{ 1, 2, 3, 4, 5, 11, 65, 100, 101, 272, 23456, 8_007_006_005_004_003 }) |n| {
-        const text = try spellOrdinal(allocator, n);
-        defer allocator.free(text);
+        const text = try spellOrdinal(gpa, n);
+        defer gpa.free(text);
         print("{s}\n", .{text});
     }
 }
@@ -30,7 +29,7 @@ const irregular_ordinals = [20]?[]const u8{
 
 /// Refer spellInteger() in Number_names.zig for documentation.
 /// Caller owns returned slice memory.
-fn spellOrdinal(allocator: std.mem.Allocator, n: i64) ![]u8 {
+fn spellOrdinal(allocator: Allocator, n: i64) ![]u8 {
     const words = try parseInteger(allocator, n);
     defer allocator.free(words);
     assert(words.len != 0);

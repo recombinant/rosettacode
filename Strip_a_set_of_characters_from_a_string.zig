@@ -1,19 +1,19 @@
 // https://www.rosettacode.org/wiki/Strip_a_set_of_characters_from_a_string
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     // ------------------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-    // ---------------------------------------------------- allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
     // --------------------------------------------------------------
-    const s = try strip(allocator, "She was a soul stripper. She took my heart!", "aei");
-    defer allocator.free(s);
+    const s = try strip(gpa, "She was a soul stripper. She took my heart!", "aei");
+    defer gpa.free(s);
 
     try stdout.print("{s}\n", .{s});
 
@@ -21,8 +21,8 @@ pub fn main() !void {
 }
 
 /// Caller owns returned slice memory.
-fn strip2(allocator: std.mem.Allocator, s: []const u8, remove: []const u8) ![]const u8 {
-    var a: std.Io.Writer.Allocating = .init(allocator);
+fn strip2(allocator: Allocator, s: []const u8, remove: []const u8) ![]const u8 {
+    var a: Io.Writer.Allocating = .init(allocator);
     defer a.deinit();
 
     var it = std.mem.tokenizeAny(u8, s, remove);
@@ -33,7 +33,7 @@ fn strip2(allocator: std.mem.Allocator, s: []const u8, remove: []const u8) ![]co
 }
 
 /// Caller owns returned slice memory.
-fn strip(allocator: std.mem.Allocator, s: []const u8, remove: []const u8) ![]const u8 {
+fn strip(allocator: Allocator, s: []const u8, remove: []const u8) ![]const u8 {
     // Determine size of stripped result.
     var size: usize = 0;
     for (s) |c|

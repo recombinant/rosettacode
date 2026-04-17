@@ -1,14 +1,14 @@
 // https://rosettacode.org/wiki/Semordnilap
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+
 const print = std.debug.print;
 
 const unixdict = @embedFile("data/unixdict.txt");
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
 
     var word_count: usize = 0; // for word_lookup capacity
     {
@@ -18,12 +18,12 @@ pub fn main() !void {
     }
     // 'word' vs 'seen'
     var word_lookup: std.StringArrayHashMapUnmanaged(bool) = .empty;
-    defer word_lookup.deinit(allocator);
+    defer word_lookup.deinit(gpa);
     {
-        try word_lookup.ensureUnusedCapacity(allocator, word_count);
+        try word_lookup.ensureUnusedCapacity(gpa, word_count);
         var it = std.mem.tokenizeScalar(u8, unixdict, '\n');
         while (it.next()) |word|
-            _ = try word_lookup.getOrPutValue(allocator, word, true);
+            _ = try word_lookup.getOrPutValue(gpa, word, true);
     }
     var palindromes: std.ArrayList([2][]const u8) = .empty;
     // palindromes.toOwnedSlice() obviates the need for palindromes.deinit();
@@ -36,8 +36,8 @@ pub fn main() !void {
                 // mark seen
                 entry1.value_ptr.* = false;
                 // reverse word to create palindrome
-                const word = try allocator.dupe(u8, entry1.key_ptr.*);
-                defer allocator.free(word);
+                const word = try gpa.dupe(u8, entry1.key_ptr.*);
+                defer gpa.free(word);
                 std.mem.reverse(u8, word);
                 // is there the palindrome in lookup?
                 const optional_entry2 = word_lookup.getEntry(word);
@@ -46,14 +46,14 @@ pub fn main() !void {
                     if (entry2.value_ptr.*) {
                         // mark palindrome seen
                         entry2.value_ptr.* = false;
-                        try palindromes.append(allocator, .{ entry1.key_ptr.*, entry2.key_ptr.* });
+                        try palindromes.append(gpa, .{ entry1.key_ptr.*, entry2.key_ptr.* });
                     }
                 }
             }
         }
     }
-    var pairs = try palindromes.toOwnedSlice(allocator);
-    defer allocator.free(pairs);
+    var pairs = try palindromes.toOwnedSlice(gpa);
+    defer gpa.free(pairs);
     print("There are {d} unique semordnilap pairs in the dictionary.\n\n", .{pairs.len});
 
     // stable sort by length, shortest first.

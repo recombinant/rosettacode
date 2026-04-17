@@ -1,29 +1,28 @@
 // https://rosettacode.org/wiki/Smith_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    // ------------------------------------------ allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     // --------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     // ----------------------------------------------------
-
     try stdout.writeAll("All the Smith Numbers < 10000 are:\n");
-    const count = try listAllSmithNumbers(allocator, stdout, 10_000);
+    const count = try listAllSmithNumbers(gpa, stdout, 10_000);
     try stdout.print("\nFound {d} Smith numbers.\n", .{count});
 
     // ----------------------------------------------------
     try stdout.flush();
 }
 
-fn listAllSmithNumbers(allocator: std.mem.Allocator, w: *std.Io.Writer, x: u64) !u16 {
+fn listAllSmithNumbers(allocator: Allocator, w: *Io.Writer, x: u64) !u16 {
     var array: std.ArrayList(u64) = .empty;
     defer array.deinit(allocator);
 
@@ -43,7 +42,7 @@ fn listAllSmithNumbers(allocator: std.mem.Allocator, w: *std.Io.Writer, x: u64) 
     return count;
 }
 
-fn primeFactors(allocator: std.mem.Allocator, x_: u64, array: *std.ArrayList(u64)) !void {
+fn primeFactors(allocator: Allocator, x_: u64, array: *std.ArrayList(u64)) !void {
     var p: u64 = 2;
     if (x_ == 1)
         try array.append(allocator, 1)

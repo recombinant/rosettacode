@@ -1,26 +1,27 @@
 // https://rosettacode.org/wiki/Solve_triangle_solitaire_puzzle
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Kotlin}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     var board: Board = .init();
 
     var solutions: std.ArrayList(Solution) = .empty;
-    defer solutions.deinit(allocator);
+    defer solutions.deinit(gpa);
 
     // run once to get solutions
     const empty_start = 1;
     board.start(empty_start); // starting with peg 1 removed
-    try board.solve(allocator, &solutions);
+    try board.solve(gpa, &solutions);
     std.debug.assert(board.isSolved());
 
     // restart & replay solutions printing the board
@@ -89,7 +90,7 @@ const Board = struct {
         self.board[solution.land] = true;
     }
     /// Recursive function to solve the puzzle
-    fn solve(self: *Board, allocator: std.mem.Allocator, solutions: *std.ArrayList(Solution)) !void {
+    fn solve(self: *Board, allocator: Allocator, solutions: *std.ArrayList(Solution)) !void {
         if (isSolved(self))
             return;
         for (1..self.board.len) |peg| {
@@ -119,7 +120,7 @@ const Board = struct {
             count += @intFromBool(peg);
         return count == 1; // just one peg left
     }
-    fn drawBoard(self: *const Board, w: *std.Io.Writer) !void {
+    fn drawBoard(self: *const Board, w: *Io.Writer) !void {
         var pegs: [16]u8 = undefined;
         @memset(&pegs, '-');
         for (self.board, &pegs, 0..) |peg, *s, i|

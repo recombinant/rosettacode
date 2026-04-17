@@ -1,20 +1,22 @@
 // https://rosettacode.org/wiki/Shortest_common_supersequence
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    // ------------------------------------------ allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     // ------------------------------------------------ scs
     const seq1 = "abcbdab";
     const seq2 = "abdcaba";
-    const result = try shortestCommonSupersequence(allocator, seq1, seq2);
-    defer allocator.free(result);
+    const result = try shortestCommonSupersequence(gpa, seq1, seq2);
+    defer gpa.free(result);
+
     // ---------------------------------------------- print
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try stdout.print("{s}\n", .{result});
@@ -22,7 +24,7 @@ pub fn main() !void {
     try stdout.flush();
 }
 
-fn shortestCommonSupersequence(allocator: std.mem.Allocator, u: []const u8, v: []const u8) ![]u8 {
+fn shortestCommonSupersequence(allocator: Allocator, u: []const u8, v: []const u8) ![]u8 {
     const lcs = try longestCommonSubsequence(allocator, u, v);
     defer allocator.free(lcs);
     var ui: usize = 0;
@@ -48,7 +50,7 @@ fn shortestCommonSupersequence(allocator: std.mem.Allocator, u: []const u8, v: [
 }
 
 /// Caller owns returned slice memory.
-fn longestCommonSubsequence(allocator: std.mem.Allocator, a: []const u8, b: []const u8) ![]u8 {
+fn longestCommonSubsequence(allocator: Allocator, a: []const u8, b: []const u8) ![]u8 {
     var lengths: Matrix = try .init(allocator, a.len + 1, b.len + 1);
     defer lengths.deinit();
 
@@ -84,11 +86,11 @@ fn longestCommonSubsequence(allocator: std.mem.Allocator, a: []const u8, b: []co
 
 const Matrix = struct {
     data: []u8 = undefined,
-    allocator: std.mem.Allocator,
+    allocator: Allocator,
     m: usize,
     n: usize, // not read
 
-    fn init(allocator: std.mem.Allocator, m: usize, n: usize) !Matrix {
+    fn init(allocator: Allocator, m: usize, n: usize) !Matrix {
         const data = try allocator.alloc(u8, m * n);
         // simple to zero entirety (only row 0 and column 0 need to be zeroed)
         @memset(data, 0);

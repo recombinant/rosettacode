@@ -1,13 +1,15 @@
 // https://rosettacode.org/wiki/Sphenic_numbers
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
+
 const assert = std.debug.assert;
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
     const limit = 1_000_000;
     const imax = limit / 6;
@@ -39,7 +41,7 @@ pub fn main() !void {
     }
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     var n: usize = 0;
@@ -82,8 +84,8 @@ pub fn main() !void {
     try stdout.print("\nNumber of sphenic numbers < 1,000,000: {}\n", .{count});
     try stdout.print("Number of sphenic triplets < 1,000,000: {}\n", .{triplets});
 
-    const factors = try findPrimeFactors(allocator, s200_000);
-    defer allocator.free(factors);
+    const factors = try findPrimeFactors(gpa, s200_000);
+    defer gpa.free(factors);
     assert(factors.len == 3);
     try stdout.print(
         "The 200,000th sphenic number: {} = {} * {} * {}\n",
@@ -124,7 +126,7 @@ fn calcPrimeSieve(comptime limit: usize) std.StaticBitSet(limit) {
     return bits;
 }
 
-fn findPrimeFactors(allocator: std.mem.Allocator, n_: u32) ![]u32 {
+fn findPrimeFactors(allocator: Allocator, n_: u32) ![]u32 {
     var n = n_;
     var factors: std.ArrayList(u32) = .empty;
     if (n > 1 and (n & 1) == 0) {

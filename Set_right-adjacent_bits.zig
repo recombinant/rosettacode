@@ -1,15 +1,15 @@
 // https://rosettacode.org/wiki/Set_right-adjacent_bits
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
-    // ------------------------------------------ allocator
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
     // --------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     // ----------------------------------------------------
@@ -21,8 +21,8 @@ pub fn main() !void {
         .{ .bits = b, .n = 2 },      .{ .bits = b, .n = 3 },
     };
     for (sample_data) |s| {
-        const result = try setRightBits(allocator, s.bits, s.n);
-        defer allocator.free(result);
+        const result = try setRightBits(gpa, s.bits, s.n);
+        defer gpa.free(result);
         try stdout.print("n = {}; Width e = {}\n\n", .{ s.n, s.bits.len });
         try stdout.print("     Input b: {s}\n", .{s.bits});
         try stdout.print("     Result:  {s}\n\n", .{result});
@@ -30,7 +30,7 @@ pub fn main() !void {
     }
 }
 
-fn setRightBits(allocator: std.mem.Allocator, bits: []const u8, n: u4) ![]const u8 {
+fn setRightBits(allocator: Allocator, bits: []const u8, n: u4) ![]const u8 {
     const result = try allocator.dupe(u8, bits);
     var remaining: usize = 0;
     for (result) |*bit| {

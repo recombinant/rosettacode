@@ -1,29 +1,30 @@
 // https://rosettacode.org/wiki/Sierpinski_arrowhead_curve
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
 const sqrt3_2: f32 = @sqrt(3.0) * 0.5;
 const Point = struct { x: f32, y: f32 };
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
 
-    var file = try std.fs.cwd().createFile("sierpinski_arrowhead.svg", .{});
-    defer file.close();
+    var file = try Io.Dir.cwd().createFile(io, "sierpinski_arrowhead.svg", .{});
+    defer file.close(io);
 
     var buffer: [4096]u8 = undefined;
-    var file_writer = file.writer(&buffer);
+    var file_writer = file.writer(io, &buffer);
     const w = &file_writer.interface;
 
-    try writeSierpinskiArrowhead(allocator, 600, 8, w);
+    try writeSierpinskiArrowhead(gpa, 600, 8, w);
 
     try w.flush();
 }
 
-fn writeSierpinskiArrowhead(allocator: std.mem.Allocator, size: usize, iterations: u16, w: *std.Io.Writer) !void {
+fn writeSierpinskiArrowhead(allocator: Allocator, size: usize, iterations: u16, w: *Io.Writer) !void {
     try w.print("<svg xmlns='http://www.w3.org/2000/svg' width='{d}' height='{d}'>", .{ size, size });
     try w.writeAll("<rect width='100%' height='100%' fill='white'/>");
     try w.writeAll("<path stroke='black' fill='none' d='");
@@ -53,7 +54,7 @@ fn writeSierpinskiArrowhead(allocator: std.mem.Allocator, size: usize, iteration
     try w.writeAll("'/></svg>");
 }
 
-fn sierpinskiArrowheadNext(allocator: std.mem.Allocator, points: []Point) ![]Point {
+fn sierpinskiArrowheadNext(allocator: Allocator, points: []Point) ![]Point {
     var output = try allocator.alloc(Point, 3 * (points.len - 1) + 1);
 
     var j: usize = 0;
