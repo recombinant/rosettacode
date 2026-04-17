@@ -1,9 +1,14 @@
 // https://rosettacode.org/wiki/Vigen%C3%A8re_cipher/Cryptanalysis
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const gpa: Allocator = init.gpa;
+    const io: Io = init.io;
+
     const input =
         \\ MOMUD EKAPV TQEFM OEVHP AJMII CDCTI FGYAG JSPXY ALUYM NSMYH
         \\ VUXJE LEPXJ FXGCM JHKDZ RYICU HYPUS PGIGM OIYHF WHTCQ KMLRD
@@ -31,19 +36,15 @@ pub fn main() !void {
         0.01974, 0.00074,
     };
 
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
     var va: VigenereAnalyser = .init(english);
-    const output = try va.analyze(allocator, input);
+    const output = try va.analyze(gpa, input);
     defer {
-        allocator.free(output.text);
-        allocator.free(output.key);
+        gpa.free(output.text);
+        gpa.free(output.key);
     }
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try stdout.print("Key: {s}\n\n", .{output.key});
@@ -80,7 +81,7 @@ const VigenereAnalyser = struct {
     }
 
     /// Caller owns the two returned strings - but not the struct itself.
-    fn analyze(self: *Self, allocator: std.mem.Allocator, input: []const u8) !struct { text: []const u8, key: []const u8 } {
+    fn analyze(self: *Self, allocator: Allocator, input: []const u8) !struct { text: []const u8, key: []const u8 } {
         const cleaned = blk: {
             var cleaned: std.ArrayList(u8) = .empty;
             for (input) |c|
@@ -194,14 +195,14 @@ const VigenereAnalyser = struct {
     }
 };
 
-fn createStringArray(allocator: std.mem.Allocator, size: usize) ![]std.ArrayList(u8) {
+fn createStringArray(allocator: Allocator, size: usize) ![]std.ArrayList(u8) {
     var array: std.ArrayList(std.ArrayList(u8)) = try .initCapacity(allocator, size);
     for (0..size) |_|
         try array.append(allocator, .empty);
     return try array.toOwnedSlice(allocator);
 }
 
-fn deinitStringArray(allocator: std.mem.Allocator, array: []std.ArrayList(u8)) void {
+fn deinitStringArray(allocator: Allocator, array: []std.ArrayList(u8)) void {
     for (array) |*s|
         s.deinit(allocator);
     allocator.free(array);
