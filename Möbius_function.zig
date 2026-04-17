@@ -1,13 +1,15 @@
 // https://rosettacode.org/wiki/M%C3%B6bius_function
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Io = std.Io;
 
 const MU_MAX = 1_000_000;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     const moebius: Moebius(MU_MAX) = .init();

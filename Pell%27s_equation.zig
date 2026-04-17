@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Pell%27s_equation
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 
 // Neither C nor C++ gave the correct answer for 277 because of integer overflow which was performed silently as undefined behaviour.
@@ -9,10 +9,13 @@
 // *Zig provides integer operators which can detect overflow, e.g. @subWithOverflow()
 // *Zig supports arbitrary bit-width integers, e.g. u256.
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     try printSolvedPell(61, stdout);
@@ -68,7 +71,7 @@ fn solvePell(n: u256) Pair {
     return Pair.init(a, b);
 }
 
-fn printSolvedPell(n: u256, w: *std.Io.Writer) !void {
+fn printSolvedPell(n: u256, w: *Io.Writer) !void {
     const r = solvePell(n);
     try w.print("x^2 - {d:3} * y^2 = 1 for x = {d:21} and y = {d:19}\n", .{ n, r.v1, r.v2 });
 }

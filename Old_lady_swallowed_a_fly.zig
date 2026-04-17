@@ -1,10 +1,13 @@
 // https://rosettacode.org/wiki/Old_lady_swallowed_a_fly
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init_: std.process.Init) !void {
+    const io: Io = init_.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     const Animal = struct {

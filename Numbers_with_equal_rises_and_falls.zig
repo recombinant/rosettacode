@@ -1,11 +1,12 @@
 // https://rosettacode.org/wiki/Numbers_with_equal_rises_and_falls
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 
 // https://oeis.org/A296712
 // Pipe through fmt for columnar output.
 
 const std = @import("std");
+const Io = std.Io;
 
 /// Check whether a number has an equal amount of rises and falls
 fn riseEqFall(arg_num: u64) bool {
@@ -32,9 +33,10 @@ const RiseAndFall = struct {
     }
 };
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     {
