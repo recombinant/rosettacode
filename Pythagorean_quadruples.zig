@@ -1,13 +1,16 @@
 // https://rosettacode.org/wiki/Pythagorean_quadruples
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 
 // from https://github.com/tiehuis/zig-rosetta
 const std = @import("std");
+const Io = std.Io;
 
 const N = 2200;
 const N2 = N * N * 2;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var r: std.StaticBitSet(N + 1) = .initEmpty();
 
     // Educated guess for the amount of memory required for `ab` DynamicBitSet
@@ -44,7 +47,7 @@ pub fn main() !void {
     }
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     var d: usize = 1;

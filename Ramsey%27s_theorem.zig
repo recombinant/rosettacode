@@ -1,7 +1,8 @@
 // https://rosettacode.org/wiki/Ramsey%27s_theorem
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|C}}
 const std = @import("std");
+const Io = std.Io;
 
 const Kind = enum(u8) {
     zero = '0',
@@ -12,7 +13,9 @@ const Kind = enum(u8) {
 var a: [17][17]Kind = undefined;
 var idx: [4]usize = undefined;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     for (0..17) |i|
         for (0..17) |j| {
             a[i][j] = if (i == j) Kind.two else Kind.zero;
@@ -27,7 +30,7 @@ pub fn main() !void {
         };
 
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     for (0..17) |i| {
@@ -49,7 +52,7 @@ pub fn main() !void {
     try stdout.flush();
 }
 
-fn findGroup(kind: Kind, min_n: usize, max_n: usize, depth: usize, w: *std.Io.Writer) !bool {
+fn findGroup(kind: Kind, min_n: usize, max_n: usize, depth: usize, w: *Io.Writer) !bool {
     if (depth == 4) {
         try w.print("totally {s}connected group:", .{if (kind != .zero) "" else "un"});
         for (idx) |value| {

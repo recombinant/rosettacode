@@ -1,10 +1,13 @@
 // https://rosettacode.org/wiki/Quaternion_type
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     const Q = Quaternion(f64);
@@ -47,7 +50,7 @@ fn Quaternion(T: type) type {
         fn init(r: T, i: T, j: T, k: T) Self {
             return .{ .r = r, .i = i, .j = j, .k = k };
         }
-        pub fn formatNumber(self: *const Self, w: *std.Io.Writer, number: std.fmt.Number) !void {
+        pub fn formatNumber(self: *const Self, w: *Io.Writer, number: std.fmt.Number) !void {
             _ = number;
 
             try w.print("({}, {}, {}, {})", .{ self.r, self.i, self.j, self.k });

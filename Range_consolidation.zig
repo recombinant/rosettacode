@@ -1,11 +1,14 @@
 // https://rosettacode.org/wiki/Range_consolidation
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 const testing = std.testing;
+const Io = std.Io;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io: Io = init.io;
+
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
     var test1 = [_]Range{.{ .lo = 1.1, .hi = 2.2 }};
@@ -32,7 +35,7 @@ const Range = struct {
 
     pub fn format(
         self: Self,
-        w: *std.Io.Writer,
+        w: *Io.Writer,
     ) !void {
         try w.print("[{d}, {d}]", .{ self.lo, self.hi });
     }
@@ -70,7 +73,7 @@ fn consolidateRanges(ranges: []Range) []Range {
     return ranges[0..out_index];
 }
 
-fn printRanges(ranges: []Range, w: *std.Io.Writer) !void {
+fn printRanges(ranges: []Range, w: *Io.Writer) !void {
     if (ranges.len == 0)
         return;
     try w.print("{f}", .{ranges[0]});
@@ -78,7 +81,7 @@ fn printRanges(ranges: []Range, w: *std.Io.Writer) !void {
         try w.print(", {f}", .{r});
 }
 
-fn testConsolidateRanges(ranges: []Range, w: *std.Io.Writer) !void {
+fn testConsolidateRanges(ranges: []Range, w: *Io.Writer) !void {
     try printRanges(ranges, w);
     try w.writeAll(" -> ");
     const consolidated = consolidateRanges(ranges);
