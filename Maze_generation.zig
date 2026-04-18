@@ -1,10 +1,11 @@
 // https://rosettacode.org/wiki/Maze_generation
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
+const Io = std.Io;
 const print = std.debug.print;
 
-pub fn main() void {
-    var mg: MazeGenerator(8, 8) = .init();
+pub fn main(init: std.process.Init) void {
+    var mg: MazeGenerator(8, 8) = .init(init.io);
     mg.generate(0, 0);
     mg.display();
 }
@@ -21,10 +22,10 @@ fn MazeGenerator(comptime width: u16, comptime height: u16) type {
         };
 
         const Self = @This();
-        fn init() Self {
+        fn init(io: Io) Self {
             if (S.rand == null) {
                 var seed: u64 = undefined;
-                std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
+                Io.random(io, std.mem.asBytes(&seed));
                 S.prng = .init(seed);
                 S.rand = S.prng.random();
             }
