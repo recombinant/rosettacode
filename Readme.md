@@ -5,7 +5,6 @@ The code in this repository has [Zig](https://ziglang.org/) solutions to some of
 All these solutions are with Zig 0.16.0 unless:
 
 - source comments stating running on Zig 0.15.1 - because code has yet to be updated to Zig 0.16.0
-- source comments stating running on Zig 0.15.2 - because of not knowing how to use std.Io at comptime
 - source comments stating running on Zig 0.14.1 - because deprecated features are required e.g. std.math.big.Rational
 - TODO in filename
 
