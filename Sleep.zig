@@ -1,14 +1,15 @@
 // https://rosettacode.org/wiki/Sleep
-// {{works with|Zig|0.14.1}}
-// Copied from rosettacode
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
-const time = std.time;
+const Io = std.Io;
 const info = std.log.info;
 
-pub fn main() void {
+pub fn main(init: std.process.Init) void {
+    const io: Io = init.io;
+
     info("Sleeping...", .{});
 
-    time.sleep(1 * time.ns_per_s); // `sleep` uses nanoseconds
+    Io.sleep(io, .fromSeconds(1), .real) catch unreachable;
 
     info("Awake!", .{});
 }
