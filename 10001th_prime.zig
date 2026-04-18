@@ -9,7 +9,7 @@ pub fn main(init: std.process.Init) !void {
     const n = 10001;
     const f: f32 = @floatFromInt(n);
     // ----------------------------- estimate maximum prime plus some
-    const limit: usize = @intFromFloat(@floor(@log(f) * f * 1.2));
+    const limit: usize = @floor(@log(f) * f * 1.2);
     // --------------------------------------------------------------
     const primes = try pritchard(gpa, u32, limit);
     defer gpa.free(primes);

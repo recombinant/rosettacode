@@ -84,7 +84,7 @@ fn validate(allocator: Allocator, diagram: []const u8) ![][]const u8 {
 
     const first_line = lines[0];
     const width = first_line.len;
-    const cols: usize = @intFromFloat(@floor((@as(f32, @floatFromInt(width - 1))) / 3));
+    const cols: usize = @floor((@as(f32, @floatFromInt(width - 1))) / 3);
     // number of columns should be 8, 16, 32 or 64
     if (cols != 8 and cols != 16 and cols != 32 and cols != 64)
         return ValidationError.InvalidColumnCount;
@@ -130,7 +130,7 @@ fn decode(allocator: Allocator, lines: [][]const u8, w: *Io.Writer) ![]Result {
         const line = line0[1 .. width - 1];
         var it = std.mem.tokenizeScalar(u8, line, '|');
         while (it.next()) |name0| {
-            const size: usize = @intFromFloat(@floor(@as(f32, @floatFromInt(name0.len + 1)) / 3));
+            const size: usize = @floor(@as(f32, @floatFromInt(name0.len + 1)) / 3);
             const name = std.mem.trim(u8, name0, " ");
             const r = Result{
                 .name = name,

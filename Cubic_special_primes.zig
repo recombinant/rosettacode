@@ -54,7 +54,7 @@ pub fn main(init: std.process.Init) error{WriteFailed}!void {
 }
 
 fn isCube(x: u32) ?u32 {
-    const cbrt: u32 = @intFromFloat(@floor(std.math.cbrt(@as(f32, @floatFromInt(x)))));
+    const cbrt: u32 = @floor(std.math.cbrt(@as(f32, @floatFromInt(x))));
     return if (cbrt * cbrt * cbrt == x) cbrt else null;
 }
 
