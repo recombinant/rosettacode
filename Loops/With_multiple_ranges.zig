@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Loops/With_multiple_ranges
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 const std = @import("std");
 
 /// To avoid global variables use a struct as a namespace

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Elementary_cellular_automaton/Random_number_generator
-// {{works with|Zig|0.15.1}}
+// {{works with|Zig|0.16.0}}
 // {{trans|Go}}
 const std = @import("std");
 
