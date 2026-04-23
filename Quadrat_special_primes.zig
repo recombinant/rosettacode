@@ -4,16 +4,12 @@
 
 // see also: https://rosettacode.org/wiki/Cubic_special_primes
 
-// zig run Quadrat_special_primes.zig -I ../primesieve-12.13/zig-out/include/ ../primesieve-12.13/zig-out/lib/primesieve.lib -lstdc++
-//   or
-// zig test Quadrat_special_primes.zig
+// Using cpp primesieve from https://github.com/kimwalisch/primesieve/
+
 const std = @import("std");
 const Io = std.Io;
 
-const ps = @cImport({
-    @cInclude("stdlib.h");
-    @cInclude("primesieve.h");
-});
+const ps = @import("primesieve");
 
 pub fn main(init: std.process.Init) error{WriteFailed}!void {
     const io: Io = init.io;

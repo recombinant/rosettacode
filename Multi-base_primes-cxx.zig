@@ -3,14 +3,12 @@
 // {{trans|C++}}
 
 // Using cpp primesieve from https://github.com/kimwalisch/primesieve/
-// zig run Multi-base_primes-cxx.zig -I ../primesieve-12.13/zig-out/include/ ../primesieve-12.13/zig-out/lib/primesieve.lib -lstdc++
-const std = @import("std");
-const ps = @cImport({
-    @cInclude("primesieve.h");
-});
 
+const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
+
+const ps = @import("primesieve");
 
 // pub const std_options = std.Options{
 //     .log_level = .info,

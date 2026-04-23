@@ -1,13 +1,12 @@
 // https://rosettacode.org/wiki/Prime_triplets
 // {{works with|Zig|0.16.0}}
-// Using cpp primesieve from https://github.com/kimwalisch/primesieve/
-// zig run Prime_triplets.zig -I ../primesieve-12.13/zig-out/include/ ../primesieve-12.13/zig-out/lib/primesieve.lib -lstdc++
-const std = @import("std");
-const ps = @cImport({
-    @cInclude("primesieve.h");
-});
 
+// Using cpp primesieve from https://github.com/kimwalisch/primesieve/
+
+const std = @import("std");
 const Io = std.Io;
+
+const ps = @import("primesieve");
 
 pub fn main(init: std.process.Init) !void {
     const io: Io = init.io;

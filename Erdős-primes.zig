@@ -1,14 +1,13 @@
 // https://rosettacode.org/wiki/Erdős-primes
 // {{works with|Zig|0.16.0}}
 
-// zig run Erdős-primes.zig -I ../primesieve-12.13/zig-out/include/ ../primesieve-12.13/zig-out/lib/primesieve.lib -lstdc++
+// Using cpp primesieve from https://github.com/kimwalisch/primesieve/
+
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
-const ps = @cImport({
-    @cInclude("primesieve.h");
-});
+const ps = @import("primesieve");
 
 pub fn main(init: std.process.Init) !void {
     const gpa: Allocator = init.gpa;

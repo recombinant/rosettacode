@@ -2,15 +2,12 @@
 // {{works with|Zig|0.16.0}}
 
 // Using cpp primesieve from https://github.com/kimwalisch/primesieve/
-// zig run Multi-base_primes-naive.zig -I ../primesieve-12.13/zig-out/include/ ../primesieve-12.13/zig-out/lib/primesieve.lib -lstdc++
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
-const ps = @cImport({
-    @cInclude("primesieve.h");
-});
+const ps = @import("primesieve");
 
 const DIGITS = 5;
 const MIN_BASE = 2;

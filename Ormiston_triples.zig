@@ -2,15 +2,12 @@
 // {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 
-const std = @import("std");
-
 // Using cpp primesieve from https://github.com/kimwalisch/primesieve/
-// zig run Ormiston_triples.zig -I ../primesieve-12.13/zig-out/include/ ../primesieve-12.13/zig-out/lib/primesieve.lib -lstdc++
-const ps = @cImport({
-    @cInclude("primesieve.h");
-});
 
+const std = @import("std");
 const Io = std.Io;
+
+const ps = @import("primesieve");
 
 pub fn main(init: std.process.Init) !void {
     const io: Io = init.io;

@@ -3,16 +3,12 @@
 // {{trans|Wren}}
 
 // Using cpp primesieve from https://github.com/kimwalisch/primesieve/
-// zig run Ascending_primes.zig -I ../primesieve-12.13/zig-out/include/ ../primesieve-12.13/zig-out/lib/primesieve.lib -lstdc++
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
-const ps = @cImport({
-    @cInclude("stdlib.h");
-    @cInclude("primesieve.h");
-});
+const ps = @import("primesieve");
 
 pub fn main(init: std.process.Init) !void {
     const io: Io = init.io;

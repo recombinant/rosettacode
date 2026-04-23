@@ -2,14 +2,12 @@
 // {{works with|Zig|0.16.0}}
 
 // Using cpp primesieve from https://github.com/kimwalisch/primesieve/
-// zig run Sisyphus_sequence.zig -I ../primesieve-12.13/zig-out/include/ ../primesieve-12.13/zig-out/lib/primesieve.lib -lstdc++
+
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
-const primesieve = @cImport({
-    @cInclude("primesieve.h");
-});
+const primesieve = @import("primesieve");
 
 pub fn main(init: std.process.Init) !void {
     const io: Io = init.io;
