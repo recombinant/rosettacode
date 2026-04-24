@@ -6,10 +6,7 @@
 // includes stretch goal
 const std = @import("std");
 const Allocator = std.mem.Allocator;
-const rl = @cImport({
-    @cInclude("raylib.h");
-    @cInclude("raymath.h");
-});
+const rl = @import("raylib");
 
 const WINDOW_SIZE = 800;
 const WINDOW_RADIUS = WINDOW_SIZE / 2;

@@ -2,10 +2,7 @@
 // {{works with|Zig|0.16.0}}
 // {{libheader|raylib}}
 const std = @import("std");
-const rl = @cImport({
-    @cInclude("raylib.h");
-    @cInclude("raymath.h");
-});
+const rl = @import("raylib");
 
 const SCREEN_WIDTH = 640;
 const SCREEN_HEIGHT = 480;

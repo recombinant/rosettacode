@@ -2,9 +2,7 @@
 // {{works with|Zig|0.16.0}}
 // {{libheader|raylib}}
 const std = @import("std");
-const rl = @cImport({
-    @cInclude("raylib.h");
-});
+const rl = @import("raylib");
 
 pub fn main() void {
     rl.SetConfigFlags(rl.FLAG_VSYNC_HINT);

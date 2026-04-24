@@ -3,9 +3,7 @@
 // {{trans|Factor}}
 // {{libheader|raylib}}
 const std = @import("std");
-const rl = @cImport({
-    @cInclude("raylib.h");
-});
+const rl = @import("raylib");
 
 pub fn main() !void {
     rl.SetConfigFlags(rl.FLAG_WINDOW_RESIZABLE | rl.FLAG_VSYNC_HINT);
