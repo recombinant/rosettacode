@@ -76,7 +76,7 @@ fn perfectPowers(allocator: Allocator, n: anytype) ![]@TypeOf(n) {
         @compileError("perfectPowers() expected unsigned integer argument, found " ++ @typeName(T));
 
     // to prevent variable p overflow
-    const P = std.meta.Int(.unsigned, @typeInfo(T).int.bits * 2); // u128 in long-hand
+    const P = @Int(.unsigned, @typeInfo(T).int.bits * 2); // u128 in long-hand
 
     var result: std.ArrayList(T) = .empty;
     defer result.deinit(allocator);

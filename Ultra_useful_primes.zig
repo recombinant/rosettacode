@@ -27,7 +27,7 @@ pub fn main(init: std.process.Init) !void {
 fn useful(comptime n: u16, random: std.Random) u16 {
     var k: u16 = 1;
     // The number of integer bits in T depends on n
-    const T = if (n < 6) u64 else std.meta.Int(.unsigned, std.math.pow(u16, 2, n) + 1);
+    const T = if (n < 6) u64 else @Int(.unsigned, std.math.pow(u16, 2, n) + 1);
     // std.debug.print("({}) ", .{ T });
     var np = std.math.pow(T, 2, @as(T, @intCast(std.math.pow(u16, 2, n)))) - 1;
     while (true) {

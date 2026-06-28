@@ -9,7 +9,7 @@ fn isPrime(n_: anytype) bool {
 
     if (n_ <= 1) return false;
 
-    const U: type = comptime std.meta.Int(.unsigned, @typeInfo(T).int.bits);
+    const U: type = comptime @Int(.unsigned, @typeInfo(T).int.bits);
 
     const n: U = @bitCast(n_);
     if (n % 2 == 0) return n == 2;

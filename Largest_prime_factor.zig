@@ -73,7 +73,7 @@ pub fn AutoNumberType(comptime max: u64) type {
     if (bit_len < 4)
         bit_len = 4;
     // Allow for (k * k > n)
-    return std.meta.Int(.unsigned, bit_len + 1);
+    return @Int(.unsigned, bit_len + 1);
 }
 
 const testing = std.testing;

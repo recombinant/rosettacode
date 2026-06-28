@@ -36,7 +36,7 @@ fn getRangeFormat(allocator: Allocator, T: type, slice: []const T) ![]const u8 {
         return allocator.alloc(u8, 0);
 
     // Maximum buffer size depends on T and log10_int needs unsigned argument.
-    const U = std.meta.Int(.unsigned, @typeInfo(T).int.bits);
+    const U = @Int(.unsigned, @typeInfo(T).int.bits);
     var buffer: [@as(u16, std.math.log10_int(@as(U, std.math.maxInt(U))) * 2) + 5]u8 = undefined;
 
     var w: Io.Writer = .fixed(&buffer);

@@ -36,7 +36,7 @@ fn runPollardsRho(T: type, random: std.Random, number: T) T {
         return 2;
 
     // Twice the number of bits as `T`
-    const U: type = std.meta.Int(.unsigned, @typeInfo(T).int.bits * 2);
+    const U: type = @Int(.unsigned, @typeInfo(T).int.bits * 2);
 
     const bit_length = @typeInfo(T).int.bits - @clz(number);
     const constant = random.intRangeLessThan(U, 0, bit_length);

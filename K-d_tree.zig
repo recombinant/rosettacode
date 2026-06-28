@@ -144,5 +144,5 @@ fn BitsType(comptime dim: u16) type {
     inline while (s != 0) : (s >>= 1) {
         bits += 1;
     }
-    return std.meta.Int(.unsigned, bits); // enough bits to hold 'dim'
+    return @Int(.unsigned, bits); // enough bits to hold 'dim'
 }

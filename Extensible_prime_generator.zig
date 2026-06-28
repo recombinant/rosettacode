@@ -115,7 +115,7 @@ fn Wheel2357Multiple(comptime T: type) type {
 
 fn SqrtType(comptime T: type) type {
     assertInt(T);
-    return std.meta.Int(.unsigned, @typeInfo(T).int.bits / 2);
+    return @Int(.unsigned, @typeInfo(T).int.bits / 2);
 }
 
 // given an upper bound, max, return the most restrictive sieving data type.
@@ -129,7 +129,7 @@ pub fn AutoSieveType(comptime max: u64) type {
         bit_len += 1;
     if (bit_len < 4)
         bit_len = 4;
-    return std.meta.Int(.unsigned, bit_len);
+    return @Int(.unsigned, bit_len);
 }
 
 fn assertInt(comptime T: type) void {
