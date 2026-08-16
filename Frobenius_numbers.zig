@@ -1,3 +1,4 @@
+// https://rosettacode.org/wiki/Frobenius_numbers
 // {{works with|Zig|0.16.0}}
 // {{trans|C++}}
 
