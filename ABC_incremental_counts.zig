@@ -30,7 +30,7 @@ pub fn main(init: std.process.Init) !void {
             }
             try stdout.print("] --- Minimum count {d}\n", .{min_count});
 
-            const result = try abcIncrementalCounts(gpa, text, letters, min_count);
+            const result = abcIncrementalCounts(gpa, text, letters, min_count);
             defer gpa.free(result);
 
             if (result.len == 0)
@@ -47,13 +47,13 @@ pub fn main(init: std.process.Init) !void {
     try stdout.flush();
 }
 
-fn abcIncrementalCounts(allocator: Allocator, text: []const u8, letters: []const u8, min_count: usize) ![][]const u8 {
+fn abcIncrementalCounts(allocator: Allocator, text: []const u8, letters: []const u8, min_count: usize) [][]const u8 {
     if (text.len == 0 or letters.len == 0)
-        return allocator.alloc([]const u8, 0);
+        return allocator.alloc([]const u8, 0) catch @panic("OOM");
 
     var result: std.ArrayList([]const u8) = .empty;
 
-    const counts = try allocator.alloc(usize, letters.len);
+    const counts = allocator.alloc(usize, letters.len) catch @panic("OOM");
     defer allocator.free(counts);
 
     var it = std.mem.tokenizeScalar(u8, text, '\n');
@@ -80,7 +80,7 @@ fn abcIncrementalCounts(allocator: Allocator, text: []const u8, letters: []const
                 value1 = value2;
             }
         }
-        try result.append(allocator, word);
+        result.append(allocator, word) catch @panic("OOM");
     }
-    return result.toOwnedSlice(allocator);
+    return result.toOwnedSlice(allocator) catch @panic("OOM");
 }
