@@ -1,4 +1,4 @@
-// https://rosettacode.org/wiki/Golden_ratio/Convergence#C
+// https://rosettacode.org/wiki/Golden_ratio/Convergence
 // {{works with|Zig|0.16.0}}
 const std = @import("std");
 const Io = std.Io;

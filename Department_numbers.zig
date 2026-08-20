@@ -1,4 +1,4 @@
-// https://rosettacode.org/wiki/Department_numbers#Zig
+// https://rosettacode.org/wiki/Department_numbers
 // {{works with|Zig|0.16.0}}
 const std = @import("std");
 const Io = std.Io;

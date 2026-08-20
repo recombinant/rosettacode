@@ -1,4 +1,4 @@
-// https://rosettacode.org/wiki/Abbreviations,_simple
+// https://rosettacode.org/wiki/Abbreviations,_easy
 // {{works with|Zig|0.16.0}}
 // {{trans|Python}}
 const std = @import("std");
