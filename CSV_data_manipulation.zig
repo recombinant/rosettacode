@@ -4,6 +4,9 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
+// Transliteration of C solution complete with design flaws
+// e.g. CSV.open() does not check or reset the state of the CSV.
+
 pub const TITLE = "CSV data manipulation";
 pub const URL = "http://rosettacode.org/wiki/CSV_data_manipulation";
 
