@@ -18,19 +18,24 @@ pub fn main() void {
     const limit = std.math.maxInt(u32);
     var humble = std.mem.zeroes([16]usize);
 
-    var n: u32 = 1;
-    var count: usize = 0;
-    while (n != limit) : (n +%= 1)
-        if (isHumble(n)) {
-            const len = std.math.log10_int(n);
-            humble[len] += 1;
-            if (count < 50)
-                print("{d} ", .{n});
-            count += 1;
-        };
-    print("\n\n", .{});
-
-    print("Of the first {d} humble numbers:\n", .{count});
-    for (1..10) |num|
-        print("{d:5} have {d} digits\n", .{ humble[num], num });
+    {
+        var n: u32 = 1;
+        var count: usize = 0;
+        while (n != limit) : (n +%= 1)
+            if (isHumble(n)) {
+                const len = std.math.log10_int(n);
+                humble[len] += 1;
+                if (count < 50)
+                    print("{d} ", .{n});
+                count += 1;
+            };
+        print("\n\n", .{});
+        print("Of the first {d} humble numbers:\n", .{count});
+    }
+    for (humble, 1..) |count, n| {
+        if (count == 0) break;
+        print("{d:5} have {d} digit", .{ count, n });
+        if (n != 1) print("s", .{});
+        print("\n", .{});
+    }
 }
