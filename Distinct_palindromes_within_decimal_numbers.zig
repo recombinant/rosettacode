@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Distinct_palindromes_within_decimal_numbers
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C++}}
 const std = @import("std");
 

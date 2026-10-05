@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Department_numbers#Zig_using_an_iterator
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // Using a Zig struct to create an iterator is a common pattern in Zig.
 const std = @import("std");
 const Io = std.Io;

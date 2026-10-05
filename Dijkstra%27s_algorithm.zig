@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Dijkstra%27s_algorithm
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Nim}}
 const std = @import("std");
 

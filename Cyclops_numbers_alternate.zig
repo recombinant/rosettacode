@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Cyclops_numbers
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C++}}
 
 // Using a prime sieve generator is slower than than using the

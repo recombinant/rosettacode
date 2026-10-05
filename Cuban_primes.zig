@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Cuban_primes
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Wren}}
 const std = @import("std");
 

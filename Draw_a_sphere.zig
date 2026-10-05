@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Draw_a_sphere
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Factor}}
 // {{libheader|raylib}}
 const std = @import("std");

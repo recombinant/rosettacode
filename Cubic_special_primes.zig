@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Cubic_special_primes
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Wren}}
 
 // see also: https://rosettacode.org/wiki/Quadrat_special_primes
