@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Combinations
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Io = std.Io;
 
@@ -40,7 +40,7 @@ fn CombinationIterator(comptime T: type, comptime m: T, comptime n: T) type {
 
         fn init() Self {
             return .{
-                .bits = .initEmpty(),
+                .bits = .empty,
                 .count = 0,
                 .count_ok = true,
             };
@@ -81,7 +81,7 @@ fn CombinationIterator(comptime T: type, comptime m: T, comptime n: T) type {
 /// Brute force by iterating through all possible combinations of "m"
 /// and only selecting those where the count matches "n".
 fn comb(w: *Io.Writer, comptime T: type, comptime m: []const T, n: u8) !void {
-    var bits: std.StaticBitSet(m.len) = .initEmpty();
+    var bits: std.StaticBitSet(m.len) = .empty;
 
     // number of possible combinations
     const limit = std.math.pow(T, 2, m.len);

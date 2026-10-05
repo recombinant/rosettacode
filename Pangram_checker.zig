@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Pangram_checker
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const testing = std.testing;
 const Io = std.Io;
@@ -68,7 +68,7 @@ fn isPangramWithBitmap(s: []const u8) bool {
     if (s.len < 26)
         return false;
 
-    var bits = std.StaticBitSet(26).initEmpty();
+    var bits: std.StaticBitSet(26) = .empty;
 
     for (s) |c|
         if (std.ascii.isAlphabetic(c))

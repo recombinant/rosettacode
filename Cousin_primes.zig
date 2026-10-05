@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Cousin_primes
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Io = std.Io;
 
@@ -11,7 +11,7 @@ fn Sieve(comptime max: usize) type {
         primes: T,
 
         fn init() Self {
-            var result: Self = .{ .primes = .initFull() };
+            var result: Self = .{ .primes = .full };
 
             const primes = &result.primes;
             primes.unset(0);

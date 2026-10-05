@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Multi-base_primes
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 
 // Using cpp primesieve from https://github.com/kimwalisch/primesieve/
 
@@ -57,7 +57,7 @@ pub fn main(init: std.process.Init) !void {
     }
 
     std.log.info("elapsed time {f}", .{t0.untilNow(io, .real)});
-    std.log.warn("Allocator may now checking for leaks (slow)", .{});
+    std.log.warn("Allocator now checking for leaks (slow)", .{});
 }
 
 /// Return an array of prime numbers up to and including limit
@@ -108,7 +108,7 @@ const CharactersTable = struct {
                     gop.value_ptr.set(base)
                 else {
                     gop.key_ptr.* = try allocator.dupe(u8, s);
-                    gop.value_ptr.* = BaseFlags.initEmpty();
+                    gop.value_ptr.* = BaseFlags.empty;
                     gop.value_ptr.set(base);
                 }
             }

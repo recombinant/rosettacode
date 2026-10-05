@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Hex_words
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
@@ -40,7 +40,7 @@ pub fn main(init: std.process.Init) !void {
         if (word.len < 4) continue;
 
         var letter_count: u16 = 0;
-        var letter_bits = std.StaticBitSet(6).initEmpty();
+        var letter_bits: std.StaticBitSet(6) = .empty;
         for (word) |letter|
             switch (letter) {
                 'a'...'f' => {

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/10001th_prime
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 
@@ -18,8 +18,8 @@ pub fn main(init: std.process.Init) !void {
 
 /// Pritchard's sieve of primes up to limit with a StaticBitSet.
 pub fn pritchard(allocator: Allocator, T: type, comptime limit: usize) ![]T {
-    var members: std.bit_set.ArrayBitSet(usize, limit) = .initEmpty();
-    var mcopy: std.bit_set.ArrayBitSet(usize, limit) = .initEmpty();
+    var members: std.bit_set.ArrayBitSet(usize, limit) = .empty;
+    var mcopy: std.bit_set.ArrayBitSet(usize, limit) = .empty;
     members.set(1);
 
     var steplength: usize = 1;

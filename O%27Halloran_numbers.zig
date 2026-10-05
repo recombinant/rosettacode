@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/O%27Halloran_numbers
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C++}}
 const std = @import("std");
 const Io = std.Io;
@@ -10,7 +10,7 @@ pub fn main(init: std.process.Init) !void {
     const maximum_area = 1_000;
     const half_maximum_area = maximum_area / 2;
 
-    var ohalloran_numbers: std.StaticBitSet(half_maximum_area) = .initFull();
+    var ohalloran_numbers: std.StaticBitSet(half_maximum_area) = .full;
     for (0..3) |i|
         ohalloran_numbers.unset(i);
 

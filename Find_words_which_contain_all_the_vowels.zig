@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Find_words_which_contain_all_the_vowels
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const print = std.debug.print;
 
@@ -18,10 +18,11 @@ fn verifyVowels(word: []const u8) bool {
     if (word.len <= 10)
         return false;
 
-    var vowels = comptime std.mem.zeroes([std.meta.fields(Vowel).len]bool);
+    const field_values = @typeInfo(Vowel).@"enum".field_values;
+    var vowels: [field_values.len]bool = @splat(false);
 
     for (word) |c| {
-        const idx: usize = @intFromEnum(switch (c) {
+        const idx = @backingInt(switch (c) {
             'a', 'A' => Vowel.a,
             'e', 'E' => Vowel.e,
             'i', 'I' => Vowel.i,
@@ -34,8 +35,8 @@ fn verifyVowels(word: []const u8) bool {
         vowels[idx] = true;
     }
 
-    inline for (std.meta.fields(Vowel)) |f|
-        if (!vowels[f.value])
+    inline for (field_values) |value|
+        if (!vowels[value])
             return false;
 
     return true;

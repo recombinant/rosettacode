@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Pythagorean_quadruples
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 
 // from https://github.com/tiehuis/zig-rosetta
 const std = @import("std");
@@ -11,7 +11,7 @@ const N2 = N * N * 2;
 pub fn main(init: std.process.Init) !void {
     const io: Io = init.io;
 
-    var r: std.StaticBitSet(N + 1) = .initEmpty();
+    var r: std.StaticBitSet(N + 1) = .empty;
 
     // Educated guess for the amount of memory required for `ab` DynamicBitSet
     var buffer: [20 + (N2 + 1) / @sizeOf(usize)]u8 = undefined;
@@ -20,7 +20,7 @@ pub fn main(init: std.process.Init) !void {
 
     // // 'ab' had a performance issue with Zig 0.14dev when using StaticBitSet
     // // so DynamicBitSet is used. DynamicBitSet is Ok for 'ab'
-    // var ab: std.StaticBitSet(N2 + 1) = .initEmpty();
+    // var ab: std.StaticBitSet(N2 + 1) = .empty;
     var ab: std.DynamicBitSet = try .initEmpty(allocator, N2 + 1);
 
     var a: usize = 1;

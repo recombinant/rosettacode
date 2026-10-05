@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Conway%27s_Game_of_Life
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Go}}
 const std = @import("std");
 const Io = std.Io;
@@ -69,7 +69,7 @@ fn Field(comptime w: usize, comptime h: usize) type {
         s: std.StaticBitSet(w * h),
 
         fn init() Self {
-            return .{ .s = std.StaticBitSet(w * h).initEmpty() };
+            return .{ .s = .empty };
         }
         fn set(self: *Self, x: usize, y: usize, b: bool) void {
             self.s.setValue(y * w + x, b);

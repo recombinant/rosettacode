@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Additive_primes
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C}}
 const std = @import("std");
 const Io = std.Io;
@@ -19,7 +19,7 @@ pub fn main(init: std.process.Init) !void {
     const is_prime: std.StaticBitSet(N) = comptime blk: {
         @setEvalBranchQuota(4000);
         // An array of bool would have been simpler.
-        var bitset: std.StaticBitSet(N) = .initEmpty();
+        var bitset: std.StaticBitSet(N) = .empty;
         var it = bitset.iterator(.{ .kind = .unset });
         while (it.next()) |n|
             if (isPrime(n))

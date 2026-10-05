@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Blum_integer
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C}}
 // https://en.wikipedia.org/wiki/Magic_number_(programming)
 const std = @import("std");
@@ -99,7 +99,7 @@ fn firstPrimeFactor(n: u32) u32 {
 const testing = std.testing;
 
 test "modulo logic for counts" {
-    var bits: std.StaticBitSet(4) = .initEmpty();
+    var bits: std.StaticBitSet(4) = .empty;
     var i: u32 = 0;
     while (i < 10) : (i += 1) {
         const actual = i % 10 / 3; // this line is the logic under test

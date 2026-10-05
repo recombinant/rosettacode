@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Double_Twin_Primes
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C}}
 const std = @import("std");
 const print = std.debug.print;
@@ -23,7 +23,7 @@ fn Sieve(comptime max: usize) type {
         primes: T,
 
         fn init() Self {
-            var result: Self = .{ .primes = T.initFull() };
+            var result: Self = .{ .primes = T.full };
 
             const primes = &result.primes;
             primes.unset(0);

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Sphenic_numbers
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C++}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -15,7 +15,7 @@ pub fn main(init: std.process.Init) !void {
     const imax = limit / 6;
 
     const sieve = calcPrimeSieve(imax + 1);
-    var sphenic = std.StaticBitSet(limit + 1).initEmpty();
+    var sphenic: std.StaticBitSet(limit + 1) = .empty;
 
     for (0..imax + 1) |i| {
         if (!sieve.isSet(i))
@@ -104,7 +104,7 @@ pub fn main(init: std.process.Init) !void {
 // Sieve of Pritchard would be quicker.
 // Primesieve (https://github.com/kimwalisch/primesieve) would be even quicker.
 fn calcPrimeSieve(comptime limit: usize) std.StaticBitSet(limit) {
-    var bits = std.StaticBitSet(limit).initFull();
+    var bits: std.StaticBitSet(limit) = .full;
 
     if (limit > 0) bits.unset(0);
     if (limit > 1) bits.unset(1);
