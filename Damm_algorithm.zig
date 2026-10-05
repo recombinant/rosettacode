@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Damm_algorithm
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const testing = std.testing;
 const print = std.debug.print;
@@ -36,13 +36,13 @@ test "simple test" {
     const num_ok = [_]u32{ 5724, 112946 };
     const num_bad = [_]u32{ 5727, 112949 };
     for (num_ok) |num| {
-        const digits = try std.fmt.allocPrint(allocator, "{d}", .{num});
+        const digits = try allocator.print("{d}", .{num});
         for (digits) |*c| c.* -= '0';
         defer allocator.free(digits);
         try testing.expect(damm(digits));
     }
     for (num_bad) |num| {
-        const digits = try std.fmt.allocPrint(allocator, "{d}", .{num});
+        const digits = try allocator.print("{d}", .{num});
         for (digits) |*c| c.* -= '0';
         defer allocator.free(digits);
         try testing.expect(!damm(digits));

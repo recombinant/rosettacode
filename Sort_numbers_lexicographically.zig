@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Sort_numbers_lexicographically
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -51,7 +51,7 @@ fn LexOrder(comptime T: type) type {
 
             var i = lo;
             while (i <= hi) : (i += 1) {
-                const s = try std.fmt.allocPrint(allocator, "{d}", .{i});
+                const s = try allocator.print("{d}", .{i});
                 const pair = Pair{ .n = i, .s = s };
                 try array.append(allocator, pair);
             }

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Triangular_numbers
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
@@ -50,7 +50,7 @@ fn printNSimplexNumbers(w: *Io.Writer, allocator: Allocator, r: u8, count: u8, t
     // Create terms and obtain maximum width at run-time
     for (1..count + 1) |n| {
         const term = try binomial(n + r - 1, r);
-        const buffer = try std.fmt.allocPrint(allocator, "{d}", .{term});
+        const buffer = try allocator.print("{d}", .{term});
         try terms.append(allocator, buffer);
         width = @max(width, buffer.len);
     }

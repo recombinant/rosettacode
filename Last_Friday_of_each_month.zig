@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Last_Friday_of_each_month
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Fortran}}
 
 // see also:
@@ -41,7 +41,7 @@ fn getLastFridays(allocator: Allocator, year: u16) ![12][]const u8 {
 
     for (days_in_month, &result, 1..) |m, *text, i| {
         k += m;
-        text.* = try std.fmt.allocPrint(allocator, "{}-{d:02}-{d:2}", .{ year, i, m - (k % 7) });
+        text.* = try allocator.print("{}-{d:02}-{d:2}", .{ year, i, m - (k % 7) });
     }
     return result;
 }

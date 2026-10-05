@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Resistance_calculator
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 
 // Shared Infix/Postfix Code
 const std = @import("std");
@@ -82,7 +82,7 @@ pub const Node = struct {
         // iterate though 'a' and 'b' optional nodes
         for ([2]?*Node{ self.a, self.b }) |optional_node| {
             if (optional_node) |node| {
-                const next_level = try std.fmt.allocPrint(allocator, "{s}| ", .{level});
+                const next_level = try allocator.print("{s}| ", .{level});
                 defer allocator.free(next_level);
                 try node.report(allocator, w, next_level);
             }

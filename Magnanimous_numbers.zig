@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Magnanimous_numbers
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Go}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -51,7 +51,7 @@ fn ordinal(allocator: Allocator, n: anytype) ![]const u8 {
 
     var m = n % 100;
     if (m >= 4 and m <= 20) {
-        return std.fmt.allocPrint(allocator, "{}th", .{n});
+        return allocator.print("{}th", .{n});
     }
     m %= 10;
     const suffix: []const u8 = switch (m) {
@@ -60,7 +60,7 @@ fn ordinal(allocator: Allocator, n: anytype) ![]const u8 {
         3 => "rd",
         else => "th",
     };
-    return std.fmt.allocPrint(allocator, "{d}{s}", .{ n, suffix });
+    return allocator.print("{d}{s}", .{ n, suffix });
 }
 
 fn isMagnanimous(n: anytype) bool {

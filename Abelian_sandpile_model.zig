@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Abelian_sandpile_model
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
@@ -26,7 +26,7 @@ pub fn main(init: std.process.Init) !void {
 
     if (sand_pile.side_len <= 20) try sand_pile.display(stdout, init_val);
 
-    const name = try std.fmt.allocPrint(gpa, "abelian_sandpile_{d}.ppm", .{init_val});
+    const name = try gpa.print("abelian_sandpile_{d}.ppm", .{init_val});
     defer gpa.free(name);
     try sand_pile.writePpmFile(io, name);
     try stdout.print("PPM image written in \"{s}\".\n", .{name});
