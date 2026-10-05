@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Experimental_Verification_of_the_NKTg_Law_Using_NASA_Mercury_Data_in_2025
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Rust}}
 const std = @import("std");
 const Io = std.Io;

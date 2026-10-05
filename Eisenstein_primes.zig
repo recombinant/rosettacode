@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Eisenstein_primes
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Nim}}
 // currently lacks a plot
 const std = @import("std");

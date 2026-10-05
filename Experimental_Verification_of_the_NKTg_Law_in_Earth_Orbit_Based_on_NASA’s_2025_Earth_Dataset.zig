@@ -1,5 +1,5 @@
 // http://rosettacode.org/wiki/Experimental_Verification_of_the_NKTg_Law_in_Earth_Orbit_Based_on_NASA’s_2025_Earth_Dataset
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Rust}}
 const std = @import("std");
 const Io = std.Io;

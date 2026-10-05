@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Equal_prime_and_composite_sums
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 
 // https://rosettacode.org/wiki/Extensible_prime_generator

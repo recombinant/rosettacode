@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Eban_numbers
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|D}}
 const std = @import("std");
 const Io = std.Io;

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Find_words_which_contain_the_most_consonants
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 
 const Allocator = std.mem.Allocator;
@@ -76,7 +76,7 @@ fn verifyConsonants(word: []const u8) ConsonantError!usize {
     if (word.len <= 10)
         return ConsonantError.WordTooShort;
 
-    var consonants: std.StaticBitSet(26) = .initEmpty();
+    var consonants: std.StaticBitSet(26) = .empty;
 
     for (word) |c| {
         if (!std.ascii.isAlphabetic(c))

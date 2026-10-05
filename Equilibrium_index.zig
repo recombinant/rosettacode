@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Equilibrium_index
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Wren}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -27,7 +27,7 @@ pub fn main(init: std.process.Init) !void {
     for (tests) |numbers| {
         const eqm = try equilibrium(gpa, numbers);
         defer gpa.free(eqm);
-        const s = try std.fmt.allocPrint(gpa, "{any}", .{numbers});
+        const s = try gpa.print("{any}", .{numbers});
         defer gpa.free(s);
         try stdout.print("{s:>26} -> {any}\n", .{ s, eqm });
     }
