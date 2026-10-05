@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Four_is_the_number_of_letters_in_the_...
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C++}}
 
 // Differs from the C++ inasmuch as the C++ implementation uses std::string

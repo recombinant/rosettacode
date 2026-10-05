@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Integer_sequence
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 
 // copied from rosettacode
 const std = @import("std");

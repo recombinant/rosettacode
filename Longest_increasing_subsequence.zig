@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Longest_increasing_subsequence
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // Based on O(n log n) method from wikipedia
 // https://en.wikipedia.org/wiki/Longest_increasing_subsequence#Efficient_algorithms
 const std = @import("std");

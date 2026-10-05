@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Idoneal_numbers
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C}}
 
 // Using, say, a 16 bit integer C would silently fail with integer overflow.

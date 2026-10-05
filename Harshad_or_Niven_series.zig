@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Harshad_or_Niven_series
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 
 const limit = 1000;

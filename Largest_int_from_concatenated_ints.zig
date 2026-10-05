@@ -1,5 +1,5 @@
 // https://www.rosettacode.org/wiki/Largest_int_from_concatenated_ints
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C}}
 const std = @import("std");
 const Io = std.Io;

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Haversine_formula
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|R}}
 
 // When a Zig struct type can be inferred then anonymous structs .{} can be

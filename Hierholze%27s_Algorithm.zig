@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Hierholze%27s_Algorithm
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // translated from
 // https://algoteka.com/samples/41/hierholzer%2527s-eulerian-cycle-algorithm-c-plus-plus-o%2528m%2529-readable-solution
 const std = @import("std");

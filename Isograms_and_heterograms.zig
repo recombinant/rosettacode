@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Isograms_and_heterograms
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 
 //! This task has been designed to limit the number of dynamic (heap)
 //! allocations by performing lowercase string conversions just

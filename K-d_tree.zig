@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/K-d_tree
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C}}
 // also https://en.wikipedia.org/wiki/Quickselect
 const std = @import("std");

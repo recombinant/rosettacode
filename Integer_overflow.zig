@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Integer_overflow
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const assert = std.debug.assert;
 // To quote the Zig documentation:

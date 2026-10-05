@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/L-system
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|FreeBASIC}}
 
 // This solution is overly sophisticated for a solution with only

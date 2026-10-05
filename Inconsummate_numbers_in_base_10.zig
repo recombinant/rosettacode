@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Inconsummate_numbers_in_base_10
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C++}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Integer_roots
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C++}}
 // {{trans|Python}}
 // {{trans|Go}}

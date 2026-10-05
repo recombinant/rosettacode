@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Idiomatically_determine_all_the_lowercase_and_uppercase_letters
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Io = std.Io;
 

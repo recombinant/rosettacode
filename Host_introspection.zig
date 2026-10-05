@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Host_introspection
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const builtin = @import("builtin");
 const Io = std.Io;

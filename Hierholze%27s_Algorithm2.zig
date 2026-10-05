@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Hierholze%27s_Algorithm
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C++}}
 
 // Copied and refactored from rosettacode

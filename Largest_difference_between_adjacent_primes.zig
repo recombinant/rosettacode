@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Largest_difference_between_adjacent_primes
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 
 const LIMIT = 1_000_000;
