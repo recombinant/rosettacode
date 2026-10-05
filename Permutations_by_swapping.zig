@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Permutations_by_swapping
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // Zig makes use of wraparound addition.
 const std = @import("std");
 const print = std.debug.print;
@@ -67,7 +67,7 @@ fn JohnsonTrotterIterator(comptime n: usize, T: type) type {
             // Brute force search.
             for (self.directed_integers, 0..) |di, i|
                 if (di.position > largest) {
-                    const j: usize = i +% @intFromEnum(di.direction);
+                    const j: usize = i +% @backingInt(di.direction);
                     if (j < n and self.directed_integers[j].position < di.position)
                         if (di.position > largest) {
                             largest = di.position;
