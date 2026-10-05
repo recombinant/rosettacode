@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Brzozowski_Algebraic_Method
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C++}}
 
 // The main difference from the C++ solution is that this Zig solution
@@ -102,7 +102,7 @@ const RegularExpressionType = enum {
     star,
 };
 
-const RegularExpressionPool = std.heap.MemoryPoolExtra(RegularExpression, .{});
+const RegularExpressionPool = std.heap.MemoryPool(RegularExpression);
 
 const RegularExpression = union(RegularExpressionType) {
     const Self = @This();
@@ -132,9 +132,10 @@ const RegularExpression = union(RegularExpressionType) {
         }
     }
     fn getFieldName(comptime T: type) []const u8 {
-        inline for (@typeInfo(Self).@"union".fields) |field|
-            if (field.type == T)
-                return field.name;
+        const info = comptime @typeInfo(Self).@"union";
+        inline for (info.field_types, info.field_names) |field_type, field_name|
+            if (field_type == T)
+                return field_name;
         unreachable;
     }
 };

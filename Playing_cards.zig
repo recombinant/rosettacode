@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Playing_cards
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Io = std.Io;
 
@@ -55,8 +55,8 @@ const Card = struct {
 };
 
 const Deck = struct {
-    const suit_len = std.meta.fields(Card.Suit).len;
-    const pip_len = std.meta.fields(Card.Pip).len;
+    const suit_len = @typeInfo(Card.Suit).@"enum".field_names.len;
+    const pip_len = @typeInfo(Card.Pip).@"enum".field_names.len;
     const pack_len = suit_len * pip_len;
 
     cards: [pack_len]Card,
@@ -67,11 +67,11 @@ const Deck = struct {
             .cards = undefined,
             .cards_dealt = 0,
         };
-        inline for (std.meta.fields(Card.Suit)) |suit_field| {
-            inline for (std.meta.fields(Card.Pip)) |pip_field|
-                deck.cards[suit_field.value * pip_len + pip_field.value] = Card{
-                    .suit = @enumFromInt(suit_field.value),
-                    .pip = @enumFromInt(pip_field.value),
+        inline for (@typeInfo(Card.Suit).@"enum".field_values) |suit_value| {
+            inline for (@typeInfo(Card.Pip).@"enum".field_values) |pip_value|
+                deck.cards[suit_value * pip_len + pip_value] = Card{
+                    .suit = @fromBackingInt(suit_value),
+                    .pip = @fromBackingInt(pip_value),
                 };
         }
         return deck;

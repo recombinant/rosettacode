@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Ramsey%27s_theorem
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C}}
 const std = @import("std");
 const Io = std.Io;
@@ -35,7 +35,7 @@ pub fn main(init: std.process.Init) !void {
 
     for (0..17) |i| {
         for (0..17) |j|
-            try stdout.print("{c} ", .{@intFromEnum(a[i][j])});
+            try stdout.print("{c} ", .{@backingInt(a[i][j])});
         try stdout.writeByte('\n');
     }
 

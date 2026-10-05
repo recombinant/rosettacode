@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Zebra_puzzle
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Go}}
 // This Zig version assumes Ascii text to reduce code clutter.
 const std = @import("std");
@@ -143,30 +143,30 @@ const HouseSet = struct {
         var di: [5]usize = undefined; // Drink
         var si: [5]usize = undefined; // Smoke
         for (self.houses, 0..) |h, i| {
-            ni[@intFromEnum(h.n)] = i;
-            ci[@intFromEnum(h.c)] = i;
-            ai[@intFromEnum(h.a)] = i;
-            di[@intFromEnum(h.d)] = i;
-            si[@intFromEnum(h.s)] = i;
+            ni[@backingInt(h.n)] = i;
+            ci[@backingInt(h.c)] = i;
+            ai[@backingInt(h.a)] = i;
+            di[@backingInt(h.d)] = i;
+            si[@backingInt(h.s)] = i;
         }
         // Condition 5:
-        if (ci[@intFromEnum(Colour.green)] + 1 != ci[@intFromEnum(Colour.white)])
+        if (ci[@backingInt(Colour.green)] + 1 != ci[@backingInt(Colour.white)])
             return false;
 
         // Condition 11:
-        if (dist(ai[@intFromEnum(Animal.cats)], si[@intFromEnum(Smoke.Blend)]) != 1)
+        if (dist(ai[@backingInt(Animal.cats)], si[@backingInt(Smoke.Blend)]) != 1)
             return false;
 
         // Condition 12:
-        if (dist(ai[@intFromEnum(Animal.horse)], si[@intFromEnum(Smoke.Dunhill)]) != 1)
+        if (dist(ai[@backingInt(Animal.horse)], si[@backingInt(Smoke.Dunhill)]) != 1)
             return false;
 
         // Condition 15:
-        if (dist(ni[@intFromEnum(Nationality.Norwegian)], ci[@intFromEnum(Colour.blue)]) != 1)
+        if (dist(ni[@backingInt(Nationality.Norwegian)], ci[@backingInt(Colour.blue)]) != 1)
             return false;
 
         // Condition 16:
-        if (dist(di[@intFromEnum(Drink.water)], si[@intFromEnum(Smoke.Blend)]) != 1)
+        if (dist(di[@backingInt(Drink.water)], si[@backingInt(Smoke.Blend)]) != 1)
             return false;
 
         // Condition 9: (already tested elsewhere)

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Ternary_logic
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C}}
 
 // translation of C's "Implementing logic using lookup tables" solution
@@ -44,22 +44,17 @@ const Trit = enum {
     };
 };
 
-fn demoBinaryOp(operator: [3][3]Trit, name: []const u8, w: *Io.Writer) !void {
+fn demoBinaryOp(operator: [3][3]Trit, op_name: []const u8, w: *Io.Writer) !void {
     try w.writeByte('\n');
 
-    inline for (@typeInfo(Trit).@"enum".fields) |field1| {
-        const value1: Trit = @enumFromInt(field1.value);
-        inline for (@typeInfo(Trit).@"enum".fields) |field2| {
-            const value2: Trit = @enumFromInt(field2.value);
-
-            const idx1 = @intFromEnum(value1); // to show @intFromEnum()
-            const idx2 = @intFromEnum(value2);
-
+    const info = comptime @typeInfo(Trit).@"enum";
+    inline for (info.field_values) |value1| {
+        inline for (info.field_values) |value2| {
             try w.print("{s} {s} {s}: {s}\n", .{
-                value1.asString(),
-                name,
-                value2.asString(),
-                operator[idx1][idx2].asString(),
+                @as(Trit, @fromBackingInt(value1)).asString(),
+                op_name,
+                @as(Trit, @fromBackingInt(value2)).asString(),
+                operator[value1][value2].asString(),
             });
         }
     }
@@ -74,9 +69,8 @@ pub fn main(init: std.process.Init) !void {
     // --------------------------------------------------------------
 
     // Demo unary operator 'not'
-    inline for (@typeInfo(Trit).@"enum".fields) |field| {
-        const idx = field.value;
-        const value: Trit = @enumFromInt(field.value);
+    inline for (@typeInfo(Trit).@"enum".field_values) |idx| {
+        const value: Trit = @fromBackingInt(idx);
         try stdout.print(
             "Not {s}: {s}\n",
             .{ value.asString(), Trit.not[idx].asString() },

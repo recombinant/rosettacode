@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Bioinformatics/Sequence_mutation
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C++}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -53,7 +53,7 @@ const DnaSequence = struct {
     };
 
     fn mutate(self: *DnaSequence) !void {
-        const mutation: Mutate = @enumFromInt(self.rand.uintLessThan(u2, 3));
+        const mutation: Mutate = @fromBackingInt(self.rand.uintLessThan(u2, 3));
         switch (mutation) {
             .swap => self.mutateSwap(),
             .delete => try self.mutateDelete(),
