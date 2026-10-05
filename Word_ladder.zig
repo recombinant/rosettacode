@@ -1,5 +1,5 @@
 // https://www.rosettacode.org/wiki/Word_ladder
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Go}}
 const std = @import("std");
 

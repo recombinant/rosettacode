@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Loops/Increment_loop_index_within_loop_body
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Io = std.Io;
 

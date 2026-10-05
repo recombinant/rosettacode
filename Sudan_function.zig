@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Sudan_function
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 
 // requires utf-8 terminal for printing to work.
 

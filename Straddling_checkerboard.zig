@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Straddling_checkerboard
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 
 // The output compares to the Kotlin & Wren output
 const std = @import("std");

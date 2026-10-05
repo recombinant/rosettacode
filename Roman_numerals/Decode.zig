@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Roman_numerals/Decode
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const testing = std.testing;
 const Io = std.Io;

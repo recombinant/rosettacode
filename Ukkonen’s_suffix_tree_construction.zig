@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Ukkonen%E2%80%99s_suffix_tree_construction
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 
 // Translation of https://www.geeksforgeeks.org/suffix-tree-application-3-longest-repeated-substring/
 // also https://www.geeksforgeeks.org/ukkonens-suffix-tree-construction-part-6/

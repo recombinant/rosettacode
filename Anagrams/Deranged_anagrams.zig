@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Anagrams/Deranged_anagrams
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Io = std.Io;
 const Allocator = std.mem.Allocator;

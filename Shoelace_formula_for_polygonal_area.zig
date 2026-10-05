@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Shoelace_formula_for_polygonal_area
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const testing = std.testing;
 const Io = std.Io;

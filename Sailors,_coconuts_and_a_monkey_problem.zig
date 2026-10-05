@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Sailors,_coconuts_and_a_monkey_problem
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Kotlin}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;

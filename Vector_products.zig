@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Vector_products
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // Uses Zig vectors https://ziglang.org/documentation/master/#Vectors
 const std = @import("std");
 const Io = std.Io;

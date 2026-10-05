@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Ulam_spiral_(for_primes)
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 
 // based on code from https://github.com/tiehuis/zig-rosetta
 const std = @import("std");

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Trabb_Pardo%E2%80%93Knuth_algorithm
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Io = std.Io;
 

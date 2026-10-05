@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Sum_of_primes_in_odd_positions_is_prime
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Io = std.Io;
 

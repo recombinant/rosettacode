@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Ultra_useful_primes
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // Uses Miller-Rabin primality test from https://rosettacode.org/wiki/Miller–Rabin_primality_test
 const std = @import("std");
 const Io = std.Io;

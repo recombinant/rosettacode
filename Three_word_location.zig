@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Three_word_location
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Go}}
 const std = @import("std");
 const Io = std.Io;

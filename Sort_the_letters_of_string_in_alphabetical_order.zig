@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Sort_the_letters_of_string_in_alphabetical_order
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Io = std.Io;
 

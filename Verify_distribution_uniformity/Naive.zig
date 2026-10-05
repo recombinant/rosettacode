@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Verify_distribution_uniformity/Naive
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C}}
 const std = @import("std");
 const Io = std.Io;

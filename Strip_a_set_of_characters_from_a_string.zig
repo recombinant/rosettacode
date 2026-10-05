@@ -1,5 +1,5 @@
 // https://www.rosettacode.org/wiki/Strip_a_set_of_characters_from_a_string
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;

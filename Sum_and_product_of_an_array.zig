@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Sum_and_product_of_an_array
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 
 // Copied from rosettacode
 const std = @import("std");
