@@ -1,0 +1,39 @@
+.{
+    .name = .rosettacode,
+    .version = "0.0.0",
+    .fingerprint = 0xc6975e7a37bae59b, // Changing this has security and trust implications.
+    .minimum_zig_version = "0.17.0",
+
+    // Raylib is usually up to date wrt zig
+    // Use the master branch and hope...
+    // zig fetch --save "git+https://github.com/raysan5/raylib"
+
+    // zig fetch --save "git+https://github.com/recombinant/primesieve"
+
+    // zig fetch --save git+https://codeberg.org/ziglang/translate-c
+
+    .dependencies = .{
+        .primesieve = .{
+            .url = "git+https://github.com/recombinant/primesieve#fc70205d648080fb1291a095baaa7272212976aa",
+            .hash = "primesieve-0.0.0-H2AblWIOAAAc5ncPiR29ut4mAYJzZH6Znp5FeLM-yeMd",
+        },
+        .raylib = .{
+            .url = "git+https://github.com/raysan5/raylib#30fa673ef2fa137588cf8b5732c65d76d86c1570",
+            .hash = "raylib-6.0.0-whq8uDuRNwU-qsXm4RFf0ZBx11T8CE-vPfzcgAgQ24UH",
+        },
+        .translate_c = .{
+            .url = "git+https://codeberg.org/ziglang/translate-c#875969d3493e245e01bf5d7860f792d8f3eb9ef5",
+            .hash = "translate_c-0.0.0-Q_BUWoFOBwAhz77Zd15HCVuhTKzdUKc94kezmCeJ7IC_",
+        },
+    },
+    .paths = .{
+        // The project was started using Zig 0.2 in 2018 with
+        // no understanding of Zig. Hence the poor file layout
+        // with the source files in the root folder.
+
+        // This is insufficient. The source is not in `src`
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
