@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Animate_a_pendulum
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{libheader|raylib}}
 const std = @import("std");
 const rl = @import("raylib");

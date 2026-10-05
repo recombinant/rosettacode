@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/ASCII_art_diagram_converter
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Wren}}
 const std = @import("std");
 

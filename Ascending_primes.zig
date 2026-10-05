@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Ascending_primes
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Wren}}
 
 // Using cpp primesieve from https://github.com/kimwalisch/primesieve/

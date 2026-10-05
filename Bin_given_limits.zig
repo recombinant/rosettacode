@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Bin_given_limits
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const print = std.debug.print;
 

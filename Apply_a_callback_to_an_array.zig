@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Apply_a_callback_to_an_array
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 
 // from https://github.com/tiehuis/zig-rosetta
 const std = @import("std");

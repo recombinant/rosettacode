@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Base_16_numbers_needing_a_to_f
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C}}
 const std = @import("std");
 const Io = std.Io;
