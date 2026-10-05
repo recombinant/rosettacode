@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Ludic_numbers
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
@@ -60,7 +60,7 @@ fn getLudicNumbers(gpa: Allocator, limit: usize) ![]usize {
         data: usize,
         node: std.SinglyLinkedList.Node = .{},
     };
-    const DataNodePool = std.heap.MemoryPoolExtra(DataNode, .{});
+    const DataNodePool = std.heap.MemoryPool(DataNode);
 
     var data_node_pool: DataNodePool = .empty;
     defer data_node_pool.deinit(std.heap.page_allocator);

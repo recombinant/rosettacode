@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/McNaughton-Yamada-Thompson_algorithm
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C++}}
 
 // This is a nearly verbatim translation of the C++ solution
@@ -99,7 +99,7 @@ fn shunt(allocator: Allocator, infix: []const u8) ![]const u8 {
     return postfix.toOwnedSlice(allocator);
 }
 
-const StatePool = std.heap.MemoryPoolExtra(State, .{});
+const StatePool = std.heap.MemoryPool(State);
 const StateSet = std.AutoArrayHashMapUnmanaged(*State, void);
 
 const State = struct {

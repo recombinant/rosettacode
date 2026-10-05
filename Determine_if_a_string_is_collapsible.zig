@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Determine_if_a_string_is_collapsible
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
@@ -38,7 +38,7 @@ const CollapserNode = struct {
 
 const CollapserContainer = struct {
     const Self = @This();
-    const NodePool = std.heap.MemoryPoolExtra(CollapserNode, .{});
+    const NodePool = std.heap.MemoryPool(CollapserNode);
 
     node_pool: NodePool = .empty,
 

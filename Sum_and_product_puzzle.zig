@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Sum_and_product_puzzle
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -11,7 +11,7 @@ const Item = struct {
     x: u64,
     y: u64,
 };
-const Pool = std.heap.MemoryPoolExtra(Item, .{});
+const Pool = std.heap.MemoryPool(Item);
 
 pub fn main(init: std.process.Init) !void {
     const gpa: Allocator = init.gpa;
