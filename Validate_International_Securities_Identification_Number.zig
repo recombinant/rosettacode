@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Validate_International_Securities_Identification_Number
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 
 pub fn main() !void {
@@ -56,7 +56,7 @@ fn validateISIN(s: []const u8) ValidationError!void {
         return ValidationError.InvalidChecksumCharacter;
 
     // enough space to hold two characters per `s` character
-    var buffer = [_]u8{0} ** (12 * 2);
+    var buffer: [12 * 2]u8 = @splat(0);
     var array: std.ArrayList(u8) = .initBuffer(&buffer);
 
     for (s) |ch| {

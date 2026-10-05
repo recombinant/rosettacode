@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Mian-Chowla_sequence
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C}}
 // {{trans|Go}}
 const std = @import("std");
@@ -26,7 +26,6 @@ pub fn main(init: std.process.Init) !void {
 }
 
 fn run1(allocator: Allocator, io: Io, n: usize, w: *Io.Writer) !void {
-    try w.writeAll("\n\n" ++ "-" ** 66 ++ "\n");
     try w.print("Calculating {d} terms of Mian-Chowla sequence (translation of C)...\n", .{n});
     try w.flush();
 
@@ -88,7 +87,9 @@ fn getMianChowla1(allocator: Allocator, io: Io, n: usize) ![]u64 {
 }
 
 fn run2(allocator: Allocator, io: Io, n: usize, w: *Io.Writer) !void {
-    try w.writeAll("\n\n" ++ "-" ** 66 ++ "\n");
+    try w.writeAll("\n\n");
+    try w.splatByteAll('-', 66);
+    try w.writeByte('\n');
     try w.print("Calculating {d} terms of Mian-Chowla sequence (translation of Go)...\n", .{n});
     try w.flush();
 
@@ -144,7 +145,9 @@ fn getMianChowla2(allocator: Allocator, io: Io, n: usize) ![]u64 {
 }
 
 fn run3(io: Io, comptime n: usize, w: *Io.Writer) !void {
-    try w.writeAll("\n\n" ++ "-" ** 66 ++ "\n");
+    try w.writeAll("\n\n");
+    try w.splatByteAll('-', 66);
+    try w.writeByte('\n');
     try w.print("Calculating {d} terms of Mian-Chowla sequence (naive)...\n", .{n});
     try w.flush();
 
@@ -196,7 +199,9 @@ fn getMianChowla3(io: Io, comptime n: usize) ![n]u64 {
 }
 
 fn run4(allocator: Allocator, io: Io, n: usize, w: *Io.Writer) !void {
-    try w.writeAll("\n\n" ++ "-" ** 66 ++ "\n");
+    try w.writeAll("\n\n");
+    try w.splatByteAll('-', 66);
+    try w.writeByte('\n');
     try w.print("Calculating {d} terms of Mian-Chowla sequence (tweaked translation of C)...\n", .{n});
     try w.flush();
 

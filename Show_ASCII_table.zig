@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Show_ASCII_table
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Io = std.Io;
 
@@ -18,15 +18,15 @@ pub fn main(init: std.process.Init) !void {
             switch (j) {
                 ' ' => {
                     try stdout.writeAll("Spc");
-                    separator = " " ** 2;
+                    separator = &@as([2]u8, @splat(' '));
                 },
                 127 => {
                     try stdout.writeAll("Del");
-                    separator = " " ** 2;
+                    separator = &@as([2]u8, @splat(' '));
                 },
                 else => {
                     try stdout.writeByte(j);
-                    separator = " " ** 4;
+                    separator = &@as([4]u8, @splat(' '));
                 },
             }
         }

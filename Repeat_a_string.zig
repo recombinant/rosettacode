@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Repeat_a_string
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
@@ -11,9 +11,6 @@ pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [1024]u8 = undefined;
     var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
-
-    // comptime
-    try stdout.print("{s}\n", .{"ha" ** 5});
 
     // runtime using writeSplat()
     _ = try stdout.writeSplat(&.{"ha"}, 5);

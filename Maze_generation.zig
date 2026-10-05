@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Maze_generation
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Io = std.Io;
 const print = std.debug.print;
@@ -65,7 +65,9 @@ fn MazeGenerator(comptime width: u16, comptime height: u16) type {
                 print("|\n", .{});
             }
             // draw the bottom line
-            print("{s}+\n", .{"+---" ** width});
+            for (0..width) |_|
+                print("{s}", .{"+---"});
+            print("+\n", .{});
         }
 
         fn getCell(self: Self, x: usize, y: usize) ?Cell {
