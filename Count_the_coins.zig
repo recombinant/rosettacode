@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Count_the_coins
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Python}}
 // Translation of Python (Fast version)
 const std = @import("std");

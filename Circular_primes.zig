@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Circular_primes
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 
 // TODO: second task not implemented
 
@@ -22,7 +22,7 @@ pub fn main(init: std.process.Init) !void {
     defer candidates.deinit(allocator);
 
     try stdout.writeAll("The circular primes are:\n");
-    try stdout.print("{:10}" ** 4, .{ 2, 3, 5, 7 });
+    try stdout.print("{:10}{:10}{:10}{:10}", .{ 2, 3, 5, 7 });
 
     var c: u32 = 4;
     try candidates.push(allocator, 0);

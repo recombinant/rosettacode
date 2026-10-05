@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Composite_numbers_k_with_no_single_digit_factors_whose_factors_are_all_substrings_of_k
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C}}
 const std = @import("std");
 const Io = std.Io;

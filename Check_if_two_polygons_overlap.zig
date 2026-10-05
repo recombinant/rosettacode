@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Check_if_two_polygons_overlap
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Java}}
 // An implementation of the Separating Axis Theorem algorithm for convex polygons.
 const std = @import("std");

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Check_if_a_polygon_overlaps_with_a_rectangle
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Java}}
 // There is no runtime heap allocation - everything happens on
 // the stack - hence variable declarations in the main() routine

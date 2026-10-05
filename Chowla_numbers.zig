@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Chowla_numbers
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Io = std.Io;
 const print = std.debug.print;

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Chinese_zodiac
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|zkl}}
 const std = @import("std");
 const print = std.debug.print;
@@ -15,7 +15,7 @@ pub fn main() void {
     }
 }
 
-const ZodiacResult = std.meta.Tuple(&[_]type{[]const u8} ** 7);
+const ZodiacResult = @Tuple(&(@as([7]type, @splat([]const u8))));
 
 fn ceToChineseZodiac(ce_year: u14) ZodiacResult {
     const celestial_pinyin = [10][]const u8{

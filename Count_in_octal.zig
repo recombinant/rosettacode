@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Count_in_octal
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // copied from rosettacode
 const std = @import("std");
 const Io = std.Io;

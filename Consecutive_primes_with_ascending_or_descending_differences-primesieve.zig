@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Consecutive_primes_with_ascending_or_descending_differences
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;

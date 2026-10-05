@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Convex_hull
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // Translation of
 // https://algoteka.com/samples/35/graham-scan-convex-hull-algorithm-c-plus-plus-o%2528n-log-n%2529-readable-solution
 const std = @import("std");

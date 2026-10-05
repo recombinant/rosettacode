@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Chaocipher
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Nim (Another Implementation)}}
 const std = @import("std");
 const Io = std.Io;

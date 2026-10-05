@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Cistercian_numerals
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{Trans|C}}
 const std = @import("std");
 const Io = std.Io;
