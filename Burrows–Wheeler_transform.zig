@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Burrows%E2%80%93Wheeler_transform
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // https://en.wikipedia.org/wiki/Burrows%E2%80%93Wheeler_transform
 // This code follows the wikipedia example and explanation,
 // it is not a translation of the wikipedia Python Sample.

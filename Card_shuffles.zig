@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Card_shuffles
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Python}}
 const std = @import("std");
 const Io = std.Io;

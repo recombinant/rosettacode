@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Calculating_the_value_of_e
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // update of existing Rosetta Zig implementation to Zig 0.16.0
 const std = @import("std");
 const Io = std.Io;

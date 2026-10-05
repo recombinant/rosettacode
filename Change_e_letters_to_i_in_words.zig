@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Change_e_letters_to_i_in_words
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
