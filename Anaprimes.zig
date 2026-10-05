@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Anaprimes
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 
 // https://rosettacode.org/wiki/Extensible_prime_generator
 const std = @import("std");

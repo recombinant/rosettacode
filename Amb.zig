@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Amb
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Go}}
 
 // Translation of the alternative solution. Zig does not have

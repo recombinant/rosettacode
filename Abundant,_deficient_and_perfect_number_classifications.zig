@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Abundant,_deficient_and_perfect_number_classifications
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Io = std.Io;
 

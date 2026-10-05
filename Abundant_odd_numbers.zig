@@ -1,5 +1,5 @@
 // https://www.rosettacode.org/wiki/Abundant_odd_numbers
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // based on C
 const std = @import("std");
 const math = std.math;

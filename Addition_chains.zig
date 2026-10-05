@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Addition_chains
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 
 // Only handles Brauer addition chains.
 const std = @import("std");

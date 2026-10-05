@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/ADFGVX_cipher
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C++}}
 // Note: The C++ is/was missing the columnar transposition
 const std = @import("std");
