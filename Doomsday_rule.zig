@@ -1,11 +1,16 @@
 // https://rosettacode.org/wiki/Doomsday_rule
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
-const c = @cImport({
-    @cInclude("time.h");
-});
-
 const Io = std.Io;
+// // With Zig 0.16.0 and earlier there was an easy way for
+// // simple imports of C header files.
+// const c = @cImport({
+//     @cInclude("time.h");
+// });
+
+// Zig 0.17.0 and later requires a build.zig with addTranslateC machinery
+// and/or manual function prototypes,
+const c = @import("c");
 
 pub fn main(init: std.process.Init) anyerror!void {
     const io: Io = init.io;

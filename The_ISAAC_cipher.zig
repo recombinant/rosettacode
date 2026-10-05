@@ -1,14 +1,34 @@
 // https://rosettacode.org/wiki/The_ISAAC_cipher
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 
 // Links with the (tweaked) original C source code
-//   zig run The_ISAAC_cipher.zig The_ISAAC_cipher.c -lc -I.
+//   zig run The_ISAAC_cipher.zig The_ISAAC_cipher.c -lc
 const std = @import("std");
 const Io = std.Io;
-const c = @cImport({
-    @cInclude("The_ISAAC_cipher.h");
-});
 
+// --------------------------------------------------------------
+// // With Zig 0.16.0 and earlier there was an easy way for
+// // simple imports of C header files.
+// const c = @cImport({
+//    @cInclude("The_ISAAC_cipher.h");
+// });
+
+// Zig 0.17.0 and later requires manual function prototypes (as below),
+// and/or a build.zig with addTranslateC machinery.
+const c = struct {
+    const MAXMSG = 4096;
+    const MOD = 95;
+    const START = 32;
+    const mEncipher = 0;
+    const mDecipher = 1;
+    const mNone = 2;
+    const enum_ciphermode = c_uint;
+    extern fn iSeed(seed: [*c]const u8, flag: c_int) void;
+    extern fn Vernam(msg: [*c]const u8) [*c]const u8;
+    extern fn CaesarStr(m: enum_ciphermode, msg: [*c]const u8, modulo: u8, start: u8) [*c]const u8;
+};
+
+// --------------------------------------------------------------
 /// This is a near equivalent of the strcpy(), returning a slice of dest
 /// containing the characters copied.
 fn copy(dest: []u8, src: [*c]const u8) []const u8 {

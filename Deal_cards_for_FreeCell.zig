@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Deal_cards_for_FreeCell
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const RndGen = @import("Linear_congruential_generator.zig").Microsoft.lcg;
 

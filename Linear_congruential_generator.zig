@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Linear_congruential_generator
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 
 const print = std.debug.print;
@@ -39,9 +39,7 @@ pub fn main() void {
         print("{}\n", .{rnd.random().int(usize)});
     }
     {
-        const c = @cImport({
-            @cInclude("stdlib.h");
-        });
+        const c = @import("c");
 
         c.srand(1);
         print("\nMicrosoft random\n", .{});
