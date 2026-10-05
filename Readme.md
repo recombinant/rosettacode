@@ -16,4 +16,4 @@ For any questions about Zig ask on one of the Zig forums:
 - [Ziggit](https://ziggit.dev/)
 - somewhere on Discord
 
-[zig.news](https://zig.news/) lists some info as well as interesting happenings in the global Zig community.
+[zig.news](https://zig.news/) lists some info as well as interesting happenings in the global Zig community. (05 Oct 2026 - [zig.news](https://zig.news/) is depopulated pending revamp)
