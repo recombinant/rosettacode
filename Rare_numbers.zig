@@ -1,5 +1,5 @@
 // https://www.rosettacode.org/wiki/Rare_numbers
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 
 // Naïve brute force implementation of first five rare numbers.
 const std = @import("std");

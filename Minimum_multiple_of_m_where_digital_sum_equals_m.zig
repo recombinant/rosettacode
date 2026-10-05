@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Minimum_multiple_of_m_where_digital_sum_equals_m
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // OEIS A131382
 const std = @import("std");
 const Io = std.Io;

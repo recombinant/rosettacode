@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Pell%27s_equation
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C}}
 
 // Neither C nor C++ gave the correct answer for 277 because of integer overflow which was performed silently as undefined behaviour.

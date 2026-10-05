@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Permutations_with_some_identical_elements
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Go}}
 
 // Based of C++ code from https://www.geeksforgeeks.org/distinct-permutations-string-set-2/

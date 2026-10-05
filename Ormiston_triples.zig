@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Ormiston_triples
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C++}}
 
 // Using cpp primesieve from https://github.com/kimwalisch/primesieve/

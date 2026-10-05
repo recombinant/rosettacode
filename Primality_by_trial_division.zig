@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Primality_by_trial_division
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 
 fn isPrime(n_: anytype) bool {

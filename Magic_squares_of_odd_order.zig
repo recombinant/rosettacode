@@ -1,5 +1,5 @@
 // https://www.rosettacode.org/wiki/Magic_squares_of_odd_order
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C}}
 // Usage : executable <integer specifying rows in magic square>
 const std = @import("std");

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Remove_duplicate_elements
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 

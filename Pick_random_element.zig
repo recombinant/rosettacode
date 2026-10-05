@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Pick_random_element
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // Copied from rosettacode
 const std = @import("std");
 const Io = std.Io;

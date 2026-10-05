@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Range_extraction
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Go}}
 
 const std = @import("std");

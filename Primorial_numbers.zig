@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Primorial_numbers
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 
 // To improve speed use this C library for prime numbers:
 // https://github.com/kimwalisch/primesieve

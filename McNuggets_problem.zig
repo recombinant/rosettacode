@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/McNuggets_problem
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C}}
 
 // No allocation required.

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Maximum_triangle_path_sum
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Nim}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;

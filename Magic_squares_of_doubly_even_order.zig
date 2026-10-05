@@ -1,5 +1,5 @@
 // https://www.rosettacode.org/wiki/Magic_squares_of_doubly_even_order
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|Java}}
 // {{trans|Kotlin}}
 const std = @import("std");

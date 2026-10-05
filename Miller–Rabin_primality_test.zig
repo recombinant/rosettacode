@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Miller–Rabin_primality_test
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // Translation of
 // https://algoteka.com/samples/46/miller%25E2%2580%2593rabin-primality-test-c-plus-plus-simple-64-bit-implementation
 const std = @import("std");

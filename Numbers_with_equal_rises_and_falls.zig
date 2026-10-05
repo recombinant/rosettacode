@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Numbers_with_equal_rises_and_falls
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C}}
 
 // https://oeis.org/A296712

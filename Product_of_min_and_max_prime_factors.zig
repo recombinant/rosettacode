@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Product_of_min_and_max_prime_factors
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 
 const assert = std.debug.assert;

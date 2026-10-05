@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Quickselect_algorithm
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // Two available partition algorithm functions - Hoare's and Lomuto's.
 // A third, Alexandrescu's, is not here as it wouldn't work correctly
 // "out of the box" with duplicates in the supplied slice.

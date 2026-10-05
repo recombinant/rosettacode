@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Old_lady_swallowed_a_fly
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Io = std.Io;
 

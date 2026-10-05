@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Primes_whose_first_and_last_number_is_3
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 // {{trans|C}}
 const std = @import("std");
 const Io = std.Io;

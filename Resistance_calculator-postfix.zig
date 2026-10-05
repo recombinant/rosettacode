@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Resistance_calculator
-// {{works with|Zig|0.16.0}}
+// {{works with|Zig|0.17.0}}
 
 // Postfix_(RPN)
 const std = @import("std");
