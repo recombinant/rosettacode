@@ -42,7 +42,7 @@ fn printFreeCell(rnd_: anytype, w: *Io.Writer) !void {
     var deck: std.ArrayList([]const u8) = .initBuffer(&deck_buffer);
     for (ranks) |rank|
         for (suits) |suit| {
-            const buf = try std.fmt.allocPrint(allocator, "{s}{s}", .{ rank, suit });
+            const buf = try allocator.print("{s}{s}", .{ rank, suit });
             try deck.appendBounded(buf);
         };
 
