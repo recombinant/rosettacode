@@ -12,7 +12,13 @@
 
     // zig fetch --save git+https://codeberg.org/ziglang/translate-c
 
+    // zig fetch --save git+https://github.com/peymanmortazavi/csv-zero.git
+
     .dependencies = .{
+        .csvzero = .{
+            .url = "git+https://github.com/peymanmortazavi/csv-zero.git#a687d508e57b1cd62dc1efa7d90f268055e1ca46",
+            .hash = "csvzero-0.2.0-YQXXvD3GAAB60CVoVAuz64YS3Lg3okE2UKRPviOe2lcL",
+        },
         .primesieve = .{
             .url = "git+https://github.com/recombinant/primesieve#fc70205d648080fb1291a095baaa7272212976aa",
             .hash = "primesieve-0.0.0-H2AblWIOAAAc5ncPiR29ut4mAYJzZH6Znp5FeLM-yeMd",

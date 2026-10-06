@@ -17,6 +17,7 @@ pub fn build(b: *std.Build) !void {
     const arena_allocator = arena.allocator();
 
     // --------------------------------------------------------------
+    const csvzero = b.dependency("csvzero", .{});
     const primesieve = b.dependency("primesieve", .{});
     const raylib = b.dependency("raylib", .{
         .raudio = true,
@@ -40,13 +41,11 @@ pub fn build(b: *std.Build) !void {
     // --------------------------------------------------------------
     for (source_files) |si| {
         defer _ = arena.reset(.retain_capacity);
-        const task, const test_flag = try evaluateTask(b.graph.io, arena_allocator, si);
+        const task: Task, const flags: Flags = try evaluateTask(b.graph.io, arena_allocator, si);
         switch (task) {
             .discard => continue,
             .test_only,
             .vanilla_c,
-            .primesieve,
-            .raylib,
             .isaac_cypher,
             .zig,
             => {},
@@ -57,21 +56,26 @@ pub fn build(b: *std.Build) !void {
             .target = target,
             .optimize = optimize,
         });
+
         // ----------------------------- link libraries / C files
         switch (task) {
             .vanilla_c => {
                 root_module.link_libc = true;
                 root_module.addImport("c", translator.mod);
             },
-            .primesieve => root_module.addImport("primesieve", primesieve.module("primesieve")),
-            .raylib => root_module.addImport("raylib", raylib.module("raylib")),
             .isaac_cypher => {
                 root_module.link_libc = true;
                 root_module.addCSourceFile(.{ .file = b.path("The_ISAAC_cipher.c") });
             },
-            .test_only, .zig => {},
+            .test_only => {},
+            .zig => {
+                if (flags.csvzero_flag) root_module.addImport("csvzero", csvzero.module("csvzero"));
+                if (flags.primesieve_flag) root_module.addImport("primesieve", primesieve.module("primesieve"));
+                if (flags.raylib_flag) root_module.addImport("raylib", raylib.module("raylib"));
+            },
             .discard => unreachable,
         }
+
         // ------------------------------------------- executable
         if (task != .test_only) {
             const exe = b.addExecutable(.{
@@ -91,7 +95,7 @@ pub fn build(b: *std.Build) !void {
             all.dependOn(&install_cmd.step);
         }
         // ------------------------------------------------ tests
-        if (test_flag) {
+        if (flags.test_flag) {
             const exe_tests = b.addTest(.{
                 .root_module = root_module,
             });
@@ -116,8 +120,8 @@ fn getFiles(b: *std.Build, module_subpath: []const u8) ![]const SourceInfo {
     var dir = try Io.Dir.cwd().openDir(io, b.pathResolve(&.{ ".", module_subpath }), .{ .iterate = true });
     defer dir.close(io);
 
-    var iter = dir.iterate();
-    while (try iter.next(io)) |entry| {
+    var it = dir.iterate();
+    while (try it.next(io)) |entry| {
         if (entry.name[0] == '.')
             continue;
         switch (entry.kind) {
@@ -155,14 +159,20 @@ fn getFiles(b: *std.Build, module_subpath: []const u8) ![]const SourceInfo {
 const Task = enum {
     discard,
     vanilla_c,
-    primesieve,
-    raylib,
     isaac_cypher,
     zig,
     test_only, // no main(), only tests
 };
 
-fn evaluateTask(io: Io, allocator: std.mem.Allocator, source_info: SourceInfo) !struct { Task, bool } {
+const Flags = struct {
+    csvzero_flag: bool = false,
+    primesieve_flag: bool = false,
+    raylib_flag: bool = false,
+    test_flag: bool = false,
+};
+
+fn evaluateTask(io: Io, allocator: std.mem.Allocator, source_info: SourceInfo) !struct { Task, Flags } {
+    var flags: Flags = .{};
     // std.debug.print("{s}\n{s}\n{s}\n\n", .{ source_info.module_subpath, source_info.name, source_info.path });
     const f = try Io.Dir.cwd().openFile(io, source_info.path, .{});
     defer f.close(io);
@@ -172,76 +182,58 @@ fn evaluateTask(io: Io, allocator: std.mem.Allocator, source_info: SourceInfo) !
     const r = &file_reader.interface;
     const text = try r.allocRemaining(allocator, .unlimited);
 
-    const test_flag = std.mem.indexOf(u8, text, "\ntest ") != null;
+    flags.test_flag = std.mem.indexOf(u8, text, "\ntest ") != null;
 
     if (std.mem.indexOf(u8, text, "This file should fail to compile") != null) {
         std.log.info("@CompileLog() {s}", .{source_info.name});
-        return .{ .discard, test_flag };
+        return .{ .discard, flags };
     }
 
     if (std.mem.indexOf(u8, text, "{{works with|Zig|0.14.1}}") != null) {
         std.log.info("0.14.1 {s}", .{source_info.name});
-        return .{ .discard, test_flag };
+        return .{ .discard, flags };
     }
     if (std.mem.indexOf(u8, text, "{{works with|Zig|0.15.1}}") != null) {
         // std.log.info("0.15.1 {s}", .{source_info.name});
-        return .{ .discard, test_flag };
+        return .{ .discard, flags };
     }
     if (std.mem.indexOf(u8, text, "{{works with|Zig|0.15.2}}") != null) {
         std.log.info("0.15.2 {s}", .{source_info.name});
-        return .{ .discard, test_flag };
+        return .{ .discard, flags };
     }
     if (std.mem.indexOf(u8, text, "{{works with|Zig|0.16.0}}") != null) {
         std.log.info("0.16.0 {s}", .{source_info.name});
-        return .{ .discard, test_flag };
+        return .{ .discard, flags };
     }
 
-    // defaults to zig 0.17.0
+    // Expected to be zig 0.17.0
+    if (std.mem.indexOf(u8, text, "{works with|Zig|0.17.0}}") == null) {
+        std.log.warn("Expected Zig 0.17.0 - not found {s}", .{source_info.path});
+        return .{ .discard, .{} };
+    }
 
-    // if (std.mem.indexOf(u8, text, "TODO") != null) {
-    //     std.log.info("TODO   {s}", .{source_info.name});
-    //     return .{ .discard, test_flag };
-    // }
+    flags.csvzero_flag = (std.mem.indexOf(u8, text, "= @import(\"csvzero\");") != null);
+    flags.primesieve_flag = (std.mem.indexOf(u8, text, "= @import(\"primesieve\");") != null);
+    flags.raylib_flag = (std.mem.indexOf(u8, text, "= @import(\"raylib\");") != null);
 
     if (std.mem.indexOf(u8, text, "\npub fn main(") == null) {
-        if (test_flag) {
-            // std.log.info("no main() {s}", .{source_info.name});
+        if (flags.test_flag) {
+            std.log.info("no main() {s}", .{source_info.name});
+            return .{ .test_only, flags };
         } else {
             std.log.info("--------- no main, no test --------- {s}", .{source_info.name});
-            return .{ .discard, false };
-        }
-        if (std.mem.indexOf(u8, text, "{works with|Zig|0.18.0}}") != null) {
-            // std.log.info("0.16.0 {s} (test only)", .{source_info.name});
-            return .{ .test_only, test_flag };
-        } else {
-            std.log.warn("--------- unknown test --------- {s}", .{source_info.name});
-            return .{ .discard, true };
+            return .{ .discard, .{} };
         }
     }
 
-    if (std.mem.indexOf(u8, text, "= @import(\"primesieve\");") != null) {
-        // std.log.info("primesieve {s}", .{source_info.name});
-        return .{ .primesieve, test_flag };
-    }
-    if (std.mem.indexOf(u8, text, "= @import(\"raylib\");") != null) {
-        // std.log.info("raylib {s}", .{source_info.name});i
-        return .{ .raylib, test_flag };
-    }
     if (std.mem.indexOf(u8, text, "The_ISAAC_cipher") != null) {
         // std.log.info("ISAAC  {s}", .{source_info.name});
-        return .{ .isaac_cypher, test_flag };
+        return .{ .isaac_cypher, .{} };
     }
     if (std.mem.indexOf(u8, text, "@import(\"c\")") != null or std.mem.indexOf(u8, text, "extern fn ") != null) {
         // std.log.info("C      {s}", .{source_info.name});
-        return .{ .vanilla_c, test_flag };
+        return .{ .vanilla_c, flags };
     }
 
-    if (std.mem.indexOf(u8, text, "{works with|Zig|0.17.0}}") != null) {
-        // std.log.info("0.16.0 {s}", .{source_info.name});
-        return .{ .zig, test_flag };
-    }
-
-    std.log.warn("unknown ------- {s}", .{source_info.name});
-
-    return .{ .discard, test_flag };
+    return .{ .zig, flags };
 }
