@@ -18,7 +18,7 @@ pub fn main(init: std.process.Init) !void {
     var file = try std.Io.Dir.cwd().openFile(io, path, .{});
     defer file.close(io);
 
-    var buffer: [64 * 1024]u8 = undefined;
+    var buffer: [4096]u8 = undefined;
     var reader = file.reader(io, &buffer);
     const IteratorTSV = csvz.Csv(.{ .delimiter = '\t' });
     var it = IteratorTSV.init(&reader.interface);
