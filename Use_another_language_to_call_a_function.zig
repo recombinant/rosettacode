@@ -1,5 +1,6 @@
 // https://rosettacode.org/wiki/Use_another_language_to_call_a_function
 // Copied from rosettacode
+// {{works with|Zig|0.17.0}}
 
 // zig build-lib Use_another_language_to_call_a_function.zig
 // zig run Use_another_language_to_call_a_function.c Use_another_language_to_call_a_function.lib -lc
