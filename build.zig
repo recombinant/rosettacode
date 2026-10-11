@@ -17,9 +17,9 @@ pub fn build(b: *std.Build) !void {
     const arena_allocator = arena.allocator();
 
     // --------------------------------------------------------------
-    const csvzero = b.dependency("csvzero", .{});
-    const primesieve = b.dependency("primesieve", .{});
-    const raylib = b.dependency("raylib", .{
+    const csvzero_dependency = b.dependency("csvzero", .{});
+    const primesieve_dependency = b.dependency("primesieve", .{});
+    const raylib_dependency = b.dependency("raylib", .{
         .raudio = true,
         .rmodels = true,
         .rshapes = true,
@@ -27,11 +27,18 @@ pub fn build(b: *std.Build) !void {
         .rtextures = true,
     });
 
+    const primesieve_module: *std.Build.Module = primesieve_dependency.module("primesieve");
+    for (primesieve_module.getGraph().names) |n|
+        std.debug.print("{s}\n", .{n});
+
     // --------------------------------------------------------------
     const translate_c = b.dependency("translate_c", .{});
 
     const translator: Translator = .init(translate_c, .{
-        .c_source_file = b.path("c.h"),
+        .c_source_file = b.addWriteFiles().add("c.h",
+            \\#include <stdlib.h>
+            \\#include <time.h>
+        ),
         .target = target,
         .optimize = optimize,
         // additional options now available that go here:
@@ -69,9 +76,9 @@ pub fn build(b: *std.Build) !void {
             },
             .test_only => {},
             .zig => {
-                if (flags.csvzero_flag) root_module.addImport("csvzero", csvzero.module("csvzero"));
-                if (flags.primesieve_flag) root_module.addImport("primesieve", primesieve.module("primesieve"));
-                if (flags.raylib_flag) root_module.addImport("raylib", raylib.module("raylib"));
+                if (flags.csvzero_flag) root_module.addImport("csvzero", csvzero_dependency.module("csvzero"));
+                if (flags.primesieve_flag) root_module.addImport("primesieve", primesieve_module);
+                if (flags.raylib_flag) root_module.addImport("raylib", raylib_dependency.module("raylib"));
             },
             .discard => unreachable,
         }
