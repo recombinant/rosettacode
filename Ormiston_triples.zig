@@ -2,12 +2,11 @@
 // {{works with|Zig|0.17.0}}
 // {{trans|C++}}
 
-// Using cpp primesieve from https://github.com/kimwalisch/primesieve/
-
 const std = @import("std");
 const Io = std.Io;
 
-const ps = @import("primesieve");
+// Using wrapper around cpp primesieve from https://github.com/kimwalisch/primesieve/
+const primesieve = @import("primesieve");
 
 pub fn main(init: std.process.Init) !void {
     const io: Io = init.io;
@@ -54,18 +53,18 @@ const OrmistonTripleGeneratorError = error{
 const OrmistonTripleGenerator = struct {
     const Self = @This();
 
-    it: ps.primesieve_iterator,
+    it: primesieve.Iterator,
     prime1: u64,
     prime2: u64,
 
     fn init() !Self {
-        var it: ps.primesieve_iterator = undefined;
-        ps.primesieve_init(&it);
+        var it: primesieve.Iterator = undefined;
+        primesieve.init(&it);
 
         var primes: [2]u64 = undefined;
         for (&primes) |*prime| {
-            prime.* = ps.primesieve_next_prime(&it);
-            if (it.is_error != 0 or prime.* == ps.PRIMESIEVE_ERROR)
+            prime.* = primesieve.nextPrime(&it);
+            if (it.is_error != 0 or prime.* == primesieve.ERROR)
                 return OrmistonTripleGeneratorError.PrimesieveError;
         }
         return Self{
@@ -75,12 +74,12 @@ const OrmistonTripleGenerator = struct {
         };
     }
     fn deinit(self: *Self) void {
-        defer ps.primesieve_free_iterator(&self.it);
+        primesieve.freeIterator(&self.it);
     }
     fn next(self: *Self) ![3]u64 {
         while (true) {
-            const prime = ps.primesieve_next_prime(&self.it);
-            if (self.it.is_error != 0 or prime == ps.PRIMESIEVE_ERROR)
+            const prime = primesieve.nextPrime(&self.it);
+            if (self.it.is_error != 0 or prime == primesieve.ERROR)
                 return OrmistonTripleGeneratorError.PrimesieveError;
 
             const prime0 = self.prime1;

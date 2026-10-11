@@ -2,8 +2,8 @@
 // {{works with|Zig|0.17.0}}
 // {{trans|C++}}
 
-// Using cpp primesieve from https://github.com/kimwalisch/primesieve/
-const ps = @import("primesieve");
+// Using wrapper around cpp primesieve from https://github.com/kimwalisch/primesieve/
+const primesieve = @import("primesieve");
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -18,19 +18,19 @@ pub fn main(init: std.process.Init) !void {
 
     try stdout.print("Frobenius numbers less than {} (asterisk marks primes):\n", .{limit});
 
-    var it: ps.primesieve_iterator = undefined;
-    ps.primesieve_init(&it);
-    defer ps.primesieve_free_iterator(&it);
+    var it: primesieve.Iterator = undefined;
+    primesieve.init(&it);
+    defer primesieve.freeIterator(&it);
 
     var count: u64 = 1;
 
-    var prime1 = ps.primesieve_next_prime(&it);
-    if (it.is_error != 0 or prime1 == ps.PRIMESIEVE_ERROR)
+    var prime1 = primesieve.nextPrime(&it);
+    if (it.is_error != 0 or prime1 == primesieve.ERROR)
         return error.PrimesieveError;
 
     while (true) : (count += 1) {
-        const prime2 = ps.primesieve_next_prime(&it);
-        if (it.is_error != 0 or prime2 == ps.PRIMESIEVE_ERROR)
+        const prime2 = primesieve.nextPrime(&it);
+        if (it.is_error != 0 or prime2 == primesieve.ERROR)
             return error.PrimesieveError;
 
         const frobenius = prime1 * prime2 - prime1 - prime2;

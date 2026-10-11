@@ -2,13 +2,12 @@
 // {{works with|Zig|0.17.0}}
 // {{trans|C++}}
 
-// Using cpp primesieve from https://github.com/kimwalisch/primesieve/
-
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
-const ps = @import("primesieve");
+// Using wrapper around cpp primesieve from https://github.com/kimwalisch/primesieve/
+const primesieve = @import("primesieve");
 
 // pub const std_options = std.Options{
 //     .log_level = .info,
@@ -148,18 +147,18 @@ const PrimeSieve = struct {
     fn init(allocator: Allocator, limit: usize) !PrimeSieve {
         var primes = try allocator.alloc(bool, limit);
         @memset(primes, false);
-        var it: ps.primesieve_iterator = undefined;
-        ps.primesieve_init(&it);
-        defer ps.primesieve_free_iterator(&it);
+        var it: primesieve.Iterator = undefined;
+        primesieve.init(&it);
+        defer primesieve.freeIterator(&it);
         {
             // consume 2
-            const p = ps.primesieve_next_prime(&it);
-            if (it.is_error != 0 or p == ps.PRIMESIEVE_ERROR)
+            const p = primesieve.nextPrime(&it);
+            if (it.is_error != 0 or p == primesieve.ERROR)
                 return error.PrimesieveError;
         }
         while (true) {
-            const p = ps.primesieve_next_prime(&it);
-            if (it.is_error != 0 or p == ps.PRIMESIEVE_ERROR)
+            const p = primesieve.nextPrime(&it);
+            if (it.is_error != 0 or p == primesieve.ERROR)
                 return error.PrimesieveError;
             if (p >= limit) break;
             primes[p >> 1] = true;

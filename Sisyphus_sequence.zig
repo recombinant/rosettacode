@@ -1,12 +1,11 @@
 // https://www.rosettacode.org/wiki/Sisyphus_sequence
 // {{works with|Zig|0.17.0}}
 
-// Using cpp primesieve from https://github.com/kimwalisch/primesieve/
-
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
+// Using wrapper around cpp primesieve from https://github.com/kimwalisch/primesieve/
 const primesieve = @import("primesieve");
 
 pub fn main(init: std.process.Init) !void {
@@ -101,25 +100,25 @@ const SisyphusSequenceGeneratorError = error{
 };
 
 const SisyphusSequenceGenerator = struct {
-    it: primesieve.primesieve_iterator = undefined,
+    it: primesieve.Iterator = undefined,
     next_: u64 = 1,
     prime: u64 = 0,
 
     fn init() !SisyphusSequenceGenerator {
         var si: SisyphusSequenceGenerator = .{};
-        primesieve.primesieve_init(&si.it);
+        primesieve.init(&si.it);
         return si;
     }
     fn deinit(self: *SisyphusSequenceGenerator) void {
-        primesieve.primesieve_free_iterator(&self.it);
+        primesieve.freeIterator(&self.it);
     }
     fn next(self: *SisyphusSequenceGenerator) SisyphusSequenceGeneratorError!u64 {
         const n = self.next_;
         if (self.next_ % 2 == 0) {
             self.next_ /= 2;
         } else {
-            self.prime = primesieve.primesieve_next_prime(&self.it);
-            if (self.it.is_error != 0 or self.prime == primesieve.PRIMESIEVE_ERROR)
+            self.prime = primesieve.nextPrime(&self.it);
+            if (self.it.is_error != 0 or self.prime == primesieve.ERROR)
                 return SisyphusSequenceGeneratorError.PrimeSieveError;
             self.next_ += self.prime;
         }

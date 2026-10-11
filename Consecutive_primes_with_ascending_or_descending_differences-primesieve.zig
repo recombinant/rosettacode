@@ -4,8 +4,8 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
-// Using cpp primesieve from https://github.com/kimwalisch/primesieve/
-const ps = @import("primesieve");
+// Using wrapper around cpp primesieve from https://github.com/kimwalisch/primesieve/
+const primesieve = @import("primesieve");
 
 const LIMIT = 1_000_000;
 
@@ -19,11 +19,11 @@ pub fn main(init: std.process.Init) !void {
 
     var t0: Io.Timestamp = .now(io, .real);
 
-    var it: ps.primesieve_iterator = undefined;
-    ps.primesieve_init(&it);
-    defer ps.primesieve_free_iterator(&it);
+    var it: primesieve.Iterator = undefined;
+    primesieve.init(&it);
+    defer primesieve.freeIterator(&it);
 
-    var p1 = ps.primesieve_next_prime(&it);
+    var p1 = primesieve.nextPrime(&it);
 
     var inc = Sequence(.inc).init(gpa, p1);
     defer inc.deinit();
@@ -31,7 +31,7 @@ pub fn main(init: std.process.Init) !void {
     defer dec.deinit();
 
     while (true) {
-        const p2 = ps.primesieve_next_prime(&it);
+        const p2 = primesieve.nextPrime(&it);
         if (p2 >= LIMIT)
             break;
 

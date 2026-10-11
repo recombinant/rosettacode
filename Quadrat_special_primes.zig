@@ -4,12 +4,11 @@
 
 // see also: https://rosettacode.org/wiki/Cubic_special_primes
 
-// Using cpp primesieve from https://github.com/kimwalisch/primesieve/
-
 const std = @import("std");
 const Io = std.Io;
 
-const ps = @import("primesieve");
+// Using wrapper around cpp primesieve from https://github.com/kimwalisch/primesieve/
+const primesieve = @import("primesieve");
 
 pub fn main(init: std.process.Init) error{WriteFailed}!void {
     const io: Io = init.io;
@@ -23,9 +22,9 @@ pub fn main(init: std.process.Init) error{WriteFailed}!void {
     var size: usize = 0;
 
     // Get an array with the primes inside [start, stop] */
-    var primes: [*]u32 = @ptrCast(@alignCast(ps.primesieve_generate_primes(start, stop, &size, ps.UINT32_PRIMES)));
-    // Check for error in primesieve_generate_primes?
-    defer ps.primesieve_free(primes);
+    var primes: [*]u32 = @ptrCast(@alignCast(primesieve.generatePrimes(start, stop, &size, primesieve.UINT32_PRIMES)));
+    // Check for error in primesieve.generatePrimes?
+    defer primesieve.free(primes);
 
     try stdout.writeAll("Quadrat special primes under 16,000:\n");
     try stdout.writeAll(" Prime1  Prime2    Gap  Sqrt\n");

@@ -2,13 +2,12 @@
 // {{works with|Zig|0.17.0}}
 // {{trans|Wren}}
 
-// Using cpp primesieve from https://github.com/kimwalisch/primesieve/
-
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
 
-const ps = @import("primesieve");
+// Using wrapper around cpp primesieve from https://github.com/kimwalisch/primesieve/
+const primesieve = @import("primesieve");
 
 pub fn main(init: std.process.Init) !void {
     const io: Io = init.io;
@@ -29,9 +28,9 @@ pub fn main(init: std.process.Init) !void {
     const t0: Io.Timestamp = .now(io, .real);
 
     // Get an array with the primes inside [start, stop]
-    const primes: [*]u32 = @ptrCast(@alignCast(ps.primesieve_generate_primes(start, stop, &size, ps.UINT32_PRIMES)));
-    // Check for error in primesieve_generate_primes? (errno)
-    defer ps.primesieve_free(primes);
+    const primes: [*]u32 = @ptrCast(@alignCast(primesieve.generatePrimes(start, stop, &size, primesieve.UINT32_PRIMES)));
+    // Check for error in primesieve.generatePrimes? (errno)
+    defer primesieve.free(primes);
 
     for (primes[0..size]) |p|
         if (isAscending(p))
