@@ -10,7 +10,7 @@
 
     // zig fetch --save "git+https://github.com/recombinant/primesieve"
 
-    // zig fetch --save git+https://codeberg.org/ziglang/translate-c
+    // zig fetch --save git+https://codeberg.org/ziglang/translate-c#zig-0.17.x
 
     // zig fetch --save git+https://github.com/peymanmortazavi/csv-zero.git
 
@@ -20,16 +20,16 @@
             .hash = "csvzero-0.2.0-YQXXvD3GAAB60CVoVAuz64YS3Lg3okE2UKRPviOe2lcL",
         },
         .primesieve = .{
-            .url = "git+https://github.com/recombinant/primesieve#d33ad40a89e4df558ddf0dccc7af7b7cd9b1a30b",
-            .hash = "primesieve-0.0.0-H2AblX4UAAAjhRYHn3ofkM-wJbTQOeJjJqfrE1hBmGMr",
+            .url = "git+https://github.com/recombinant/primesieve#b72a6798c842e3077aab3f3e501641265c608aad",
+            .hash = "primesieve-0.0.0-H2AblW1PAAAqQZUrV0DD4N6f2GuJbtJF1rQnFLwyLWYm",
         },
         .raylib = .{
             .url = "git+https://github.com/raysan5/raylib#30fa673ef2fa137588cf8b5732c65d76d86c1570",
             .hash = "raylib-6.0.0-whq8uDuRNwU-qsXm4RFf0ZBx11T8CE-vPfzcgAgQ24UH",
         },
         .translate_c = .{
-            .url = "git+https://codeberg.org/ziglang/translate-c#875969d3493e245e01bf5d7860f792d8f3eb9ef5",
-            .hash = "translate_c-0.0.0-Q_BUWoFOBwAhz77Zd15HCVuhTKzdUKc94kezmCeJ7IC_",
+            .url = "git+https://codeberg.org/ziglang/translate-c?ref=zig-0.17.x#f978dca0f2b2a782d06591989e80aae7c74d0183",
+            .hash = "translate_c-2.0.1-Q_BUWmVOBwDWdxpDb7n6-LpMznKteZvXbL_4r6DxB2_d",
         },
     },
     .paths = .{
