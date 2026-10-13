@@ -20,8 +20,8 @@
             .hash = "csvzero-0.2.0-YQXXvD3GAAB60CVoVAuz64YS3Lg3okE2UKRPviOe2lcL",
         },
         .primesieve = .{
-            .url = "git+https://github.com/recombinant/primesieve#b72a6798c842e3077aab3f3e501641265c608aad",
-            .hash = "primesieve-0.0.0-H2AblW1PAAAqQZUrV0DD4N6f2GuJbtJF1rQnFLwyLWYm",
+            .url = "git+https://github.com/recombinant/primesieve#85ca843411a5fe62f4ca87d4c68573ddab7ff789",
+            .hash = "primesieve-0.0.0-H2AblS-NAABPMVUWQZZ0uziMTMA77jAcQO3Gg9_onXiH",
         },
         .raylib = .{
             .url = "git+https://github.com/raysan5/raylib#30fa673ef2fa137588cf8b5732c65d76d86c1570",
