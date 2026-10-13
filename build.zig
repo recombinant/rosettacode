@@ -27,10 +27,6 @@ pub fn build(b: *std.Build) !void {
         .rtextures = true,
     });
 
-    const primesieve_module: *std.Build.Module = primesieve_dependency.module("primesieve");
-    for (primesieve_module.getGraph().names) |n|
-        std.debug.print("{s}\n", .{n});
-
     // --------------------------------------------------------------
     const translate_c = b.dependency("translate_c", .{});
 
@@ -77,7 +73,7 @@ pub fn build(b: *std.Build) !void {
             .test_only => {},
             .zig => {
                 if (flags.csvzero_flag) root_module.addImport("csvzero", csvzero_dependency.module("csvzero"));
-                if (flags.primesieve_flag) root_module.addImport("primesieve", primesieve_module);
+                if (flags.primesieve_flag) root_module.addImport("primesieve", primesieve_dependency.module("primesieve"));
                 if (flags.raylib_flag) root_module.addImport("raylib", raylib_dependency.module("raylib"));
             },
             .discard => unreachable,
