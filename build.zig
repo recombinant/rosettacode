@@ -26,6 +26,7 @@ pub fn build(b: *std.Build) !void {
         .rtext = true,
         .rtextures = true,
     });
+    const zeit_dependency = b.dependency("zeit", .{});
 
     // --------------------------------------------------------------
     const translate_c = b.dependency("translate_c", .{});
@@ -33,7 +34,6 @@ pub fn build(b: *std.Build) !void {
     const translator: Translator = .init(translate_c, .{
         .c_source_file = b.addWriteFiles().add("c.h",
             \\#include <stdlib.h>
-            \\#include <time.h>
         ),
         .target = target,
         .optimize = optimize,
@@ -75,6 +75,7 @@ pub fn build(b: *std.Build) !void {
                 if (flags.csvzero_flag) root_module.addImport("csvzero", csvzero_dependency.module("csvzero"));
                 if (flags.primesieve_flag) root_module.addImport("primesieve", primesieve_dependency.module("primesieve"));
                 if (flags.raylib_flag) root_module.addImport("raylib", raylib_dependency.module("raylib"));
+                if (flags.zeit_flag) root_module.addImport("zeit", zeit_dependency.module("zeit"));
             },
             .discard => unreachable,
         }
@@ -171,6 +172,7 @@ const Flags = struct {
     csvzero_flag: bool = false,
     primesieve_flag: bool = false,
     raylib_flag: bool = false,
+    zeit_flag: bool = false,
     test_flag: bool = false,
 };
 
@@ -218,6 +220,7 @@ fn evaluateTask(io: Io, allocator: std.mem.Allocator, source_info: SourceInfo) !
     flags.csvzero_flag = (std.mem.indexOf(u8, text, "= @import(\"csvzero\");") != null);
     flags.primesieve_flag = (std.mem.indexOf(u8, text, "= @import(\"primesieve\");") != null);
     flags.raylib_flag = (std.mem.indexOf(u8, text, "= @import(\"raylib\");") != null);
+    flags.zeit_flag = (std.mem.indexOf(u8, text, "= @import(\"zeit\");") != null);
 
     if (std.mem.indexOf(u8, text, "\npub fn main(") == null) {
         if (flags.test_flag) {

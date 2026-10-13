@@ -2,86 +2,69 @@
 // {{works with|Zig|0.17.0}}
 const std = @import("std");
 const Io = std.Io;
-// // With Zig 0.16.0 and earlier there was an easy way for
-// // simple imports of C header files.
-// const c = @cImport({
-//     @cInclude("time.h");
-// });
-
-// Zig 0.17.0 and later requires a build.zig with addTranslateC machinery
-// and/or manual function prototypes,
-const c = @import("c");
+const zeit = @import("zeit");
 
 pub fn main(init: std.process.Init) anyerror!void {
     const io: Io = init.io;
 
-    const MonthsError = error{
-        NoMonthZero, // there is no month at months[0]
-    };
-    const months = [13]?[]const u8{ null, "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
-
-    const task_dates = [_]Date{
-        .{ .year = 1800, .month = 1, .day = 6 },
-        .{ .year = 1875, .month = 3, .day = 29 },
-        .{ .year = 1915, .month = 12, .day = 7 },
-        .{ .year = 1970, .month = 12, .day = 23 },
-        .{ .year = 2043, .month = 5, .day = 14 },
-        .{ .year = 2077, .month = 2, .day = 12 },
-        .{ .year = 2101, .month = 4, .day = 2 },
+    const task_dates = [_][]const u8{
+        "1800-01-06",
+        "1875-03-29",
+        "1915-12-07",
+        "1970-12-23",
+        "2043-05-14",
+        "2077-02-12",
+        "2101-04-02",
     };
 
     var stdout_buffer: [1024]u8 = undefined;
     var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
 
-    const now = c.time(null);
-    const tm_now: *c.tm = c.localtime(&now);
-    var tm_task: c.tm = std.mem.zeroes(c.tm);
+    try stdout.writeAll("Days of week given by Doomsday rule:\n\n");
 
-    for (task_dates) |d| {
-        const month: []const u8 = months[d.month] orelse return MonthsError.NoMonthZero;
+    const instant = zeit.instant(.{ .now = io }, &zeit.utc).time();
+    const current: zeit.Time = .{ .year = instant.year, .month = instant.month, .day = instant.day };
+    // Copy current Time to task Time so that that a comparison will only
+    // be comparing YMD as the remaining struct elements will already be
+    // identical.
+    var task: zeit.Time = current;
 
+    for (task_dates) |date| {
         const tense: []const u8 = blk: {
             const past = "was";
             const present = "is";
             const future = "will be";
-            const task_year = @as(c_int, @intCast(d.year)) - 1900;
-            // check now against task year.
-            if (task_year < tm_now.tm_year) break :blk past;
-            if (task_year > tm_now.tm_year) break :blk future;
-            // current year so use C difftime()
-            tm_task.tm_year = task_year;
-            tm_task.tm_mon = d.month;
-            tm_task.tm_mday = d.day;
-            const diff = c.difftime(c.mktime(&tm_task), now);
-            break :blk if (diff < 0) past else if (diff > 0) future else present;
+
+            task.year = try std.fmt.parseInt(std.time.epoch.Year, date[0..4], 10);
+            task.month = @fromBackingInt(try std.fmt.parseInt(@typeInfo(zeit.Month).@"enum".tag_type, date[5..7], 10));
+            task.day = try std.fmt.parseInt(@FieldType(zeit.Time, "day"), date[8..10], 10);
+
+            break :blk if (task.before(current)) past else if (task.after(current)) future else present;
         };
 
-        try stdout.print(
-            "{s} {d}, {d} {s} a {s}.\n",
-            .{ month, d.day, d.year, tense, weekday(d) },
-        );
+        try task.gofmt(stdout, "January 02 2006 ");
+        try stdout.print(" {s} a {s}.\n", .{ tense, weekday(task) });
+
         try stdout.flush();
     }
 }
 
-const Date = struct {
-    year: std.time.epoch.Year,
-    month: u4,
-    day: u5,
-};
-
-fn weekday(date: Date) []const u8 {
+fn weekday(date: zeit.Time) []const u8 {
     const days = [7][]const u8{ "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
     const leap_doom = [12]u3{ 4, 1, 7, 2, 4, 6, 4, 1, 5, 3, 7, 5 };
     const norm_doom = [12]u3{ 3, 7, 7, 4, 2, 6, 4, 1, 5, 3, 7, 5 };
 
-    const century = date.year / 100;
-    const r = date.year % 100;
+    // avoid zeit module's signed numbers & enums
+    const year: u16 = @intCast(date.year);
+    const month: u16 = @intCast(@backingInt(date.month) - 1);
+    //
+    const century = year / 100;
+    const r = year % 100;
     const s = r / 12;
     const t = r % 12;
     const c_anchor = (5 * (century % 4) + 2) % 7;
     const doom = (s + t + t / 4 + c_anchor) % 7;
-    const anchor = (if (std.time.epoch.isLeapYear(date.year)) leap_doom else norm_doom)[date.month - 1];
+    const anchor = (if (std.time.epoch.isLeapYear(year)) leap_doom else norm_doom)[month];
     return days[(7 + doom + date.day - anchor) % 7];
 }
