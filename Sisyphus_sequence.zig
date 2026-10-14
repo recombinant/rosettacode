@@ -100,26 +100,22 @@ const SisyphusSequenceGeneratorError = error{
 };
 
 const SisyphusSequenceGenerator = struct {
-    it: primesieve.Iterator = undefined,
+    it: primesieve.Iterator,
     next_: u64 = 1,
     prime: u64 = 0,
 
     fn init() !SisyphusSequenceGenerator {
-        var si: SisyphusSequenceGenerator = .{};
-        primesieve.init(&si.it);
-        return si;
+        return .{ .it = .init() };
     }
     fn deinit(self: *SisyphusSequenceGenerator) void {
-        primesieve.freeIterator(&self.it);
+        self.it.deinit();
     }
     fn next(self: *SisyphusSequenceGenerator) SisyphusSequenceGeneratorError!u64 {
         const n = self.next_;
         if (self.next_ % 2 == 0) {
             self.next_ /= 2;
         } else {
-            self.prime = primesieve.nextPrime(&self.it);
-            if (self.it.is_error != 0 or self.prime == primesieve.ERROR)
-                return SisyphusSequenceGeneratorError.PrimeSieveError;
+            self.prime = self.it.next() orelse return SisyphusSequenceGeneratorError.PrimeSieveError;
             self.next_ += self.prime;
         }
         return n;

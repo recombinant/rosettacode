@@ -147,19 +147,11 @@ const PrimeSieve = struct {
     fn init(allocator: Allocator, limit: usize) !PrimeSieve {
         var primes = try allocator.alloc(bool, limit);
         @memset(primes, false);
-        var it: primesieve.Iterator = undefined;
-        primesieve.init(&it);
-        defer primesieve.freeIterator(&it);
-        {
-            // consume 2
-            const p = primesieve.nextPrime(&it);
-            if (it.is_error != 0 or p == primesieve.ERROR)
-                return error.PrimesieveError;
-        }
-        while (true) {
-            const p = primesieve.nextPrime(&it);
-            if (it.is_error != 0 or p == primesieve.ERROR)
-                return error.PrimesieveError;
+        var it: primesieve.Iterator = .init();
+        defer it.deinit();
+
+        _ = it.next().?; // consume (2)
+        while (it.next()) |p| {
             if (p >= limit) break;
             primes[p >> 1] = true;
         }

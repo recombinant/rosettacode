@@ -64,14 +64,10 @@ fn getPrimes(allocator: Allocator, limit: u64) ![]u64 {
     var prime_list: std.ArrayList(u64) = .empty;
     defer prime_list.deinit(allocator);
 
-    var it: primesieve.Iterator = undefined;
-    primesieve.init(&it);
-    defer primesieve.freeIterator(&it);
-
+    var it: primesieve.Iterator = .init();
+    defer it.deinit();
     while (true) {
-        const p = primesieve.nextPrime(&it);
-        if (it.is_error != 0 or p == primesieve.ERROR)
-            return error.PrimesieveError;
+        const p = it.next() orelse return error.PrimesieveError;
         if (p >= limit) break;
         try prime_list.append(allocator, p);
     }

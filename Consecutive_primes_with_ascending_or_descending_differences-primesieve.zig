@@ -19,19 +19,16 @@ pub fn main(init: std.process.Init) !void {
 
     var t0: Io.Timestamp = .now(io, .real);
 
-    var it: primesieve.Iterator = undefined;
-    primesieve.init(&it);
-    defer primesieve.freeIterator(&it);
-
-    var p1 = primesieve.nextPrime(&it);
+    var it: primesieve.Iterator = .init();
+    defer it.deinit();
+    var p1 = it.next().?;
 
     var inc = Sequence(.inc).init(gpa, p1);
     defer inc.deinit();
     var dec = Sequence(.dec).init(gpa, p1);
     defer dec.deinit();
 
-    while (true) {
-        const p2 = primesieve.nextPrime(&it);
+    while (it.next()) |p2| {
         if (p2 >= LIMIT)
             break;
 

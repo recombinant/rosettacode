@@ -18,20 +18,15 @@ pub fn main(init: std.process.Init) !void {
 
     try stdout.print("Frobenius numbers less than {} (asterisk marks primes):\n", .{limit});
 
-    var it: primesieve.Iterator = undefined;
-    primesieve.init(&it);
-    defer primesieve.freeIterator(&it);
+    var it: primesieve.Iterator = .init();
+    defer it.deinit();
 
     var count: u64 = 1;
 
-    var prime1 = primesieve.nextPrime(&it);
-    if (it.is_error != 0 or prime1 == primesieve.ERROR)
-        return error.PrimesieveError;
+    var prime1 = it.next().?;
 
     while (true) : (count += 1) {
-        const prime2 = primesieve.nextPrime(&it);
-        if (it.is_error != 0 or prime2 == primesieve.ERROR)
-            return error.PrimesieveError;
+        const prime2 = it.next().?;
 
         const frobenius = prime1 * prime2 - prime1 - prime2;
         if (frobenius >= limit)

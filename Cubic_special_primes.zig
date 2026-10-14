@@ -10,7 +10,7 @@ const Io = std.Io;
 // Using wrapper around cpp primesieve from https://github.com/kimwalisch/primesieve/
 const primesieve = @import("primesieve");
 
-pub fn main(init: std.process.Init) error{WriteFailed}!void {
+pub fn main(init: std.process.Init) !void {
     const io: Io = init.io;
 
     var stdout_buffer: [1024]u8 = undefined;
@@ -19,11 +19,9 @@ pub fn main(init: std.process.Init) error{WriteFailed}!void {
 
     const start: u64 = 0;
     const stop: u64 = 15_000;
-    var size: usize = 0;
 
     // Get an array with the primes inside [start, stop] */
-    var primes: [*]u32 = @ptrCast(@alignCast(primesieve.generatePrimes(start, stop, &size, primesieve.UINT32_PRIMES)));
-    // Check for error in primesieve.generatePrimes?
+    var primes: []u32 = try primesieve.generatePrimes(u32, start, stop);
     defer primesieve.free(primes);
 
     try stdout.writeAll("Cubic special primes under 15,000:\n");
@@ -35,7 +33,7 @@ pub fn main(init: std.process.Init) error{WriteFailed}!void {
     const fmt = "{d:7} {d:7} {d:6} {d:4}\n";
     try stdout.print(fmt, .{ 2, 3, 1, 1 });
 
-    for (primes[2..size]) |p| {
+    for (primes[2..primes.len]) |p| {
         const gap = p - lastCubicSpecial;
 
         if (isCube(gap)) |cbrt| {

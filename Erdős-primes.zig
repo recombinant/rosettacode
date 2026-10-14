@@ -21,17 +21,13 @@ pub fn main(init: std.process.Init) !void {
     const sieve: PrimeSieve = try .init(gpa, limit);
     defer sieve.deinit(gpa);
 
-    var it: primesieve.Iterator = undefined;
-    primesieve.init(&it);
-    defer primesieve.freeIterator(&it);
-
+    var it: primesieve.Iterator = .init();
+    defer it.deinit();
     var count: usize = 0;
     var found = false;
     try stdout.writeAll("Erdős primes under 2500:\n");
     while (true) {
-        const p = primesieve.nextPrime(&it);
-        if (it.is_error != 0 or p == primesieve.ERROR)
-            return error.PrimesieveError;
+        const p = it.next() orelse return error.PrimesieveError;
         if (isErdos(p, &sieve)) {
             if (p > 2500 and !found) {
                 // Task 1, optional
@@ -69,19 +65,12 @@ const PrimeSieve = struct {
     fn init(allocator: Allocator, limit: usize) !PrimeSieve {
         var primes = try allocator.alloc(bool, limit);
         @memset(primes, false);
-        var it: primesieve.Iterator = undefined;
-        primesieve.init(&it);
-        defer primesieve.freeIterator(&it);
-        {
-            // consume 2
-            const p = primesieve.nextPrime(&it);
-            if (it.is_error != 0 or p == primesieve.ERROR)
-                return error.PrimesieveError;
-        }
-        while (true) {
-            const p = primesieve.nextPrime(&it);
-            if (it.is_error != 0 or p == primesieve.ERROR)
-                return error.PrimesieveError;
+
+        var it: primesieve.Iterator = .init();
+        defer it.deinit();
+
+        _ = it.next().?; // consume (2)
+        while (it.next()) |p| {
             if (p >= limit) break;
             primes[p >> 1] = true;
         }

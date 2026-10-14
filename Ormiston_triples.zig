@@ -58,14 +58,11 @@ const OrmistonTripleGenerator = struct {
     prime2: u64,
 
     fn init() !Self {
-        var it: primesieve.Iterator = undefined;
-        primesieve.init(&it);
+        var it: primesieve.Iterator = .init();
 
         var primes: [2]u64 = undefined;
         for (&primes) |*prime| {
-            prime.* = primesieve.nextPrime(&it);
-            if (it.is_error != 0 or prime.* == primesieve.ERROR)
-                return OrmistonTripleGeneratorError.PrimesieveError;
+            prime.* = it.next() orelse return OrmistonTripleGeneratorError.PrimesieveError;
         }
         return Self{
             .it = it,
@@ -74,13 +71,11 @@ const OrmistonTripleGenerator = struct {
         };
     }
     fn deinit(self: *Self) void {
-        primesieve.freeIterator(&self.it);
+        self.it.deinit();
     }
     fn next(self: *Self) ![3]u64 {
         while (true) {
-            const prime = primesieve.nextPrime(&self.it);
-            if (self.it.is_error != 0 or prime == primesieve.ERROR)
-                return OrmistonTripleGeneratorError.PrimesieveError;
+            const prime = self.it.next() orelse return OrmistonTripleGeneratorError.PrimesieveError;
 
             const prime0 = self.prime1;
             self.prime1 = self.prime2;

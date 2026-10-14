@@ -17,12 +17,12 @@ pub fn main(init: std.process.Init) !void {
     const stdout = &stdout_writer.interface;
 
     const limit = 5500;
-    var triplet_generator: PrimeTripletGenerator = try .init(limit);
+    var triplet_generator: PrimeTripletGenerator = .init(limit);
     defer triplet_generator.deinit();
 
     try stdout.writeAll("Primesieve prime triplets:\n");
     var count: usize = 0;
-    while (try triplet_generator.next()) |triplet| {
+    while (triplet_generator.next()) |triplet| {
         count += 1;
         try stdout.print("{d:4}, {d:4}, {d:4}\n", .{ triplet[0], triplet[1], triplet[2] });
     }
@@ -40,16 +40,13 @@ const PrimeTripletGenerator = struct {
     prime1: u64,
     prime2: u64,
 
-    fn init(stop: u64) !PrimeTripletGenerator {
-        var it: primesieve.Iterator = undefined;
-        primesieve.init(&it);
+    fn init(stop: u64) PrimeTripletGenerator {
+        var it: primesieve.Iterator = .init();
 
         var primes: [2]u64 = undefined;
-        for (&primes) |*prime| {
-            prime.* = primesieve.nextPrime(&it);
-            if (it.is_error != 0 or prime.* == primesieve.ERROR)
-                return PrimeTripletGeneratorError.PrimeSieveError;
-        }
+        for (&primes) |*prime|
+            prime.* = it.next().?;
+
         return PrimeTripletGenerator{
             .stop = stop,
             .it = it,
@@ -58,13 +55,11 @@ const PrimeTripletGenerator = struct {
         };
     }
     fn deinit(self: *PrimeTripletGenerator) void {
-        primesieve.freeIterator(&self.it);
+        self.it.deinit();
     }
-    fn next(self: *PrimeTripletGenerator) !?[3]u64 {
+    fn next(self: *PrimeTripletGenerator) ?[3]u64 {
         while (true) {
-            const prime = primesieve.nextPrime(&self.it);
-            if (self.it.is_error != 0 or prime == primesieve.ERROR)
-                return PrimeTripletGeneratorError.PrimeSieveError;
+            const prime = self.it.next().?;
             if (prime >= self.stop)
                 return null;
             const prime0 = self.prime1;
