@@ -23,16 +23,14 @@ pub fn main(init: std.process.Init) !void {
     // Sieved candidates limited to 7 digits
     const start: u64 = 0;
     const stop: u64 = 3_456_789; // inclusive
-    var size: usize = 0;
 
     const t0: Io.Timestamp = .now(io, .real);
 
     // Get an array with the primes inside [start, stop]
-    const primes: [*]u32 = @ptrCast(@alignCast(primesieve.generatePrimes(start, stop, &size, primesieve.UINT32_PRIMES)));
-    // Check for error in primesieve.generatePrimes? (errno)
+    const primes: []u32 = try primesieve.generatePrimes(u32, start, stop);
     defer primesieve.free(primes);
 
-    for (primes[0..size]) |p|
+    for (primes) |p|
         if (isAscending(p))
             try ascending.append(gpa, p);
 
