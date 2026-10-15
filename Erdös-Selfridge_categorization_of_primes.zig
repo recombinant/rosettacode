@@ -72,9 +72,6 @@ const Pair = struct {
 
 const ErdosSelfridge = struct {
     pairs: []Pair,
-    index_lookup: Lookup,
-
-    const Lookup = std.AutoArrayHashMapUnmanaged(u64, usize);
 
     fn init(allocator: Allocator, limit: u64) ErdosSelfridge {
         var prime_array: std.ArrayList(Pair) = .empty;
@@ -86,20 +83,11 @@ const ErdosSelfridge = struct {
                 break;
             prime_array.append(allocator, .{ .prime = prime, .category = 0 }) catch unreachable;
         }
-        // Lookup table of prime vs index into prime_array
-        var index_lookup: Lookup = .empty;
-        index_lookup.ensureTotalCapacity(allocator, prime_array.items.len) catch unreachable;
-        for (prime_array.items, 0..) |pair, idx|
-            index_lookup.put(allocator, pair.prime, idx) catch unreachable;
 
-        return .{
-            .pairs = prime_array.toOwnedSlice(allocator) catch unreachable,
-            .index_lookup = index_lookup,
-        };
+        return .{ .pairs = prime_array.toOwnedSlice(allocator) catch unreachable };
     }
     fn deinit(self: *ErdosSelfridge, allocator: Allocator) void {
         allocator.free(self.pairs);
-        self.index_lookup.deinit(allocator);
     }
     fn getCategory(self: ErdosSelfridge, index: usize) u32 {
         var pair = self.pairs[index];
@@ -128,13 +116,11 @@ const ErdosSelfridge = struct {
         return max_category;
     }
     fn getIndex(self: *const ErdosSelfridge, prime: u64) usize {
-        // The original C++ used a (slow) linear search.
-        //     for (self.pairs, 0..) |pair, i|
-        //         if (pair.first == prime)
-        //             return i;
-        // Memory is bountiful (though maybe not cheap) so a much faster
-        // lookup table is used.
-        return self.index_lookup.get(prime) orelse unreachable;
+        return std.sort.binarySearch(Pair, self.pairs, prime, comparePrimes) orelse unreachable;
+    }
+
+    fn comparePrimes(prime: u64, pair: Pair) std.math.Order {
+        return std.math.order(prime, pair.prime);
     }
 
     const PrimesByCategory = std.AutoArrayHashMapUnmanaged(u32, std.ArrayList(u64));
