@@ -18,24 +18,24 @@
 
     .dependencies = .{
         .csvzero = .{
-            .url = "git+https://github.com/peymanmortazavi/csv-zero.git#a687d508e57b1cd62dc1efa7d90f268055e1ca46",
-            .hash = "csvzero-0.2.0-YQXXvD3GAAB60CVoVAuz64YS3Lg3okE2UKRPviOe2lcL",
+            .url = "git+https://github.com/peymanmortazavi/csv-zero.git#6581656637a2b8566005e21291573837771ce8ab",
+            .hash = "csvzero-0.2.0-YQXXvIDIAADbjoPq7oNGPvySMe7-wlvEuSD-0Y_7VwjE",
         },
         .primesieve = .{
-            .url = "git+https://github.com/recombinant/primesieve#867b023d112174b0a16bdc896c2609b7f6ca6152",
-            .hash = "primesieve-0.0.0-H2AblX6MAAC4y7ue1lDFIh2Xj8wS5i0hsvxNWw1IaEyp",
+            .url = "git+https://github.com/recombinant/primesieve#28f9d9b2fd3277905d47d6550cded98d57965a7d",
+            .hash = "primesieve-0.0.0-H2AblaWQAACoBIhTVK8QdljjgQK5O7EaZXT8ZMIFtHkx",
         },
         .raylib = .{
-            .url = "git+https://github.com/raysan5/raylib#30fa673ef2fa137588cf8b5732c65d76d86c1570",
-            .hash = "raylib-6.0.0-whq8uDuRNwU-qsXm4RFf0ZBx11T8CE-vPfzcgAgQ24UH",
+            .url = "git+https://github.com/raysan5/raylib#985ac298beb26c2448b17749a39818db613a47d3",
+            .hash = "raylib-6.0.0-whq8uECFOAXOvAAc-g1HowN4YxBVxU-DoHwM9NNUJ-5y",
         },
         .translate_c = .{
-            .url = "git+https://codeberg.org/ziglang/translate-c?ref=zig-0.17.x#f978dca0f2b2a782d06591989e80aae7c74d0183",
-            .hash = "translate_c-2.0.1-Q_BUWmVOBwDWdxpDb7n6-LpMznKteZvXbL_4r6DxB2_d",
+            .url = "git+https://codeberg.org/ziglang/translate-c?ref=zig-0.17.x#cfac21f3199b2b02ce3fd7db652aa456421fe4ab",
+            .hash = "translate_c-2.0.2-Q_BUWvBNBwDnyehSiuAJmdFcMYHYGA-Jc3KiYdrV2Dqx",
         },
         .zeit = .{
-            .url = "git+https://github.com/rockorager/zeit?ref=main#06bb7b462b4218770fb5438ebe6b0c0c5ef18888",
-            .hash = "zeit-0.10.0-5I6bkxS-AgAaI3lI3RsXsWnPw7sMCqJKoFnSB8_QRAoo",
+            .url = "git+https://github.com/rockorager/zeit?ref=main#da336369d4e05f9ea38d86c481f269bc2a435560",
+            .hash = "zeit-0.10.0-5I6bkxS-AgCYLeTbtGwmBxzrIC5w1x3dP75Ob3FlH-SC",
         },
     },
     .paths = .{
