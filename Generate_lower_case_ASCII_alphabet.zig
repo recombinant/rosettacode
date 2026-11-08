@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Generate_lower_case_ASCII_alphabet
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // Copied from rosettacode
 const std = @import("std");
 const Io = std.Io;

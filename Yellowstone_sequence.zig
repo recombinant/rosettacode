@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Yellowstone_sequence
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|Nim}}
 
 // https://rosettacode.org/wiki/Yellowstone_sequence#Procedure_version

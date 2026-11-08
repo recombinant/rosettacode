@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Determine_if_a_string_is_collapsible
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;

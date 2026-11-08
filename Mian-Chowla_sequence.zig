@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Mian-Chowla_sequence
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|C}}
 // {{trans|Go}}
 const std = @import("std");

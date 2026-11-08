@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Sierpinski_carpet
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|C++}}
 
 // BCT = Binary-Coded Ternary: pairs of bits form one digit [0,1,2] (0b11 is invalid digit)

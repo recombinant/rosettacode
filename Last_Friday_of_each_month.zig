@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Last_Friday_of_each_month
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|Fortran}}
 
 // see also:

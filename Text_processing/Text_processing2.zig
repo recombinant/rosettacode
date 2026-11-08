@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Text_processing/2
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{libheader|csvzero}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;

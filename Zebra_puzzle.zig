@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Zebra_puzzle
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|Go}}
 // This Zig version assumes Ascii text to reduce code clutter.
 const std = @import("std");

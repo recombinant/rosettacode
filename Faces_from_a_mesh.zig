@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Faces_from_a_mesh
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|Go}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;

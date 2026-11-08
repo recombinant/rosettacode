@@ -211,9 +211,9 @@ fn evaluateTask(io: Io, allocator: std.mem.Allocator, source_info: SourceInfo) !
         return .{ .discard, flags };
     }
 
-    // Expected to be zig 0.17.0
-    if (std.mem.indexOf(u8, text, "{works with|Zig|0.17.0}}") == null) {
-        std.log.warn("Expected Zig 0.17.0 - not found {s}", .{source_info.path});
+    // Expected to be zig 0.17.1
+    if (std.mem.indexOf(u8, text, "{works with|Zig|0.17.1}}") == null) {
+        std.log.warn("Expected Zig 0.17.1 - not found {s}", .{source_info.path});
         return .{ .discard, .{} };
     }
 

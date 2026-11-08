@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Permutations_by_swapping
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // Zig makes use of wraparound addition.
 const std = @import("std");
 const print = std.debug.print;

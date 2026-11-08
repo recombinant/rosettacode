@@ -1,6 +1,6 @@
 // https://rosettacode.org/wiki/Compound_data_type
 // from https://github.com/tiehuis/zig-rosetta
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 pub fn Point(comptime T: type) type {
     return struct {
         x: T,

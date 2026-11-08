@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Call_a_foreign-language_function
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // # zig run Call_a_foreign-language_function.zig -lc
 // copied from rosettacode
 const std = @import("std");

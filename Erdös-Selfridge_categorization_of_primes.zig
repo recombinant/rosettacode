@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Erdös-Selfridge_categorization_of_primes
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{Trans|C++}}
 
 const std = @import("std");

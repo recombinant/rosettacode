@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Periodic_table
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|Python}}
 // zig test Periodic_table.zig
 const std = @import("std");

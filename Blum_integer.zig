@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Blum_integer
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|C}}
 // https://en.wikipedia.org/wiki/Magic_number_(programming)
 const std = @import("std");

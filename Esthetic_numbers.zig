@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Esthetic_numbers
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|Go}}
 // https://oeis.org/A033075
 const std = @import("std");

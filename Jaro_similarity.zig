@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Jaro_similarity
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|C}}
 // Translation of C (keeping comments)
 const std = @import("std");

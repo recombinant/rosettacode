@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/De_Bruijn_sequences
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|Wren}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;

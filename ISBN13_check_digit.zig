@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/ISBN13_check_digit
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|C}}
 const std = @import("std");
 

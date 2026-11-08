@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Brzozowski_Algebraic_Method
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|C++}}
 
 // The main difference from the C++ solution is that this Zig solution

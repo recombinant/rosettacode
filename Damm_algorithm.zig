@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Damm_algorithm
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 const std = @import("std");
 const testing = std.testing;
 const print = std.debug.print;

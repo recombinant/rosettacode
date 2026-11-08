@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Fibonacci_word
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|Nim}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;

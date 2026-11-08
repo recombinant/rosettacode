@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Sum_of_first_n_cubes
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // Copied from rosettacode
 const std = @import("std");
 const Io = std.Io;

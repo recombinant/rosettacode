@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/String_case
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 
 // Note: could use https://codeberg.org/dude_the_builder/zigstr
 // Copied from rosettacode

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Find_prime_numbers_of_the_form_n*n*n%2B2
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|C}}
 const std = @import("std");
 const print = std.debug.print;

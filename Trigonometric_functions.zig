@@ -1,5 +1,5 @@
 // https://www.rosettacode.org/wiki/Trigonometric_functions
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|C}}
 const std = @import("std");
 const math = std.math;

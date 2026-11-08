@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Discrete_Fourier_transform
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|Wren}}
 const std = @import("std");
 

@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Subleq
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|Kotlin}}
 const std = @import("std");
 const Allocator = std.mem.Allocator;

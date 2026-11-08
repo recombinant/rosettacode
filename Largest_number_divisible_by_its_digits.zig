@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Largest_number_divisible_by_its_digits
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|Kotlin}}
 const std = @import("std");
 const Io = std.Io;

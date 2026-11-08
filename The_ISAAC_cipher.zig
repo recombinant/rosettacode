@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/The_ISAAC_cipher
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 
 // Links with the (tweaked) original C source code
 //   zig run The_ISAAC_cipher.zig The_ISAAC_cipher.c -lc

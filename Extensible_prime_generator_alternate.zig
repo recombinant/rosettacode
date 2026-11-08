@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Extensible_prime_generator
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // Copied from rosettacode
 
 // Alternative version based on "Two Compact Incremental Prime Sieves" by Jonathon P. Sorenson.

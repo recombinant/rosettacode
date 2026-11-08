@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/Ternary_logic
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|C}}
 
 // translation of C's "Using functions" solution

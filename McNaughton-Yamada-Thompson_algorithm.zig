@@ -1,5 +1,5 @@
 // https://rosettacode.org/wiki/McNaughton-Yamada-Thompson_algorithm
-// {{works with|Zig|0.17.0}}
+// {{works with|Zig|0.17.1}}
 // {{trans|C++}}
 
 // This is a nearly verbatim translation of the C++ solution
