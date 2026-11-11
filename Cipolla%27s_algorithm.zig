@@ -17,7 +17,7 @@ pub fn main(init: std.process.Init) !void {
     const random = prng.random();
     // --------------------------------------------------- stdout
     var stdout_buffer: [1024]u8 = undefined;
-    var stdout_file = Io.File.stdout().writer(init.io, &stdout_buffer);
+    var stdout_file = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_file.interface;
     // ----------------------------------------------------------
     try findSolutions(random, 10, 13, stdout);
@@ -33,7 +33,7 @@ pub fn main(init: std.process.Init) !void {
 }
 
 /// Tonelli-Shanks algorithm to find modular square root x such that x^2 = n (mod p)
-fn findSolutions(random: Random, nOrig: u64, p: u64, w: *Io.Writer) !void {
+fn findSolutions(random: Random, nOrig: u64, p: u64, w: *Io.Writer) Io.Writer.Error!void {
     try w.print("Finding solutions for number = {} and prime = {}:\n", .{ nOrig, p });
 
     // Ensure n is reduced modulo p for calculations
