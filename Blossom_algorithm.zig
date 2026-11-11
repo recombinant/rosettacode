@@ -1,5 +1,7 @@
 // https://rosettacode.org/wiki/Blossom_algorithm
 // {{works with|Zig|0.17.1}}
+// {{trans|Rust}}
+// copied from rosettacode and tweaked
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
