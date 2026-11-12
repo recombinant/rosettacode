@@ -1,7 +1,6 @@
 // https://rosettacode.org/wiki/Borůvka_algorithm
 // {{works with|Zig|0.17.1}}
 // {{trans|Crow}}
-// Copied from rosettacode and tweaked.
 // OOM means "out of memory". An irrecoverable error.
 const std = @import("std");
 const Allocator = std.mem.Allocator;
