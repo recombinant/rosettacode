@@ -149,27 +149,27 @@ const HeldKarpAlgorithm = struct {
 fn Matrix2D(T: type) type {
     return struct {
         matrix: [][]T,
-        backing_slice: []T,
+        pool: []T,
         const Self = @This();
 
         fn init(allocator: Allocator, m: usize, n: usize, fill: T) Self {
-            var backing_slice = allocator.alloc(T, m * n) catch @panic("OOM");
-            @memset(backing_slice, fill);
+            var pool = allocator.alloc(T, m * n) catch @panic("OOM");
+            @memset(pool, fill);
 
-            var start: usize = 0;
+            var offset: usize = 0;
             const matrix = allocator.alloc([]T, m) catch @panic("OOM");
             for (matrix) |*row| {
-                row.* = backing_slice[start .. start + n];
-                start += n;
+                row.* = pool[offset .. offset + n];
+                offset += n;
             }
             return .{
                 .matrix = matrix,
-                .backing_slice = backing_slice,
+                .pool = pool,
             };
         }
         fn deinit(self: Self, allocator: Allocator) void {
             allocator.free(self.matrix);
-            allocator.free(self.backing_slice);
+            allocator.free(self.pool);
         }
     };
 }
