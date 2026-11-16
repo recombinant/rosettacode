@@ -2,6 +2,7 @@
 // {{works with|Zig|0.17.1}}
 // {{trans|Crow}}
 const std = @import("std");
+const Io = std.Io;
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 // An n-digit number d1 d2 ... dn is a Disarium number when the sum over its positions of
@@ -12,26 +13,36 @@ const ArrayList = std.ArrayList;
 // add, built once per length, answers them (meet in the middle). That finds all 20.
 
 pub fn main(init: std.process.Init) !void {
-    const allocator = init.gpa;
+    const allocator: Allocator = init.gpa;
+    // // arena is approximately 5x faster than gpa
+    // const allocator: Allocator = init.arena.allocator();
+    const io: Io = init.io;
 
     var stdout_buffer: [4096]u8 = undefined;
-    var stdout_writer = std.Io.File.stdout().writer(init.io, &stdout_buffer);
+    var stdout_writer = Io.File.stdout().writer(io, &stdout_buffer);
     const stdout = &stdout_writer.interface;
+
+    var t0: Io.Timestamp = .now(io, .real);
 
     var numbers: ArrayList(u64) = .empty;
     defer numbers.deinit(allocator);
 
     var n: usize = 1;
-    while (numbers.items.len < 19) : (n += 1) {
+    while (numbers.items.len < 20) : (n += 1) {
         const batch = try getDisariumOfLength(allocator, n);
         defer allocator.free(batch);
         try numbers.appendSlice(allocator, batch);
     }
+
+    const t1: Io.Duration = t0.untilNow(io, .real);
+
     try stdout.writeAll("All 20 Disarium numbers:\n");
     for (numbers.items) |x|
         try stdout.print("{d}\n", .{x});
 
     try stdout.flush();
+
+    std.log.info("processed in {f}", .{t1});
 }
 
 fn getDisariumOfLength(allocator: Allocator, n: usize) ![]u64 {
@@ -201,7 +212,8 @@ const Place = struct {
         const weight: u64 = std.math.pow(u64, 10, @intCast(n - i));
 
         for (first..10) |d| {
-            const num: u64 = @as(u64, @truncate(d)) * weight;
+            const num, const ov = @mulWithOverflow(@as(u64, @truncate(d)), weight);
+            if (ov == 1) break;
             const pwr: i128 = std.math.pow(i128, @intCast(d), @intCast(i));
             p.terms[p.count] = pwr - @as(i128, num);
             p.numbers[p.count] = num;
