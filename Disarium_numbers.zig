@@ -34,7 +34,7 @@ pub fn main(init: std.process.Init) !void {
         try numbers.appendSlice(allocator, batch);
     }
 
-    const t1: Io.Duration = t0.untilNow(io, .real);
+    const duration: Io.Duration = t0.untilNow(io, .real);
 
     try stdout.writeAll("All 20 Disarium numbers:\n");
     for (numbers.items) |x|
@@ -42,7 +42,7 @@ pub fn main(init: std.process.Init) !void {
 
     try stdout.flush();
 
-    std.log.info("processed in {f}", .{t1});
+    std.log.info("processed in {f}", .{duration});
 }
 
 fn getDisariumOfLength(allocator: Allocator, n: usize) ![]u64 {
