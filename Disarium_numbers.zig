@@ -36,7 +36,12 @@ pub fn main(init: std.process.Init) !void {
 
     const duration: Io.Duration = t0.untilNow(io, .real);
 
-    try stdout.writeAll("All 20 Disarium numbers:\n");
+    try stdout.writeAll("The first 18 Disarium numbers:\n");
+    try stdout.print("{}", .{numbers.items[0]});
+    for (numbers.items[1..]) |number|
+        try stdout.print(", {}", .{number});
+
+    try stdout.writeAll("\n\nAll 20 Disarium numbers:\n");
     for (numbers.items) |x|
         try stdout.print("{d}\n", .{x});
 
