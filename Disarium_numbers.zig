@@ -38,7 +38,7 @@ pub fn main(init: std.process.Init) !void {
 
     try stdout.writeAll("The first 18 Disarium numbers:\n");
     try stdout.print("{}", .{numbers.items[0]});
-    for (numbers.items[1..]) |number|
+    for (numbers.items[1..18]) |number|
         try stdout.print(", {}", .{number});
 
     try stdout.writeAll("\n\nAll 20 Disarium numbers:\n");
