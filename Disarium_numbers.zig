@@ -214,13 +214,13 @@ const Place = struct {
             .numbers = undefined,
         };
         const first: usize = if (i == 1 and n > 1) 1 else 0;
-        const weight: u64 = std.math.pow(u64, 10, @intCast(n - i));
+        const weight: u64 = std.math.powi(u64, 10, n - i) catch unreachable;
 
         for (first..10) |d| {
-            const num, const ov = @mulWithOverflow(@as(u64, @truncate(d)), weight);
+            const num: u64, const ov = @mulWithOverflow(@as(u64, d), @as(u64, weight));
             if (ov == 1) break;
-            const pwr: i128 = std.math.pow(i128, @intCast(d), @intCast(i));
-            p.terms[p.count] = pwr - @as(i128, num);
+            const pwr: i128 = std.math.powi(i128, d, i) catch unreachable;
+            p.terms[p.count] = pwr - num;
             p.numbers[p.count] = num;
             p.count += 1;
         }
@@ -263,7 +263,7 @@ fn isDisarium(num: u64) bool {
     var sum: u64 = 0;
     var len = if (n <= 9) 1 else std.math.log_int(u64, 10, n) + 1;
     while (n > 0) {
-        sum += std.math.pow(u64, n % 10, len);
+        sum += std.math.powi(u64, n % 10, len) catch unreachable;
         n /= 10;
         len -= 1;
     }
